@@ -137,7 +137,7 @@
         });
     });
 
-    // Load posts from Firestore (placeholder for now)
+    // Load posts from Firestore
     function loadPosts() {
       db.collection('posts')
         .orderBy('timestamp', 'desc')
@@ -149,13 +149,17 @@
           } else {
             querySnapshot.forEach((doc) => {
               const post = doc.data();
-              feed.innerHTML += `
+              let postHTML = `
                 <div class="post">
                   <h4>${post.authorName}</h4>
                   <p>${post.content}</p>
-                  ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%;">` : ''}
-                </div>
               `;
+              // Only add img tag if photoURL exists
+              if (post.photoURL) {
+                postHTML += `<img src="${post.photoURL}" style="max-width: 100%;">`;
+              }
+              postHTML += `</div>`;
+              feed.innerHTML += postHTML;
             });
           }
         })
