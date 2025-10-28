@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estaco - Home Feed</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #post-form {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    #post-content, #post-photo {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+    }
+    #post-button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #feed {
+      margin-top: 20px;
+    }
+    .post {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    #error-message {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Estaco - Home Feed</h1>
+  <div id="post-form">
+    <h3>Create a Post</h3>
+    <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
+    <input type="file" id="post-photo" accept="image/*">
+    <button id="post-button">Post</button>
+    <p id="error-message"></p>
+  </div>
+  <div id="feed">
+    <h3>Your Feed</h3>
+    <p>No posts yet. Create one!</p>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
+  <script>
+    // Your Firebase config (replace with your own)
+    const firebaseConfig = {
+      apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
+      authDomain: "estaco-add3c.firebaseapp.com",
+      projectId: "estaco-add3c",
+      storageBucket: "estaco-add3c.firebasestorage.app",
+      messagingSenderId: "876337002297",
+      appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // DOM elements
+    const postContent = document.getElementById('post-content');
+    const postPhoto = document.getElementById('post-photo');
+    const postButton = document.getElementById('post-button');
+    const feed = document.getElementById('feed');
+    const errorMessage = document.getElementById('error-message');
+
+    // Check if user is signed in and verified
+    auth.onAuthStateChanged((user) => {
+      if (!user || !user.emailVerified) {
+        alert('Please sign in and verify your email to access the home feed.');
+        window.location.href = 'index.html';
+      }
+    });
+
+    // Create a new post
+    postButton.addEventListener('click', () => {
+      const content = postContent.value;
+      const photoFile = postPhoto.files[0];
+
+      if (!content) {
+        errorMessage.textContent = 'Post content cannot be empty.';
+        return;
+      }
+
+      const user = auth.currentUser;
+      const post = {
+        authorId: user.uid,
+        authorName: user.displayName,
+        content: content,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      // Upload post to Firestore
+      db.collection('posts').add(post)
+        .then((docRef) => {
+          // Upload photo if selected
+          if (photoFile) {
+            const storageRef = storage.ref(`postPhotos/${docRef.id}`);
+            storageRef.put(photoFile)
+              .then((snapshot) => {
+                return snapshot.ref.getDownloadURL();
+              })
+              .then((photoURL) => {
+                // Update post with photo URL
+                db.collection('posts').doc(docRef.id).update({ photoURL: photoURL });
+              });
+          }
+          alert('Post created!');
+          postContent.value = '';
+          postPhoto.value = '';
+        })
+        .catch((error) => {
+          errorMessage.textContent = error.message;
+        });
+    });
+
+    // Load posts from Firestore (placeholder for now)
+    function loadPosts() {
+      db.collection('posts')
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then((querySnapshot) => {
+          feed.innerHTML = '<h3>Your Feed</h3>';
+          if (querySnapshot.empty) {
+            feed.innerHTML += '<p>No posts yet. Create one!</p>';
+          } else {
+            querySnapshot.forEach((doc) => {
+              const post = doc.data();
+              feed.innerHTML += `
+                <div class="post">
+                  <h4>${post.authorName}</h4>
+                  <p>${post.content}</p>
+                  ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%;">` : ''}
+                </div>
+              `;
+            });
+          }
+        })
+        .catch((error) => {
+          errorMessage.textContent = error.message;
+        });
+    }
+
+    // Load posts when page loads
+    window.onload = loadPosts;
+  </script>
+</body>
+</html>
