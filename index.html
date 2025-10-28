@@ -113,17 +113,19 @@
     
       auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
-          // Save the user's name to Firebase
-          userCredential.user.updateProfile({
-            displayName: name
-          }).then(() => {
-            alert('Account created! Please sign in.');
-            // Manually clear the input fields
-            document.getElementById('signup-name').value = '';
-            document.getElementById('signup-email').value = '';
-            document.getElementById('signup-password').value = '';
-            signupForm.style.display = 'none';
-          });
+          // Send verification email
+          userCredential.user.sendEmailVerification()
+            .then(() => {
+              alert('Account created! Please check your email for a verification link. You must verify your email before signing in.');
+              // Clear input fields
+              document.getElementById('signup-name').value = '';
+              document.getElementById('signup-email').value = '';
+              document.getElementById('signup-password').value = '';
+              signupForm.style.display = 'none';
+            })
+            .catch((error) => {
+              errorMessage.textContent = error.message;
+            });
         })
         .catch((error) => {
           errorMessage.textContent = error.message;
@@ -134,12 +136,17 @@
     signinButton.addEventListener('click', () => {
       const email = document.getElementById('signin-email').value;
       const password = document.getElementById('signin-password').value;
-
+    
       auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-          alert('Signed in successfully!');
-          // Redirect to home feed (you'll build this next)
-          window.location.href = 'home.html';
+        .then((userCredential) => {
+          const user = userCredential.user;
+          if (user.emailVerified) {
+            alert('Signed in successfully!');
+            window.location.href = 'home.html'; // Redirect to home feed
+          } else {
+            alert('Please verify your email before signing in. A verification link has been sent to your email address.');
+            auth.signOut(); // Log the user out
+          }
         })
         .catch((error) => {
           errorMessage.textContent = error.message;
