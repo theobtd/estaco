@@ -15,18 +15,18 @@ if (!admin.apps.length) {
 const storage = admin.storage();
 
 module.exports = async (req, res) => {
+  console.log(`Received ${req.method} request from ${req.headers.origin}`);
+
   // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', 'https://theobtd.github.io'); // Your specific origin
+  res.setHeader('Access-Control-Allow-Origin', 'https://theobtd.github.io');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
-    // Handle CORS preflight request
     res.status(204).end();
     return;
   }
 
-  // Only allow POST requests
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
