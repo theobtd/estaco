@@ -106,53 +106,36 @@
       }
     
       const user = auth.currentUser;
-      const authorName = user.displayName || "Unknown User";
+      user.reload().then(() => {
+        const authorName = user.displayName || "Unknown User";
+        const post = {
+          authorId: user.uid,
+          authorName: authorName,
+          content: content,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
     
-      // Create the post document first
-      db.collection('posts').add({
-        authorId: user.uid,
-        authorName: authorName,
-        content: content,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then((docRef) => {
-        // If a photo is selected, upload it
-        if (photoFile) {
-          const storageRef = storage.ref(`postPhotos/${docRef.id}`);
-          const uploadTask = storageRef.put(photoFile);
-    
-          uploadTask.on('state_changed',
-            (snapshot) => {
-              // Optional: Track upload progress
-            },
-            (error) => {
-              console.error("Upload error:", error);
-              errorMessage.textContent = "Failed to upload photo.";
-            },
-            () => {
-              // Upload completed, get the download URL
-              uploadTask.snapshot.ref.getDownloadURL()
+        // Upload post to Firestore
+        db.collection('posts').add(post)
+          .then((docRef) => {
+            if (photoFile) {
+              const storageRef = storage.ref(`postPhotos/${docRef.id}`);
+              storageRef.put(photoFile)
+                .then((snapshot) => {
+                  return snapshot.ref.getDownloadURL();
+                })
                 .then((photoURL) => {
-                  // Update the post with the photo URL
-                  db.collection('posts').doc(docRef.id).update({ photoURL: photoURL })
-                    .then(() => {
-                      alert('Post and photo uploaded!');
-                      postContent.value = '';
-                      postPhoto.value = '';
-                      loadPosts();
-                    });
+                  db.collection('posts').doc(docRef.id).update({ photoURL: photoURL });
                 });
-            });
-        } else {
-          // No photo, just refresh the feed
-          alert('Post created!');
-          postContent.value = '';
-          postPhoto.value = '';
-          loadPosts();
-        }
-      })
-      .catch((error) => {
-        errorMessage.textContent = error.message;
+            }
+            alert('Post created!');
+            postContent.value = '';
+            postPhoto.value = '';
+            loadPosts();
+          })
+          .catch((error) => {
+            errorMessage.textContent = error.message;
+          });
       });
     });
 
@@ -175,7 +158,7 @@
               `;
               // Only add img tag if photoURL exists
               if (post.photoURL) {
-                postHTML += `<img src="${post.photoURL}" style="max-width: 100%;" onerror="this.style.display='none'">`;
+                postHTML += `<img src="${post.photoURL}" style="max-width: 100%;">`;
               }
               postHTML += `</div>`;
               feed.innerHTML += postHTML;
