@@ -113,19 +113,25 @@
     
       auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
-          // Send verification email
-          userCredential.user.sendEmailVerification()
-            .then(() => {
-              alert('Account created! Please check your email for a verification link. You must verify your email before signing in.');
-              // Clear input fields
-              document.getElementById('signup-name').value = '';
-              document.getElementById('signup-email').value = '';
-              document.getElementById('signup-password').value = '';
-              signupForm.style.display = 'none';
-            })
-            .catch((error) => {
-              errorMessage.textContent = error.message;
-            });
+          // Set displayName immediately after user creation
+          userCredential.user.updateProfile({
+            displayName: name
+          })
+          .then(() => {
+            // Send verification email
+            return userCredential.user.sendEmailVerification();
+          })
+          .then(() => {
+            alert('Account created! Please check your email for a verification link.');
+            // Clear input fields
+            document.getElementById('signup-name').value = '';
+            document.getElementById('signup-email').value = '';
+            document.getElementById('signup-password').value = '';
+            signupForm.style.display = 'none';
+          })
+          .catch((error) => {
+            errorMessage.textContent = error.message;
+          });
         })
         .catch((error) => {
           errorMessage.textContent = error.message;
