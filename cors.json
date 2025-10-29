@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://theobtd.github.io"],
+    "method": ["GET", "HEAD", "DELETE", "PUT", "POST"],
+    "responseHeader": ["Content-Type", "Authorization"],
+    "maxAgeSeconds": 3600
+  }
+]
