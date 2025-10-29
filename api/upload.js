@@ -15,15 +15,30 @@ if (!admin.apps.length) {
 
 const storage = admin.storage();
 
-module.exports = cors((req, res) => {
+module.exports = (req, res) => {
+  // Enable CORS for preflight requests (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.status(204).send('');
+    return;
+  }
+
+  // Handle POST requests
   if (req.method !== 'POST') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Set CORS headers for the response
+  res.setHeader('Access-Control-Allow-Origin', '*');
 
   const { fileName, fileData } = req.body;
 
   if (!fileName || !fileData) {
-    return res.status(400).json({ error: 'Missing fileName or fileData' });
+    res.status(400).json({ error: 'Missing fileName or fileData' });
+    return;
   }
 
   const bucket = storage.bucket();
@@ -41,4 +56,5 @@ module.exports = cors((req, res) => {
       console.error(error);
       res.status(500).json({ error: 'Failed to upload file' });
     });
-});
+};
+
