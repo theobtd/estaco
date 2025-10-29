@@ -17,12 +17,15 @@ const storage = admin.storage();
 module.exports = async (req, res) => {
   console.log(`Received ${req.method} request from ${req.headers.origin}`);
 
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', 'https://theobtd.github.io');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Handle preflight request
   if (req.method === 'OPTIONS') {
-      res.setHeader('Access-Control-Allow-Origin', 'https://theobtd.github.io');
-      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      res.status(204).end();
-      return;
+    res.status(204).end(); // Respond with no content for preflight
+    return;
   }
 
   // Handle POST request
@@ -44,7 +47,6 @@ module.exports = async (req, res) => {
     const file = bucket.file(`postPhotos/${fileName}`);
 
     await file.save(buffer, { metadata: { contentType: 'image/jpeg' } });
-
     const [url] = await file.getSignedUrl({ action: 'read', expires: '03-17-2026' });
 
     res.status(200).json({ downloadURL: url });
