@@ -21,10 +21,14 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://theobtd.github.io');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.status(204).end();
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+      res.setHeader('Access-Control-Allow-Origin', 'https://theobtd.github.io');
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.status(204).end();
+      return;
   }
 
   if (req.method !== 'POST') {
