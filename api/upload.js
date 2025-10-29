@@ -22,18 +22,21 @@ module.exports = async (req, res) => {
 
   // Handle preflight request
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request');
     res.status(204).end();
     return;
   }
 
   // Only allow POST requests
   if (req.method !== 'POST') {
+    console.log(`Rejecting ${req.method} request`);
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
   try {
     const { fileName, fileData } = req.body;
+    console.log('Received POST request with fileName:', fileName);
 
     if (!fileName || !fileData) {
       res.status(400).json({ error: 'Missing fileName or fileData' });
@@ -50,7 +53,7 @@ module.exports = async (req, res) => {
 
     res.status(200).json({ downloadURL: url });
   } catch (error) {
-    console.error(error);
+    console.error('Upload error:', error);
     res.status(500).json({ error: 'Failed to upload file' });
   }
 };
