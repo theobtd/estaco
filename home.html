@@ -119,14 +119,30 @@
         db.collection('posts').add(post)
           .then((docRef) => {
             if (photoFile) {
-              const storageRef = storage.ref(`postPhotos/${docRef.id}`);
-              storageRef.put(photoFile)
-                .then((snapshot) => {
-                  return snapshot.ref.getDownloadURL();
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                const fileData = event.target.result.split(',')[1]; // Remove the data URL prefix
+            
+                // Call your Vercel API endpoint
+                fetch('https://your-vercel-app.vercel.app/api/upload', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    fileName: docRef.id,
+                    fileData: fileData,
+                  }),
                 })
-                .then((photoURL) => {
-                  db.collection('posts').doc(docRef.id).update({ photoURL: photoURL });
-                });
+                  .then((response) => response.json())
+                  .then((data) => {
+                    // Update the post with the photo URL
+                    db.collection('posts').doc(docRef.id).update({ photoURL: data.downloadURL });
+                  })
+                  .catch((error) => {
+                    console.error('Upload error:', error);
+                    errorMessage.textContent = 'Failed to upload photo.';
+                  });
+              };
+              reader.readAsDataURL(photoFile);
             }
             alert('Post created!');
             postContent.value = '';
