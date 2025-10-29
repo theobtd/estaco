@@ -1,0 +1,17 @@
+{
+  "name": "estaco-api",
+  "version": "1.0.0",
+  "description": "Vercel API for Estaco photo uploads",
+  "main": "upload.js",
+  "scripts": {
+    "start": "node upload.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.0.0",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": "16.x"
+  },
+  "type": "commonjs"
+}
