@@ -126,13 +126,21 @@
                 // Call your Vercel API endpoint
                 fetch('https://your-vercel-app.vercel.app/api/upload', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                  },
                   body: JSON.stringify({
                     fileName: docRef.id,
                     fileData: fileData,
                   }),
                 })
-                  .then((response) => response.json())
+                  .then((response) => {
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                  })
                   .then((data) => {
                     // Update the post with the photo URL
                     db.collection('posts').doc(docRef.id).update({ photoURL: data.downloadURL });
