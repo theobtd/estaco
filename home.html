@@ -99,42 +99,44 @@
     postButton.addEventListener('click', () => {
       const content = postContent.value;
       const photoFile = postPhoto.files[0];
-
+    
       if (!content) {
         errorMessage.textContent = 'Post content cannot be empty.';
         return;
       }
-
+    
       const user = auth.currentUser;
-      const post = {
-        authorId: user.uid,
-        authorName: user.displayName,
-        content: content,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      };
-
-      // Upload post to Firestore
-      db.collection('posts').add(post)
-        .then((docRef) => {
-          // Upload photo if selected
-          if (photoFile) {
-            const storageRef = storage.ref(`postPhotos/${docRef.id}`);
-            storageRef.put(photoFile)
-              .then((snapshot) => {
-                return snapshot.ref.getDownloadURL();
-              })
-              .then((photoURL) => {
-                // Update post with photo URL
-                db.collection('posts').doc(docRef.id).update({ photoURL: photoURL });
-              });
-          }
-          alert('Post created!');
-          postContent.value = '';
-          postPhoto.value = '';
-        })
-        .catch((error) => {
-          errorMessage.textContent = error.message;
-        });
+      user.reload().then(() => {
+        const authorName = user.displayName || "Unknown User";
+        const post = {
+          authorId: user.uid,
+          authorName: authorName,
+          content: content,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+    
+        // Upload post to Firestore
+        db.collection('posts').add(post)
+          .then((docRef) => {
+            if (photoFile) {
+              const storageRef = storage.ref(`postPhotos/${docRef.id}`);
+              storageRef.put(photoFile)
+                .then((snapshot) => {
+                  return snapshot.ref.getDownloadURL();
+                })
+                .then((photoURL) => {
+                  db.collection('posts').doc(docRef.id).update({ photoURL: photoURL });
+                });
+            }
+            alert('Post created!');
+            postContent.value = '';
+            postPhoto.value = '';
+            loadPosts();
+          })
+          .catch((error) => {
+            errorMessage.textContent = error.message;
+          });
+      });
     });
 
     // Load posts from Firestore
