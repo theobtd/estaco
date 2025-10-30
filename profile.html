@@ -69,6 +69,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const storage = firebase.storage();
+        const db = firebase.firestore();
 
         // Display user information
         auth.onAuthStateChanged((user) => {
