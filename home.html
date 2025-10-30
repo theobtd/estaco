@@ -154,15 +154,34 @@
 
     // Load posts from Firestore
     function loadPosts() {
-      db.collection('posts')
-        .orderBy('timestamp', 'desc')
+      const user = auth.currentUser;
+    
+      // Fetch the list of friends' IDs
+      db.collection('friendships')
+        .where('userId', '==', user.uid)
+        .where('status', '==', 'accepted')
         .get()
-        .then((querySnapshot) => {
+        .then(friendshipSnapshot => {
+          const friendIds = [user.uid]; // Include the user ID themselves
+    
+          // Get the friend IDs
+          friendshipSnapshot.forEach(doc => {
+            const friend = doc.data();
+            friendIds.push(friend.friendId); // Assuming you store friend IDs in the friendships collection
+          });
+    
+          // Now fetch posts where authorId is in the list of friendIds
+          return db.collection('posts')
+            .where('authorId', 'in', friendIds)
+            .orderBy('timestamp', 'desc')
+            .get();
+        })
+        .then(postSnapshot => {
           feed.innerHTML = '<h3>Your Feed</h3>';
-          if (querySnapshot.empty) {
+          if (postSnapshot.empty) {
             feed.innerHTML += '<p>No posts yet. Create one!</p>';
           } else {
-            querySnapshot.forEach((doc) => {
+            postSnapshot.forEach(doc => {
               const post = doc.data();
               let postHTML = `
                 <div class="post">
@@ -178,7 +197,7 @@
             });
           }
         })
-        .catch((error) => {
+        .catch(error => {
           errorMessage.textContent = error.message;
         });
     }
