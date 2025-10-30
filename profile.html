@@ -79,39 +79,30 @@
         });
 
         // Change Email
-        document.getElementById('change-email-button').addEventListener('click', () => {
+        document.getElementById('change-email-button').addEventListener('click', async () => {
             const currentPassword = prompt('Enter your current password:');
-            if (currentPassword) {
-                const user = auth.currentUser;
-                const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
-                user.reauthenticateWithCredential(credential).then(() => {
-                    const newEmail = prompt('Enter your new email address:');
-                    if (newEmail) {
-                        user.updateEmail(newEmail).then(() => {
-                            // Send email verification
-                            user.sendEmailVerification().then(() => {
-                                // Sign out the user
-                                auth.signOut().then(() => {
-                                    document.getElementById('success-message').textContent = 'Email updated successfully! Please check your email for verification.';
-                                    document.getElementById('error-message').textContent = '';
-                                    document.getElementById('user-email').textContent = newEmail; // Update displayed email (optional)
-                                }).catch((error) => {
-                                    document.getElementById('error-message').textContent = error.message;
-                                    document.getElementById('success-message').textContent = '';
-                                });
-                            }).catch((error) => {
-                                document.getElementById('error-message').textContent = error.message;
-                                document.getElementById('success-message').textContent = '';
-                            });
-                        }).catch((error) => {
-                            document.getElementById('error-message').textContent = error.message;
-                            document.getElementById('success-message').textContent = '';
-                        });
-                    }
-                }).catch((error) => {
-                    document.getElementById('error-message').textContent = 'Current password is incorrect.';
-                    document.getElementById('success-message').textContent = '';
-                });
+            if (!currentPassword) return;
+        
+            const user = auth.currentUser;
+            const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+        
+            try {
+                await user.reauthenticateWithCredential(credential);
+                const newEmail = prompt('Enter your new email address:');
+                if (!newEmail) return;
+        
+                // Send verification email to the new address
+                await user.sendEmailVerification({ url: 'https://your-github-pages-url.com/verify-email.html' });
+        
+                // Store the new email temporarily (e.g., in localStorage)
+                localStorage.setItem('pendingEmail', newEmail);
+        
+                document.getElementById('success-message').textContent =
+                    'Verification email sent to ' + newEmail + '. Please check your inbox and verify your new email.';
+                document.getElementById('error-message').textContent = '';
+            } catch (error) {
+                document.getElementById('error-message').textContent = error.message;
+                document.getElementById('success-message').textContent = '';
             }
         });
 
