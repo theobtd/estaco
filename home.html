@@ -153,18 +153,24 @@
     });
 
     // Load posts from Firestore
-    function loadPosts() {
-      const user = auth.currentUser;
-    
+    function loadPosts(userId) {
       // Fetch the list of friends' IDs
       db.collection('friendships')
-        .where('userId', '==', user.uid)
+        .where('userId', '==', userId)
         .where('status', '==', 'accepted')
         .get()
         .then(friendshipSnapshot => {
-          const friendIds = [user.uid]; // Include the user ID themselves
+          const friendIds = [userId]; // Start with the user ID themselves
     
-          // Get the friend IDs
+          // If there are no friendships, just load the user's posts
+          if (friendshipSnapshot.empty) {
+            return db.collection('posts')
+              .where('authorId', '==', userId) // Only load the user's posts
+              .orderBy('timestamp', 'desc')
+              .get();
+          }
+    
+          // If friendships exist, get the friend IDs
           friendshipSnapshot.forEach(doc => {
             const friend = doc.data();
             friendIds.push(friend.friendId); // Assuming you store friend IDs in the friendships collection
