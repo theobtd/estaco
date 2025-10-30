@@ -69,7 +69,7 @@
             if (user) {
                 document.getElementById('user-name').textContent = user.displayName || "No name set";
                 document.getElementById('user-email').textContent = user.email;
-                document.getElementById('user-password').textContent = "******.";
+                document.getElementById('user-password').textContent = "******";
             } else {
                 alert('Please sign in to view your profile.');
                 window.location.href = 'index.html';
@@ -78,18 +78,32 @@
 
         // Change Password
         document.getElementById('change-password-button').addEventListener('click', () => {
-            const newPassword = prompt('Enter your new password:');
-            if (newPassword && newPassword.length >= 6) { // Ensure password meets minimum length
+            const currentPassword = prompt('Enter your current password:');
+            if (currentPassword) {
                 const user = auth.currentUser;
-                user.updatePassword(newPassword).then(() => {
-                    document.getElementById('success-message').textContent = 'Password updated successfully!';
-                    document.getElementById('error-message').textContent = '';
+                // Re-authenticate user with current password
+                const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+                user.reauthenticateWithCredential(credential).then(() => {
+                    // Prompt for new password
+                    const newPassword = prompt('Enter your new password (at least 6 characters):');
+                    const confirmPassword = prompt('Confirm your new password:');
+
+                    // Check if new passwords match
+                    if (newPassword && confirmPassword && newPassword === confirmPassword && newPassword.length >= 6) {
+                        user.updatePassword(newPassword).then(() => {
+                            document.getElementById('success-message').textContent = 'Password updated successfully!';
+                            document.getElementById('error-message').textContent = '';
+                        }).catch((error) => {
+                            document.getElementById('error-message').textContent = error.message;
+                            document.getElementById('success-message').textContent = '';
+                        });
+                    } else {
+                        alert('Passwords do not match or are too short. Please try again.');
+                    }
                 }).catch((error) => {
-                    document.getElementById('error-message').textContent = error.message;
+                    document.getElementById('error-message').textContent = 'Current password is incorrect.';
                     document.getElementById('success-message').textContent = '';
                 });
-            } else {
-                alert('Password must be at least 6 characters long.');
             }
         });
     </script>
