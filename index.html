@@ -49,6 +49,10 @@
       <label for="signup-password">Password</label>
       <input type="password" id="signup-password" placeholder="Password" required>
     </div>
+    <div class="form-group">
+      <label for="signup-profile-pic">Profile Picture</label>
+      <input type="file" id="signup-profile-pic" accept="image/*">
+    </div>
     <button id="signup-button">Sign Up</button>
     <p id="error-message"></p>
   </div>
@@ -110,28 +114,58 @@
       const name = document.getElementById('signup-name').value;
       const email = document.getElementById('signup-email').value;
       const password = document.getElementById('signup-password').value;
+      const profilePicFile = document.getElementById('signup-profile-pic').files[0];
     
       auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
-          // Set displayName immediately after user creation
-          userCredential.user.updateProfile({
-            displayName: name
-          })
-          .then(() => {
-            // Send verification email
-            return userCredential.user.sendEmailVerification();
-          })
-          .then(() => {
-            alert('Account created! Please check your email for a verification link.');
-            // Clear input fields
-            document.getElementById('signup-name').value = '';
-            document.getElementById('signup-email').value = '';
-            document.getElementById('signup-password').value = '';
-            signupForm.style.display = 'none';
-          })
-          .catch((error) => {
-            errorMessage.textContent = error.message;
-          });
+          const user = userCredential.user;
+          user.updateProfile({ displayName: name })
+            .then(() => {
+              // Upload profile picture if selected
+              if (profilePicFile) {
+                const storageRef = storage.ref();
+                const profilePicRef = storageRef.child(`profilePictures/${user.uid}`);
+                const uploadTask = profilePicRef.put(profilePicFile);
+    
+                uploadTask.on('state_changed',
+                  null,
+                  (error) => {
+                    console.error('Upload error:', error);
+                    errorMessage.textContent = 'Failed to upload profile picture.';
+                  },
+                  () => {
+                    uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                      // Save user data to Firestore
+                      db.collection('users').doc(user.uid).set({
+                        name: name,
+                        email: email,
+                        profilePictureURL: downloadURL
+                      });
+                    });
+                  }
+                );
+              } else {
+                // Save user data without profile picture
+                db.collection('users').doc(user.uid).set({
+                  name: name,
+                  email: email,
+                  profilePictureURL: null
+                });
+              }
+              return user.sendEmailVerification();
+            })
+            .then(() => {
+              alert('Account created! Please check your email for a verification link.');
+              // Clear form
+              document.getElementById('signup-name').value = '';
+              document.getElementById('signup-email').value = '';
+              document.getElementById('signup-password').value = '';
+              document.getElementById('signup-profile-pic').value = '';
+              signupForm.style.display = 'none';
+            })
+            .catch((error) => {
+              errorMessage.textContent = error.message;
+            });
         })
         .catch((error) => {
           errorMessage.textContent = error.message;
