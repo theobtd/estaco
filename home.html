@@ -46,6 +46,15 @@
 </head>
 <body>
   <h1>Estaco - Home Feed</h1>
+
+  <div id="post-form">
+      <h3>Create a Post</h3>
+      <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
+      <input type="file" id="post-photo" accept="image/*">
+      <button id="post-button">Post</button>
+      <p id="error-message"></p>
+  </div>
+  
   <div id="post-form">
     <h3>Create a Post</h3>
     <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
@@ -53,6 +62,9 @@
     <button id="post-button">Post</button>
     <p id="error-message"></p>
   </div>
+
+  <button id="profile-button" style="margin-top: 20px;">Go to Profile</button>
+  
   <div id="feed">
     <h3>Your Feed</h3>
     <p>No posts yet. Create one!</p>
@@ -86,6 +98,11 @@
     const postButton = document.getElementById('post-button');
     const feed = document.getElementById('feed');
     const errorMessage = document.getElementById('error-message');
+    // Navigate to Profile Page
+    const profileButton = document.getElementById('profile-button');
+    profileButton.addEventListener('click', () => {
+        window.location.href = 'profile.html';
+    });
 
     // Check if user is signed in and verified
     auth.onAuthStateChanged((user) => {
