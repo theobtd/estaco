@@ -118,17 +118,6 @@
             displayName: name
           })
           .then(() => {
-            // Create a document for the user in the 'users' collection
-            const userData = {
-              id: userCredential.user.uid,
-              name: name,
-              email: email,
-              friends: [], // Initialize with an empty friends list
-              profilePictureURL: "" // Optional: Add a default or leave empty
-            };
-            return db.collection('users').doc(userCredential.user.uid).set(userData);
-          })
-          .then(() => {
             // Send verification email
             return userCredential.user.sendEmailVerification();
           })
