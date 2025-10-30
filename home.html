@@ -153,41 +153,16 @@
     });
 
     // Load posts from Firestore
-    function loadPosts(userId) {
-      // Fetch the list of friends' IDs
-      db.collection('friendships')
-        .where('userId', '==', userId)
-        .where('status', '==', 'accepted')
+    function loadPosts() {
+      db.collection('posts')
+        .orderBy('timestamp', 'desc')
         .get()
-        .then(friendshipSnapshot => {
-          const friendIds = [userId]; // Start with the user ID themselves
-    
-          // If there are no friendships, just load the user's posts
-          if (friendshipSnapshot.empty) {
-            return db.collection('posts')
-              .where('authorId', '==', userId) // Only load the user's posts
-              .orderBy('timestamp', 'desc')
-              .get();
-          }
-    
-          // If friendships exist, get the friend IDs
-          friendshipSnapshot.forEach(doc => {
-            const friend = doc.data();
-            friendIds.push(friend.friendId); // Assuming you store friend IDs in the friendships collection
-          });
-    
-          // Now fetch posts where authorId is in the list of friendIds
-          return db.collection('posts')
-            .where('authorId', 'in', friendIds)
-            .orderBy('timestamp', 'desc')
-            .get();
-        })
-        .then(postSnapshot => {
+        .then((querySnapshot) => {
           feed.innerHTML = '<h3>Your Feed</h3>';
-          if (postSnapshot.empty) {
+          if (querySnapshot.empty) {
             feed.innerHTML += '<p>No posts yet. Create one!</p>';
           } else {
-            postSnapshot.forEach(doc => {
+            querySnapshot.forEach((doc) => {
               const post = doc.data();
               let postHTML = `
                 <div class="post">
@@ -203,7 +178,7 @@
             });
           }
         })
-        .catch(error => {
+        .catch((error) => {
           errorMessage.textContent = error.message;
         });
     }
