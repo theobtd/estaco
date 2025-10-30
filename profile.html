@@ -37,6 +37,9 @@
 <body>
     <h1>Your Profile</h1>
     <div class="profile-info">
+        <img id="profile-picture" src="" alt="Profile Picture" style="max-width: 100px; border-radius: 50%;">
+        <input type="file" id="update-profile-pic" accept="image/*">
+        <button id="update-profile-pic-button" class="button">Update Profile Picture</button>
         <p><strong>Name:</strong> <span id="user-name"></span></p>
         <p><strong>Email:</strong> <span id="user-email"></span></p>
         <p><strong>Password:</strong> <span id="user-password"></span>
@@ -67,14 +70,56 @@
 
         // Display user information
         auth.onAuthStateChanged((user) => {
-            if (user) {
-                document.getElementById('user-name').textContent = user.displayName || "No name set";
-                document.getElementById('user-email').textContent = user.email;
-                document.getElementById('user-password').textContent = "******";
-            } else {
-                alert('Please sign in to view your profile.');
-                window.location.href = 'index.html';
-            }
+          if (user) {
+            document.getElementById('user-name').textContent = user.displayName || "No name set";
+            document.getElementById('user-email').textContent = user.email;
+            document.getElementById('user-password').textContent = "******";
+        
+            // Load user data from Firestore
+            db.collection('users').doc(user.uid).get()
+              .then((doc) => {
+                if (doc.exists) {
+                  const userData = doc.data();
+                  if (userData.profilePictureURL) {
+                    document.getElementById('profile-picture').src = userData.profilePictureURL;
+                  }
+                }
+              });
+          } else {
+            alert('Please sign in to view your profile.');
+            window.location.href = 'index.html';
+          }
+        });
+        
+        // Update profile picture
+        document.getElementById('update-profile-pic-button').addEventListener('click', () => {
+          const newProfilePicFile = document.getElementById('update-profile-pic').files[0];
+          if (newProfilePicFile) {
+            const user = auth.currentUser;
+            const storageRef = storage.ref();
+            const profilePicRef = storageRef.child(`profilePictures/${user.uid}`);
+            const uploadTask = profilePicRef.put(newProfilePicFile);
+        
+            uploadTask.on('state_changed',
+              null,
+              (error) => {
+                console.error('Upload error:', error);
+                document.getElementById('error-message').textContent = 'Failed to upload profile picture.';
+              },
+              () => {
+                uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                  // Update Firestore
+                  db.collection('users').doc(user.uid).update({
+                    profilePictureURL: downloadURL
+                  })
+                  .then(() => {
+                    document.getElementById('profile-picture').src = downloadURL;
+                    document.getElementById('success-message').textContent = 'Profile picture updated!';
+                  });
+                });
+              }
+            );
+          }
         });
 
         // Change Password
