@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estaco - Friend Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #friend-list, #pending-requests {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .friend {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+    }
+    button {
+      margin-left: 10px;
+    }
+    #error-message {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Friend Management</h1>
+  <div id="friend-list">
+    <h3>Your Friends</h3>
+    <p>No friends yet.</p>
+  </div>
+  <div id="pending-requests">
+    <h3>Pending Requests</h3>
+    <p>No pending requests.</p>
+  </div>
+  <div>
+    <h3>Add Friend</h3>
+    <input type="text" id="friend-email" placeholder="Friend's email">
+    <button id="add-friend-button">Add Friend</button>
+    <p id="error-message"></p>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script>
+    // Your Firebase config (replace with your own)
+    const firebaseConfig = {
+      // your config here
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // DOM elements
+    const friendList = document.getElementById('friend-list');
+    const pendingRequests = document.getElementById('pending-requests');
+    const friendEmailInput = document.getElementById('friend-email');
+    const addFriendButton = document.getElementById('add-friend-button');
+    const errorMessage = document.getElementById('error-message');
+
+    // Check if user is signed in
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        alert('Please sign in to manage friends.');
+        window.location.href = 'index.html';
+      } else {
+        loadFriends(user.uid);
+        loadPendingRequests(user.uid);
+      }
+    });
+
+    // Load friends from Firestore
+    function loadFriends(userId) {
+      db.collection('friendships')
+        .where('userId', '==', userId)
+        .where('status', '==', 'accepted')
+        .get()
+        .then(querySnapshot => {
+          friendList.innerHTML = '<h3>Your Friends</h3>';
+          if (querySnapshot.empty) {
+            friendList.innerHTML += '<p>No friends yet.</p>';
+          } else {
+            querySnapshot.forEach(doc => {
+              const friend = doc.data();
+              friendList.innerHTML += `<div class="friend">${friend.friendName}<button onclick="unfriend('${doc.id}')">Unfriend</button></div>`;
+            });
+          }
+        });
+    }
+
+    // Load pending requests from Firestore
+    function loadPendingRequests(userId) {
+      db.collection('friendships')
+        .where('userId', '==', userId)
+        .where('status', '==', 'pending')
+        .get()
+        .then(querySnapshot => {
+          pendingRequests.innerHTML = '<h3>Pending Requests</h3>';
+          if (querySnapshot.empty) {
+            pendingRequests.innerHTML += '<p>No pending requests.</p>';
+          } else {
+            querySnapshot.forEach(doc => {
+              const request = doc.data();
+              pendingRequests.innerHTML += `<div class="friend">${request.friendName}<button onclick="acceptRequest('${doc.id}')">Accept</button><button onclick="declineRequest('${doc.id}')">Decline</button></div>`;
+            });
+          }
+        });
+    }
+
+    // Add a friend
+    addFriendButton.addEventListener('click', () => {
+      const email = friendEmailInput.value;
+      const user = auth.currentUser;
+
+      if (!email) {
+        errorMessage.textContent = 'Please enter an email.';
+        return;
+      }
+
+      // Check if the user is already friends or has a pending request...
+
+      // Add friend logic
+      db.collection('friendships').add({
+        userId: user.uid,
+        friendEmail: email,
+        status: 'pending',
+        friendName: email // You may want to look up the friend's display name
+      })
+      .then(() => {
+        alert('Friend request sent!');
+        friendEmailInput.value = '';
+        loadPendingRequests(user.uid);
+      })
+      .catch(error => {
+        errorMessage.textContent = error.message;
+      });
+    });
+
+    // Function to unfriend
+    function unfriend(friendshipId) {
+      db.collection('friendships').doc(friendshipId).delete()
+        .then(() => {
+          alert('Unfriended successfully!');
+          loadFriends(auth.currentUser.uid);
+        })
+        .catch(error => {
+          console.error('Error removing friend: ', error);
+        });
+    }
+
+    // Function to accept a friend request
+    function acceptRequest(friendshipId) {
+      db.collection('friendships').doc(friendshipId).update({ status: 'accepted' })
+        .then(() => {
+          alert('Friend request accepted!');
+          loadFriends(auth.currentUser.uid);
+          loadPendingRequests(auth.currentUser.uid);
+        })
+        .catch(error => {
+          console.error('Error accepting request: ', error);
+        });
+    }
+
+    // Function to decline a friend request
+    function declineRequest(friendshipId) {
+      db.collection('friendships').doc(friendshipId).delete()
+        .then(() => {
+          alert('Friend request declined!');
+          loadPendingRequests(auth.currentUser.uid);
+        })
+        .catch(error => {
+          console.error('Error declining request: ', error);
+        });
+    }
+  </script>
+</body>
+</html>
