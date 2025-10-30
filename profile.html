@@ -36,6 +36,7 @@
 </head>
 <body>
     <h1>Your Profile</h1>
+    <button id="back-to-home-button" class="button">Back to Home</button>
     <div class="profile-info">
         <img id="profile-picture" src="" alt="Profile Picture" style="max-width: 100px; border-radius: 50%;">
         <input type="file" id="update-profile-pic" accept="image/*">
@@ -152,6 +153,11 @@
                     document.getElementById('success-message').textContent = '';
                 });
             }
+        });
+
+        // Back to Home
+        document.getElementById('back-to-home-button').addEventListener('click', () => {
+            window.location.href = 'home.html';
         });
 
         // Log Out
