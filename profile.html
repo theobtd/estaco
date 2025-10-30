@@ -53,6 +53,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
     <script>
         // Your Firebase config (replace with your own)
         const firebaseConfig = {
@@ -67,6 +68,7 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
+        const storage = firebase.storage();
 
         // Display user information
         auth.onAuthStateChanged((user) => {
