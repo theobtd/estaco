@@ -99,12 +99,12 @@
     postButton.addEventListener('click', () => {
       const content = postContent.value;
       const photoFile = postPhoto.files[0];
-    
+  
       if (!content) {
         errorMessage.textContent = 'Post content cannot be empty.';
         return;
       }
-    
+  
       const user = auth.currentUser;
       user.reload().then(() => {
         const authorName = user.displayName || "Unknown User";
@@ -114,43 +114,32 @@
           content: content,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
-    
+  
         // Upload post to Firestore
         db.collection('posts').add(post)
           .then((docRef) => {
             if (photoFile) {
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                const fileData = event.target.result.split(',')[1]; // Remove the data URL prefix
-            
-                // Call your Vercel API endpoint
-                fetch('https://estaco-p3eo4sfyd-theobtds-projects.vercel.app', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    fileName: docRef.id,
-                    fileData: fileData,
-                  }),
-                })
-                  .then((response) => {
-                    if (!response.ok) {
-                      throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                  })
-                  .then((data) => {
+              // Upload photo to Firebase Storage
+              const storageRef = storage.ref();
+              const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
+              const uploadTask = photoRef.put(photoFile);
+  
+              uploadTask.on('state_changed',
+                (snapshot) => {
+                  // Optional: Track upload progress
+                },
+                (error) => {
+                  console.error('Upload error:', error);
+                  errorMessage.textContent = 'Failed to upload photo.';
+                },
+                () => {
+                  // Upload complete, get the download URL
+                  uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
                     // Update the post with the photo URL
-                    db.collection('posts').doc(docRef.id).update({ photoURL: data.downloadURL });
-                  })
-                  .catch((error) => {
-                    console.error('Upload error:', error);
-                    errorMessage.textContent = 'Failed to upload photo.';
+                    db.collection('posts').doc(docRef.id).update({ photoURL: downloadURL });
                   });
-              };
-              reader.readAsDataURL(photoFile);
+                }
+              );
             }
             alert('Post created!');
             postContent.value = '';
