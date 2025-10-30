@@ -11,6 +11,12 @@
       margin: 0 auto;
       padding: 20px;
     }
+    #header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
     #post-form {
       margin-bottom: 20px;
       padding: 10px;
@@ -42,10 +48,25 @@
     #error-message {
       color: red;
     }
+    button {
+      padding: 8px 12px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
-  <h1>Estaco - Home Feed</h1>
+  <div id="header">
+    <h1>Estaco</h1>
+    <div>
+      <button id="friends-button">Friends</button>
+      <button id="profile-button">Profile</button>
+    </div>
+  </div>
+
   <div id="post-form">
     <h3>Create a Post</h3>
     <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
@@ -53,6 +74,7 @@
     <button id="post-button">Post</button>
     <p id="error-message"></p>
   </div>
+
   <div id="feed">
     <h3>Your Feed</h3>
     <p>No posts yet. Create one!</p>
@@ -63,8 +85,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
+
   <script>
-    // Your Firebase config (replace with your own)
+    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
       authDomain: "estaco-add3c.firebaseapp.com",
@@ -73,19 +96,29 @@
       messagingSenderId: "876337002297",
       appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
     };
-
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
     const storage = firebase.storage();
-
     // DOM elements
     const postContent = document.getElementById('post-content');
     const postPhoto = document.getElementById('post-photo');
     const postButton = document.getElementById('post-button');
     const feed = document.getElementById('feed');
     const errorMessage = document.getElementById('error-message');
+    const friendsButton = document.getElementById('friends-button');
+    const profileButton = document.getElementById('profile-button');
+
+    // Navigate to Friends page
+    friendsButton.addEventListener('click', () => {
+      window.location.href = 'friends.html';
+    });
+
+    // Navigate to Profile page
+    profileButton.addEventListener('click', () => {
+      window.location.href = 'profile.html';
+    });
 
     // Check if user is signed in and verified
     auth.onAuthStateChanged((user) => {
@@ -99,12 +132,12 @@
     postButton.addEventListener('click', () => {
       const content = postContent.value;
       const photoFile = postPhoto.files[0];
-  
+
       if (!content) {
         errorMessage.textContent = 'Post content cannot be empty.';
         return;
       }
-  
+
       const user = auth.currentUser;
       user.reload().then(() => {
         const authorName = user.displayName || "Unknown User";
@@ -114,7 +147,7 @@
           content: content,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
-  
+
         // Upload post to Firestore
         db.collection('posts').add(post)
           .then((docRef) => {
@@ -123,7 +156,7 @@
               const storageRef = storage.ref();
               const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
               const uploadTask = photoRef.put(photoFile);
-  
+
               uploadTask.on('state_changed',
                 (snapshot) => {
                   // Optional: Track upload progress
