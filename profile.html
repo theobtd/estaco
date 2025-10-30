@@ -38,7 +38,9 @@
     <h1>Your Profile</h1>
     <div class="profile-info">
         <p><strong>Name:</strong> <span id="user-name"></span></p>
-        <p><strong>Email:</strong> <span id="user-email"></span></p>
+        <p><strong>Email:</strong> <span id="user-email"></span>
+            <button id="change-email-button" class="button">Change Email</button>
+        </p>
         <p><strong>Password:</strong> <span id="user-password"></span>
             <button id="change-password-button" class="button">Change Password</button>
         </p>
@@ -69,26 +71,47 @@
             if (user) {
                 document.getElementById('user-name').textContent = user.displayName || "No name set";
                 document.getElementById('user-email').textContent = user.email;
-                document.getElementById('user-password').textContent = "******";
+                document.getElementById('user-password').textContent = "******.";
             } else {
                 alert('Please sign in to view your profile.');
                 window.location.href = 'index.html';
             }
         });
 
-        // Change Password
+        // Change Email
+        document.getElementById('change-email-button').addEventListener('click', () => {
+            const currentPassword = prompt('Enter your current password:');
+            if (currentPassword) {
+                const user = auth.currentUser;
+                const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+                user.reauthenticateWithCredential(credential).then(() => {
+                    const newEmail = prompt('Enter your new email address:');
+                    if (newEmail) {
+                        user.updateEmail(newEmail).then(() => {
+                            document.getElementById('success-message').textContent = 'Email updated successfully!';
+                            document.getElementById('error-message').textContent = '';
+                            document.getElementById('user-email').textContent = newEmail; // Update displayed email
+                        }).catch((error) => {
+                            document.getElementById('error-message').textContent = error.message;
+                            document.getElementById('success-message').textContent = '';
+                        });
+                    }
+                }).catch((error) => {
+                    document.getElementById('error-message').textContent = 'Current password is incorrect.';
+                    document.getElementById('success-message').textContent = '';
+                });
+            }
+        });
+
+        // Change Password (existing code)
         document.getElementById('change-password-button').addEventListener('click', () => {
             const currentPassword = prompt('Enter your current password:');
             if (currentPassword) {
                 const user = auth.currentUser;
-                // Re-authenticate user with current password
                 const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
                 user.reauthenticateWithCredential(credential).then(() => {
-                    // Prompt for new password
                     const newPassword = prompt('Enter your new password (at least 6 characters):');
                     const confirmPassword = prompt('Confirm your new password:');
-
-                    // Check if new passwords match
                     if (newPassword && confirmPassword && newPassword === confirmPassword && newPassword.length >= 6) {
                         user.updatePassword(newPassword).then(() => {
                             document.getElementById('success-message').textContent = 'Password updated successfully!';
