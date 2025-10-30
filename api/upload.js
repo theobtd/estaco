@@ -22,6 +22,7 @@ module.exports = async (req, res) => {
 
   // Handle preflight request
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request'); // Add this line
     res.status(204).end();
     return;
   }
