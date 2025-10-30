@@ -44,6 +44,7 @@
         </p>
         <p id="error-message"></p>
         <p id="success-message"></p>
+        <button id="logout-button" class="button">Log Out</button>
     </div>
 
     <!-- Firebase SDK -->
@@ -81,14 +82,11 @@
             const currentPassword = prompt('Enter your current password:');
             if (currentPassword) {
                 const user = auth.currentUser;
-                // Re-authenticate user with current password
                 const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
                 user.reauthenticateWithCredential(credential).then(() => {
-                    // Prompt for new password
                     const newPassword = prompt('Enter your new password (at least 6 characters):');
                     const confirmPassword = prompt('Confirm your new password:');
 
-                    // Check if new passwords match
                     if (newPassword && confirmPassword && newPassword === confirmPassword && newPassword.length >= 6) {
                         user.updatePassword(newPassword).then(() => {
                             document.getElementById('success-message').textContent = 'Password updated successfully!';
@@ -105,6 +103,16 @@
                     document.getElementById('success-message').textContent = '';
                 });
             }
+        });
+
+        // Log Out
+        document.getElementById('logout-button').addEventListener('click', () => {
+            auth.signOut().then(() => {
+                alert('You have been logged out.');
+                window.location.href = 'index.html'; // Redirect to login page or home page
+            }).catch((error) => {
+                document.getElementById('error-message').textContent = error.message;
+            });
         });
     </script>
 </body>
