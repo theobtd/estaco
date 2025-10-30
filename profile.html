@@ -14,6 +14,24 @@
         .profile-info {
             margin-bottom: 20px;
         }
+        .button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        #error-message {
+            color: red;
+        }
+        #success-message {
+            color: green;
+        }
     </style>
 </head>
 <body>
@@ -21,7 +39,11 @@
     <div class="profile-info">
         <p><strong>Name:</strong> <span id="user-name"></span></p>
         <p><strong>Email:</strong> <span id="user-email"></span></p>
-        <p><strong>Password:</strong> <span id="user-password"></span></p>
+        <p><strong>Password:</strong> <span id="user-password"></span>
+            <button id="change-password-button" class="button">Change Password</button>
+        </p>
+        <p id="error-message"></p>
+        <p id="success-message"></p>
     </div>
 
     <!-- Firebase SDK -->
@@ -47,13 +69,27 @@
             if (user) {
                 document.getElementById('user-name').textContent = user.displayName || "No name set";
                 document.getElementById('user-email').textContent = user.email;
-                // Displaying password is not safe; typically, you don't retrieve it.
-                // Example placeholder as you can't access the password.
-                document.getElementById('user-password').textContent = "Password is not retrievable for security reasons.";
+                document.getElementById('user-password').textContent = "******.";
             } else {
-                // Redirect to sign-in if not authenticated
                 alert('Please sign in to view your profile.');
                 window.location.href = 'index.html';
+            }
+        });
+
+        // Change Password
+        document.getElementById('change-password-button').addEventListener('click', () => {
+            const newPassword = prompt('Enter your new password:');
+            if (newPassword && newPassword.length >= 6) { // Ensure password meets minimum length
+                const user = auth.currentUser;
+                user.updatePassword(newPassword).then(() => {
+                    document.getElementById('success-message').textContent = 'Password updated successfully!';
+                    document.getElementById('error-message').textContent = '';
+                }).catch((error) => {
+                    document.getElementById('error-message').textContent = error.message;
+                    document.getElementById('success-message').textContent = '';
+                });
+            } else {
+                alert('Password must be at least 6 characters long.');
             }
         });
     </script>
