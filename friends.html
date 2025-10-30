@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estaco - Friends</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #search-form {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    #search-input {
+      width: 70%;
+      padding: 8px;
+      margin-right: 5px;
+    }
+    #search-button {
+      width: 25%;
+      padding: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #friends-list, #pending-requests {
+      margin-top: 20px;
+    }
+    .friend-item, .request-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 6px 10px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    #error-message {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <h1>Estaco - Friends</h1>
+    <div>
+      <button id="home-button">Home</button>
+      <button id="profile-button">Profile</button>
+    </div>
+  </div>
+
+  <div id="search-form">
+    <h3>Search for Friends</h3>
+    <input type="text" id="search-input" placeholder="Search by name or email">
+    <button id="search-button">Search</button>
+    <div id="search-results"></div>
+    <p id="error-message"></p>
+  </div>
+
+  <div id="pending-requests">
+    <h3>Pending Requests</h3>
+    <div id="requests-list">
+      <p>No pending requests.</p>
+    </div>
+  </div>
+
+  <div id="friends-list">
+    <h3>Your Friends</h3>
+    <div id="friends-container">
+      <p>No friends yet. Search for users to add!</p>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
+      authDomain: "estaco-add3c.firebaseapp.com",
+      projectId: "estaco-add3c",
+      storageBucket: "estaco-add3c.firebasestorage.app",
+      messagingSenderId: "876337002297",
+      appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    // DOM elements
+    const homeButton = document.getElementById('home-button');
+    const profileButton = document.getElementById('profile-button');
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const searchResults = document.getElementById('search-results');
+    const requestsList = document.getElementById('requests-list');
+    const friendsContainer = document.getElementById('friends-container');
+    const errorMessage = document.getElementById('error-message');
+
+    // Navigate to Home
+    homeButton.addEventListener('click', () => {
+      window.location.href = 'home.html';
+    });
+
+    // Navigate to Profile
+    profileButton.addEventListener('click', () => {
+      window.location.href = 'profile.html';
+    });
+
+    // Check if user is signed in and verified
+    auth.onAuthStateChanged((user) => {
+      if (!user || !user.emailVerified) {
+        alert('Please sign in and verify your email to access this page.');
+        window.location.href = 'index.html';
+      } else {
+        loadFriends();
+        loadPendingRequests();
+      }
+    });
+
+    // Search for users
+    searchButton.addEventListener('click', () => {
+      const searchTerm = searchInput.value.trim();
+      if (!searchTerm) {
+        errorMessage.textContent = 'Please enter a name or email.';
+        return;
+      }
+
+      // Search users collection for matching name or email
+      db.collection('users')
+        .where('name', '>=', searchTerm)
+        .where('name', '<=', searchTerm + '\uf8ff')
+        .limit(5)
+        .get()
+        .then((querySnapshot) => {
+          if (querySnapshot.empty) {
+            // If no name matches, try searching by email
+            return db.collection('users')
+              .where('email', '>=', searchTerm)
+              .where('email', '<=', searchTerm + '\uf8ff')
+              .limit(5)
+              .get();
+          } else {
+            return querySnapshot;
+          }
+        })
+        .then((querySnapshot) => {
+          searchResults.innerHTML = '';
+          if (querySnapshot.empty) {
+            searchResults.innerHTML = '<p>No users found.</p>';
+          } else {
+            querySnapshot.forEach((doc) => {
+              const user = doc.data();
+              if (user.id !== auth.currentUser.uid) {
+                searchResults.innerHTML += `
+                  <div class="friend-item">
+                    <div>
+                      <strong>${user.name}</strong>
+                      <p>${user.email}</p>
+                    </div>
+                    <button onclick="sendFriendRequest('${user.id}', '${user.name}')">Add Friend</button>
+                  </div>
+                `;
+              }
+            });
+          }
+        })
+        .catch((error) => {
+          errorMessage.textContent = error.message;
+        });
+    });
+
+    // Send friend request
+    window.sendFriendRequest = (userId, userName) => {
+      const currentUser = auth.currentUser;
+      const request = {
+        fromId: currentUser.uid,
+        fromName: currentUser.displayName,
+        toId: userId,
+        toName: userName,
+        status: 'pending',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      db.collection('friendships')
+        .add(request)
+        .then(() => {
+          alert(`Friend request sent to ${userName}!`);
+          searchInput.value = '';
+          searchResults.innerHTML = '';
+        })
+        .catch((error) => {
+          errorMessage.textContent = error.message;
+        });
+    };
+
+    // Load pending friend requests
+    function loadPendingRequests() {
+      const currentUser = auth.currentUser;
+      db.collection('friendships')
+        .where('toId', '==', currentUser.uid)
+        .where('status', '==', 'pending')
+        .get()
+        .then((querySnapshot) => {
+          requestsList.innerHTML = '';
+          if (querySnapshot.empty) {
+            requestsList.innerHTML = '<p>No pending requests.</p>';
+          } else {
+            querySnapshot.forEach((doc) => {
+              const request = doc.data();
+              requestsList.innerHTML += `
+                <div class="request-item">
+                  <div>
+                    <strong>${request.fromName}</strong>
+                    <p>Wants to be your friend</p>
+                  </div>
+                  <div>
+                    <button onclick="acceptFriendRequest('${doc.id}', '${request.fromId}', '${request.fromName}')">Accept</button>
+                    <button onclick="declineFriendRequest('${doc.id}')">Decline</button>
+                  </div>
+                </div>
+              `;
+            });
+          }
+        })
+        .catch((error) => {
+          errorMessage.textContent = error.message;
+        });
+    }
+
+    // Accept friend request
+    window.acceptFriendRequest = (requestId, userId, userName) => {
+      const currentUser = auth.currentUser;
+      db.collection('friendships').doc(requestId).update({
+        status: 'accepted'
+      })
+      .then(() => {
+        // Add each other to friends list
+        const currentUserRef = db.collection('users').doc(currentUser.uid);
+        const otherUserRef = db.collection('users').doc(userId);
+
+        // Use a transaction to avoid race conditions
+        db.runTransaction((transaction) => {
+          return transaction.get(currentUserRef)
+            .then((currentUserDoc) => {
+              const currentFriends = currentUserDoc.data().friends || [];
+              if (!currentFriends.includes(userId)) {
+                currentFriends.push(userId);
+                transaction.update(currentUserRef, { friends: currentFriends });
+              }
+            })
+            .then(() => {
+              return transaction.get(otherUserRef);
+            })
+            .then((otherUserDoc) => {
+              const otherFriends = otherUserDoc.data().friends || [];
+              if (!otherFriends.includes(currentUser.uid)) {
+                otherFriends.push(currentUser.uid);
+                transaction.update(otherUserRef, { friends: otherFriends });
+              }
+            });
+        })
+        .then(() => {
+          alert(`You are now friends with ${userName}!`);
+          loadFriends();
+          loadPendingRequests();
+        })
+        .catch((error) => {
+          errorMessage.textContent = error.message;
+        });
+      })
+      .catch((error) => {
+        errorMessage.textContent = error.message;
+      });
+    };
+
+    // Decline friend request
+    window.declineFriendRequest = (requestId) => {
+      db.collection('friendships').doc(requestId).delete()
+        .then(() => {
+          alert('Friend request declined.');
+          loadPendingRequests();
+        })
+        .catch((error) => {
+          errorMessage.textContent = error.message;
+        });
+    };
+
+    // Load friends list
+    function loadFriends() {
+      const currentUser = auth.currentUser;
+      db.collection('users').doc(currentUser.uid).get()
+        .then((doc) => {
+          const user = doc.data();
+          friendsContainer.innerHTML = '';
+          if (!user.friends || user.friends.length === 0) {
+            friendsContainer.innerHTML = '<p>No friends yet. Search for users to add!</p>';
+          } else {
+            // Get friend details
+            const friendsPromises = user.friends.map(friendId => {
+              return db.collection('users').doc(friendId).get();
+            });
+
+            Promise.all(friendsPromises)
+              .then((friendsDocs) => {
+                friendsDocs.forEach((friendDoc) => {
+                  const friend = friendDoc.data();
+                  friendsContainer.innerHTML += `
+                    <div class="friend-item">
+                      <div>
+                        <strong>${friend.name}</strong>
+                        <p>${friend.email}</p>
+                      </div>
+                      <button onclick="unfriend('${friendDoc.id}', '${friend.name}')">Unfriend</button>
+                    </div>
+                  `;
+                });
+              })
+              .catch((error) => {
+                errorMessage.textContent = error.message;
+              });
+          }
+        })
+        .catch((error) => {
+          errorMessage.textContent = error.message;
+        });
+    }
+
+    // Unfriend
+    window.unfriend = (friendId, friendName) => {
+      const currentUser = auth.currentUser;
+      const currentUserRef = db.collection('users').doc(currentUser.uid);
+      const friendRef = db.collection('users').doc(friendId);
+
+      db.runTransaction((transaction) => {
+        return transaction.get(currentUserRef)
+          .then((currentUserDoc) => {
+            let currentFriends = currentUserDoc.data().friends || [];
+            currentFriends = currentFriends.filter(id => id !== friendId);
+            transaction.update(currentUserRef, { friends: currentFriends });
+          })
+          .then(() => {
+            return transaction.get(friendRef);
+          })
+          .then((friendDoc) => {
+            let friendFriends = friendDoc.data().friends || [];
+            friendFriends = friendFriends.filter(id => id !== currentUser.uid);
+            transaction.update(friendRef, { friends: friendFriends });
+          });
+      })
+      .then(() => {
+        // Update friendship status in friendships collection
+        return db.collection('friendships')
+          .where('fromId', 'in', [currentUser.uid, friendId])
+          .where('toId', 'in', [currentUser.uid, friendId])
+          .where('status', '==', 'accepted')
+          .get();
+      })
+      .then((querySnapshot) => {
+        const batch = db.batch();
+        querySnapshot.forEach((doc) => {
+          batch.update(doc.ref, { status: 'unfriended' });
+        });
+        return batch.commit();
+      })
+      .then(() => {
+        alert(`You are no longer friends with ${friendName}.`);
+        loadFriends();
+      })
+      .catch((error) => {
+        errorMessage.textContent = error.message;
+      });
+    };
+  </script>
+</body>
+</html>
