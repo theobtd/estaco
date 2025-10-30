@@ -88,9 +88,21 @@
                     const newEmail = prompt('Enter your new email address:');
                     if (newEmail) {
                         user.updateEmail(newEmail).then(() => {
-                            document.getElementById('success-message').textContent = 'Email updated successfully!';
-                            document.getElementById('error-message').textContent = '';
-                            document.getElementById('user-email').textContent = newEmail; // Update displayed email
+                            // Send email verification
+                            user.sendEmailVerification().then(() => {
+                                // Sign out the user
+                                auth.signOut().then(() => {
+                                    document.getElementById('success-message').textContent = 'Email updated successfully! Please check your email for verification.';
+                                    document.getElementById('error-message').textContent = '';
+                                    document.getElementById('user-email').textContent = newEmail; // Update displayed email (optional)
+                                }).catch((error) => {
+                                    document.getElementById('error-message').textContent = error.message;
+                                    document.getElementById('success-message').textContent = '';
+                                });
+                            }).catch((error) => {
+                                document.getElementById('error-message').textContent = error.message;
+                                document.getElementById('success-message').textContent = '';
+                            });
                         }).catch((error) => {
                             document.getElementById('error-message').textContent = error.message;
                             document.getElementById('success-message').textContent = '';
