@@ -259,7 +259,9 @@
       db.collection('friends').doc(user.uid).get()
         .then(friendsDoc => {
           const friends = friendsDoc.data()?.friends || [];
+          console.log('Friends data:', friends);
           const friendIds = friends.map(friend => friend.uid);
+          console.log('Friend IDs:', friendIds);
           // Include the user's own UID
           friendIds.push(user.uid);
     
