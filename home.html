@@ -337,9 +337,17 @@
       });
     }
 
-
     // Load posts when page loads
     window.onload = loadPosts;
+    
+    // Add real-time listener for posts
+    db.collection('posts').onSnapshot((snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'modified') {
+          updateReactionCounts(change.doc.id);
+        }
+      });
+    });
   </script>
 </body>
 </html>
