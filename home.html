@@ -73,6 +73,51 @@
       border-radius: 4px;
       padding: 2px 4px;
     }
+    .comments-section {
+      margin-top: 10px;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+    .comment-form {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    .comment-input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .comment-button {
+      padding: 8px 12px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+    .comment {
+      display: flex;
+      margin-bottom: 8px;
+      align-items: flex-start;
+    }
+    .comment-author-picture {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .comment-content {
+      background: #f9f9f9;
+      padding: 8px 12px;
+      border-radius: 8px;
+      flex: 1;
+    }
+    .comment-author-name {
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
   </style>
 </head>
 <body>
@@ -256,10 +301,20 @@
                         <button class="reaction-button ${loveClass}" data-post-id="${doc.id}" data-reaction="love">❤️${loveCountHTML}</button>
                         <button class="reaction-button ${laughClass}" data-post-id="${doc.id}" data-reaction="laugh">😂${laughCountHTML}</button>
                       </div>
+                      <div class="comments-section">
+                        <div class="comment-form">
+                          <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${doc.id}">
+                          <button class="comment-button" data-post-id="${doc.id}">Post</button>
+                        </div>
+                        <div class="comments-list" id="comments-${doc.id}">
+                          <!-- Comments will be loaded here -->
+                        </div>
+                      </div>
                     </div>
                   `;
                   // After adding the postHTML to the feed
                   feed.innerHTML += postHTML;
+                  loadComments(doc.id);
                 })
                 .catch((error) => {
                   console.error('Error fetching user data:', error);
@@ -284,9 +339,19 @@
                         <button class="reaction-button ${loveClass}" data-post-id="${doc.id}" data-reaction="love">❤️</button>
                         <button class="reaction-button ${laughClass}" data-post-id="${doc.id}" data-reaction="laugh">😂</button>
                       </div>
+                      <div class="comments-section">
+                        <div class="comment-form">
+                          <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${doc.id}">
+                          <button class="comment-button" data-post-id="${doc.id}">Post</button>
+                        </div>
+                        <div class="comments-list" id="comments-${doc.id}">
+                          <!-- Comments will be loaded here -->
+                        </div>
+                      </div>
                     </div>
                   `;
                   feed.innerHTML += postHTML;
+                  loadComments(doc.id);
                 });
             });
           }
@@ -441,6 +506,66 @@
         });
       }
     });
+
+    // Add event listener for comment buttons
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('comment-button')) {
+        const postId = e.target.getAttribute('data-post-id');
+        const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+        const content = commentInput.value.trim();
+        if (content) {
+          addComment(postId, content);
+          commentInput.value = '';
+        }
+      }
+    });
+    
+    // Function to add a comment to Firestore
+    function addComment(postId, content) {
+      const user = auth.currentUser;
+      if (!user) return;
+    
+      const comment = {
+        authorId: user.uid,
+        authorName: user.displayName || "Unknown User",
+        content: content,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+    
+      db.collection('posts').doc(postId).collection('comments').add(comment)
+        .then(() => {
+          loadComments(postId);
+        })
+        .catch((error) => {
+          console.error("Error adding comment: ", error);
+        });
+    }
+    
+    // Function to load comments for a post
+    function loadComments(postId) {
+      db.collection('posts').doc(postId).collection('comments')
+        .orderBy('timestamp', 'asc')
+        .get()
+        .then((querySnapshot) => {
+          const commentsList = document.getElementById(`comments-${postId}`);
+          commentsList.innerHTML = '';
+          querySnapshot.forEach((doc) => {
+            const comment = doc.data();
+            const commentHTML = `
+              <div class="comment">
+                <div class="comment-author-picture">
+                  ${getInitialsFallback(comment.authorName)}
+                </div>
+                <div class="comment-content">
+                  <div class="comment-author-name">${comment.authorName}</div>
+                  <div>${comment.content}</div>
+                </div>
+              </div>
+            `;
+            commentsList.innerHTML += commentHTML;
+          });
+        });
+    }
 
     // Load posts when page loads
     window.onload = loadPosts;
