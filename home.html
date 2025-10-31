@@ -309,12 +309,51 @@
 
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('reaction-button')) {
-        const postId = e.target.getAttribute('data-post-id');
-        const reaction = e.target.getAttribute('data-reaction');
+        const button = e.target;
+        const postId = button.getAttribute('data-post-id');
+        const reaction = button.getAttribute('data-reaction');
         const user = auth.currentUser;
         if (!user) return;
     
+        // Optimistic UI update: Assume success
         const postRef = db.collection('posts').doc(postId);
+        const wasSelected = button.classList.contains('selected');
+        const countEl = document.getElementById(`reaction-count-${postId}`);
+    
+        // Toggle the selected class
+        const likeButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="like"]`);
+        const loveButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="love"]`);
+        const laughButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="laugh"]`);
+    
+        // Reset all buttons
+        if (likeButton) likeButton.classList.remove('selected');
+        if (loveButton) loveButton.classList.remove('selected');
+        if (laughButton) laughButton.classList.remove('selected');
+    
+        // Select the clicked button (unless it was already selected)
+        if (!wasSelected) {
+          button.classList.add('selected');
+        }
+    
+        // Optimistic count update (optional)
+        if (countEl) {
+          const counts = countEl.textContent.match(/(\d+) likes, (\d+) loves, (\d+) laughs/);
+          let likeCount = counts ? parseInt(counts[1]) : 0;
+          let loveCount = counts ? parseInt(counts[2]) : 0;
+          let laughCount = counts ? parseInt(counts[3]) : 0;
+    
+          if (reaction === 'like') {
+            likeCount += wasSelected ? -1 : 1;
+          } else if (reaction === 'love') {
+            loveCount += wasSelected ? -1 : 1;
+          } else if (reaction === 'laugh') {
+            laughCount += wasSelected ? -1 : 1;
+          }
+    
+          countEl.textContent = `${likeCount} likes, ${loveCount} loves, ${laughCount} laughs`;
+        }
+    
+        // Perform the Firestore transaction
         db.runTransaction((transaction) => {
           return transaction.get(postRef).then((doc) => {
             if (!doc.exists) throw "Post does not exist!";
@@ -332,8 +371,20 @@
           });
         }).catch((error) => {
           console.error("Transaction failed: ", error);
+          // Revert UI on failure
+          if (likeButton) likeButton.classList.remove('selected');
+          if (loveButton) loveButton.classList.remove('selected');
+          if (laughButton) laughButton.classList.remove('selected');
+          if (!wasSelected) {
+            if (reaction === 'like' && likeButton) likeButton.classList.add('selected');
+            if (reaction === 'love' && loveButton) loveButton.classList.add('selected');
+            if (reaction === 'laugh' && laughButton) laughButton.classList.add('selected');
+          }
+          // Revert count (optional)
+          if (countEl) {
+            updateReactionCounts(postId);
+          }
         });
-        // No need to call loadPosts() or updateReactionCounts() here
       }
     });
 
@@ -354,35 +405,6 @@
 
     // Load posts when page loads
     window.onload = loadPosts;
-    
-    // Add real-time listener for posts
-    db.collection('posts').onSnapshot((snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'modified') {
-          const post = change.doc.data();
-          const postId = change.doc.id;
-          const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
-    
-          // Update reaction buttons for this post
-          const likeButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="like"]`);
-          const loveButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="love"]`);
-          const laughButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="laugh"]`);
-    
-          // Reset all buttons
-          if (likeButton) likeButton.className = 'reaction-button';
-          if (loveButton) loveButton.className = 'reaction-button';
-          if (laughButton) laughButton.className = 'reaction-button';
-    
-          // Highlight the user's current reaction
-          if (userReaction === 'like' && likeButton) likeButton.className = 'reaction-button selected';
-          if (userReaction === 'love' && loveButton) loveButton.className = 'reaction-button selected';
-          if (userReaction === 'laugh' && laughButton) laughButton.className = 'reaction-button selected';
-    
-          // Update reaction counts
-          updateReactionCounts(postId);
-        }
-      });
-    });
   </script>
 </body>
 </html>
