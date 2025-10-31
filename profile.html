@@ -42,7 +42,6 @@
           width: 100px;
           height: 100px;
           border-radius: 15%;
-          background-color: #eee;
         }
     </style>
 </head>
@@ -112,13 +111,17 @@
               .then((doc) => {
                 if (doc.exists) {
                   const userData = doc.data();
+                  const placeholder = document.getElementById('profile-picture-placeholder');
+                  const img = document.getElementById('profile-picture');
                   if (userData.profilePictureURL) {
-                    const img = document.getElementById('profile-picture');
                     img.src = userData.profilePictureURL;
                     img.onload = function() {
-                      document.getElementById('profile-picture-placeholder').style.display = 'none';
+                      placeholder.style.display = 'none';
                       img.style.display = 'block';
                     };
+                  } else {
+                    // No profile picture, show initials fallback
+                    placeholder.innerHTML = getInitialsFallback(user.displayName || "No name set");
                   }
                 }
               });
@@ -157,6 +160,30 @@
             reader.readAsDataURL(file);
           }
         });
+
+        function getInitialsFallback(name) {
+          const firstLetter = name.charAt(0).toUpperCase();
+          const pastelColors = ['#FFD1DC', '#FFE4B5', '#B5EAD7', '#C7CEEA', '#E2F0CB', '#FFB7B2'];
+          const colorIndex = name.charCodeAt(0) % pastelColors.length;
+          const backgroundColor = pastelColors[colorIndex];
+          return `
+            <div style="
+              width: 100px;
+              height: 100px;
+              border-radius: 15%;
+              background-color: ${backgroundColor};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #333;
+              font-weight: bold;
+              font-size: 40px;
+              margin-right: 10px;
+            ">
+              ${firstLetter}
+            </div>
+          `;
+        }
         
         // Handle crop done
         document.getElementById('crop-done-button').addEventListener('click', () => {
