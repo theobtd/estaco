@@ -239,13 +239,11 @@
                         <button class="reaction-button ${likeClass}" data-post-id="${doc.id}" data-reaction="like">👍</button>
                         <button class="reaction-button ${loveClass}" data-post-id="${doc.id}" data-reaction="love">❤️</button>
                         <button class="reaction-button ${laughClass}" data-post-id="${doc.id}" data-reaction="laugh">😂</button>
-                        <span class="reaction-count" id="reaction-count-${doc.id}"></span>
                       </div>
                     </div>
                   `;
-                  // After adding the postHTML to the feed, call updateReactionCounts
+                  // After adding the postHTML to the feed
                   feed.innerHTML += postHTML;
-                  updateReactionCounts(doc.id);
                 })
                 .catch((error) => {
                   console.error('Error fetching user data:', error);
@@ -269,7 +267,6 @@
                         <button class="reaction-button ${likeClass}" data-post-id="${doc.id}" data-reaction="like">👍</button>
                         <button class="reaction-button ${loveClass}" data-post-id="${doc.id}" data-reaction="love">❤️</button>
                         <button class="reaction-button ${laughClass}" data-post-id="${doc.id}" data-reaction="laugh">😂</button>
-                        <span class="reaction-count" id="reaction-count-${doc.id}"></span>
                       </div>
                     </div>
                   `;
@@ -417,21 +414,6 @@
         });
       }
     });
-
-    function updateReactionCounts(postId) {
-      const postRef = db.collection('posts').doc(postId);
-      postRef.get().then((doc) => {
-        if (doc.exists) {
-          const reactions = doc.data().reactions || {};
-          const counts = {
-            like: 0, love: 0, laugh: 0
-          };
-          Object.values(reactions).forEach((r) => counts[r]++);
-          const countEl = document.getElementById(`reaction-count-${postId}`);
-          countEl.textContent = `${counts.like} likes, ${counts.love} loves, ${counts.laugh} laughs`;
-        }
-      });
-    }
 
     // Load posts when page loads
     window.onload = loadPosts;
