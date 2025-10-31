@@ -323,23 +323,20 @@
             const userReaction = reactions[user.uid];
     
             if (userReaction === reaction) {
-              // User is removing their reaction
               delete reactions[user.uid];
             } else {
-              // User is adding/changing their reaction
               reactions[user.uid] = reaction;
             }
     
             transaction.update(postRef, { reactions });
           });
-        }).then(() => {
-          updateReactionCounts(postId);
         }).catch((error) => {
           console.error("Transaction failed: ", error);
         });
+        // No need to call loadPosts() or updateReactionCounts() here
       }
     });
-    
+
     function updateReactionCounts(postId) {
       const postRef = db.collection('posts').doc(postId);
       postRef.get().then((doc) => {
@@ -362,7 +359,27 @@
     db.collection('posts').onSnapshot((snapshot) => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'modified') {
-          loadPosts(); // Reload all posts to update highlighting
+          const post = change.doc.data();
+          const postId = change.doc.id;
+          const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
+    
+          // Update reaction buttons for this post
+          const likeButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="like"]`);
+          const loveButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="love"]`);
+          const laughButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="laugh"]`);
+    
+          // Reset all buttons
+          if (likeButton) likeButton.className = 'reaction-button';
+          if (loveButton) loveButton.className = 'reaction-button';
+          if (laughButton) laughButton.className = 'reaction-button';
+    
+          // Highlight the user's current reaction
+          if (userReaction === 'like' && likeButton) likeButton.className = 'reaction-button selected';
+          if (userReaction === 'love' && loveButton) loveButton.className = 'reaction-button selected';
+          if (userReaction === 'laugh' && laughButton) laughButton.className = 'reaction-button selected';
+    
+          // Update reaction counts
+          updateReactionCounts(postId);
         }
       });
     });
