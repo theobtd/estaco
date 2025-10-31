@@ -530,6 +530,24 @@
           commentInput.value = '';
         }
       }
+    
+      // Handle reply button click
+      if (e.target.classList.contains('reply-button')) {
+        const commentId = e.target.getAttribute('data-comment-id');
+        const replyInputDiv = document.querySelector(`.reply-input[data-comment-id="${commentId}"]`);
+        replyInputDiv.style.display = replyInputDiv.style.display === 'none' ? 'block' : 'none'; // Toggle display
+      }
+    
+      // Handle reply submission
+      if (e.target.classList.contains('reply-submit')) {
+        const commentId = e.target.getAttribute('data-comment-id');
+        const replyInput = document.querySelector(`.reply-text[data-comment-id="${commentId}"]`);
+        const content = replyInput.value.trim();
+        if (content) {
+          addReply(commentId, content);
+          replyInput.value = '';
+        }
+      }
     });
     
     // Function to add a comment to Firestore
@@ -553,7 +571,7 @@
         });
     }
 
-    // Load comments from Firestore
+    // Function to load comments for a post
     function loadComments(postId) {
       db.collection('posts').doc(postId).collection('comments')
         .orderBy('timestamp', 'asc')
@@ -637,7 +655,7 @@
         });
     }
     
-    // Load replies for a comment
+    // Function to load replies for a comment
     function loadReplies(commentId) {
       db.collection('posts').doc(postId).collection('comments').doc(commentId).collection('replies')
         .orderBy('timestamp', 'asc')
