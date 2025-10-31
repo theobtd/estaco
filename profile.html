@@ -34,13 +34,26 @@
         #success-message {
             color: green;
         }
+        .profile-picture-container {
+          display: inline-block;
+          position: relative;
+        }
+        .profile-picture-placeholder {
+          width: 100px;
+          height: 100px;
+          border-radius: 15%;
+          background-color: #eee;
+        }
     </style>
 </head>
 <body>
     <h1>Your Profile</h1>
     <button id="back-to-home-button" class="button">Back to Home</button>
     <div class="profile-info">
-        <img id="profile-picture" src="" alt="Profile Picture" style="max-width: 100px; border-radius: 15%;">
+        <div class="profile-picture-container">
+          <div id="profile-picture-placeholder" class="profile-picture-placeholder"></div>
+          <img id="profile-picture" src="" alt="Profile Picture" style="max-width: 100px; border-radius: 15%; display: none;">
+        </div>
         <input type="file" id="update-profile-pic" accept="image/*" style="display: none;">
         <button id="update-profile-pic-button" class="button">Update Profile Picture</button>
         <p><strong>Name:</strong> <span id="user-name"></span></p>
@@ -100,14 +113,15 @@
                 if (doc.exists) {
                   const userData = doc.data();
                   if (userData.profilePictureURL) {
-                    document.getElementById('profile-picture').src = userData.profilePictureURL;
+                    const img = document.getElementById('profile-picture');
+                    img.src = userData.profilePictureURL;
+                    img.onload = function() {
+                      document.getElementById('profile-picture-placeholder').style.display = 'none';
+                      img.style.display = 'block';
+                    };
                   }
                 }
               });
-          } else {
-            // Only redirect if not a logout (handled by the button)
-            // This block can be removed if you handle it in the logout button
-          }
         });
         
         // Upload profile picture
