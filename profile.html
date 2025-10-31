@@ -91,8 +91,8 @@
                 }
               });
           } else {
-            alert('Please sign in to view your profile.');
-            window.location.href = 'index.html';
+            // Only redirect if not a logout (handled by the button)
+            // This block can be removed if you handle it in the logout button
           }
         });
         
@@ -162,12 +162,15 @@
 
         // Log Out
         document.getElementById('logout-button').addEventListener('click', () => {
+          const confirmLogout = confirm('Are you sure you want to log out?');
+          if (confirmLogout) {
             auth.signOut().then(() => {
-                alert('You have been logged out.');
-                window.location.href = 'index.html'; // Redirect to login page or home page
+              alert('You have been logged out.');
+              window.location.href = 'index.html';
             }).catch((error) => {
-                document.getElementById('error-message').textContent = error.message;
+              document.getElementById('error-message').textContent = error.message;
             });
+          }
         });
     </script>
 </body>
