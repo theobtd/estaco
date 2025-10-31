@@ -549,21 +549,32 @@
         .then((querySnapshot) => {
           const commentsList = document.getElementById(`comments-${postId}`);
           commentsList.innerHTML = '';
+          const commentPromises = [];
+    
           querySnapshot.forEach((doc) => {
             const comment = doc.data();
-            const commentHTML = `
-              <div class="comment">
-                <div class="comment-author-picture">
-                  ${getCommentAuthorPicture(comment.authorId)}
+            const promise = getCommentAuthorPicture(comment.authorId).then((profilePictureHTML) => {
+              const commentHTML = `
+                <div class="comment">
+                  <div class="comment-author-picture">
+                    ${profilePictureHTML}
+                  </div>
+                  <div class="comment-content">
+                    <div class="comment-author-name">${comment.authorName}</div>
+                    <div>${comment.content}</div>
+                  </div>
                 </div>
-                <div class="comment-content">
-                  <div class="comment-author-name">${comment.authorName}</div>
-                  <div>${comment.content}</div>
-                </div>
-              </div>
-            `;
-            commentsList.innerHTML += commentHTML;
+              `;
+              commentsList.innerHTML += commentHTML;
+            });
+            commentPromises.push(promise);
           });
+    
+          // Wait for all profile pictures to be fetched before displaying them
+          return Promise.all(commentPromises);
+        })
+        .catch((error) => {
+          console.error("Error loading comments: ", error);
         });
     }
     
