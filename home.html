@@ -296,12 +296,12 @@
                   
                   let postHTML = `
                     <div class="post">
-                      <div class="post-header">
-                        ${profilePictureHTML}
-                        <h4>${post.authorName}</h4>
-                      </div>
-                      <div class="post-timestamp">
-                        <span style="font-size: 12px; color: #666;">${formatTimestamp(post.timestamp.toDate())}</span>
+                      <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center;">
+                          ${profilePictureHTML}
+                          <h4 style="margin: 0;">${post.authorName}</h4>
+                        </div>
+                        <span style="font-size: 12px; color: #666; margin-left: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
                       </div>
                       <p>${post.content}</p>
                       ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
@@ -337,12 +337,12 @@
                   
                   let postHTML = `
                     <div class="post">
-                      <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                        ${getInitialsFallback(post.authorName)}
-                        <h4>${post.authorName}</h4>
-                      </div>
-                      <div class="post-timestamp">
-                        <span>${formatTimestamp(post.timestamp.toDate())}</span>
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center;">
+                          ${getInitialsFallback(post.authorName)}
+                          <h4 style="margin: 0;">${post.authorName}</h4>
+                        </div>
+                        <span style="font-size: 12px; color: #666; margin-left: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
                       </div>
                       <p>${post.content}</p>
                       ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
