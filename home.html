@@ -273,7 +273,6 @@
                       </div>
                     </div>
                   `;
-                  postHTML += `</div>`;
                   feed.innerHTML += postHTML;
                 });
             });
@@ -363,7 +362,7 @@
     db.collection('posts').onSnapshot((snapshot) => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'modified') {
-          updateReactionCounts(change.doc.id);
+          loadPosts(); // Reload all posts to update highlighting
         }
       });
     });
