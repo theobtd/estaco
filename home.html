@@ -587,6 +587,7 @@
           if (profilePictureURL) {
             return `<img src="${profilePictureURL}" alt="Profile Picture" class="comment-author-picture">`;
           } else {
+            // Use displayName for the initials fallback
             return getInitialsFallback(userData.displayName || "Unknown User");
           }
         } else {
