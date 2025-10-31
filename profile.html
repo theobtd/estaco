@@ -193,14 +193,11 @@
                 console.log(`Searching for user with name: ${friendName}`); // Log the search name
                 db.collection('users').where('name', '==', friendName).get()
                     .then(snapshot => {
-                        console.log(`Found ${snapshot.size} user(s) with name: ${friendName}`); // Log number of users found
                         if (!snapshot.empty) {
-                            const friendUser = snapshot.docs[0].data();
-                            if (friendUser && friendUser.uid) {
-                                sendRequest(auth.currentUser.uid, friendUser.uid, friendUser.name);
-                            } else {
-                                alert('User found but has no valid UID');
-                            }
+                            const friendDoc = snapshot.docs[0];
+                            const friendUser = friendDoc.data();
+                            const friendUid = friendDoc.id; // <-- This is the UID!
+                            sendRequest(auth.currentUser.uid, friendUid, friendUser.name);
                         } else {
                             alert('User not found');
                         }
@@ -218,7 +215,7 @@
         function sendRequest(fromId, toId, fromName) {
             if (!toId) {
                 console.error('Cannot send friend request: toId is undefined.');
-                return; // Exit if toId is not defined
+                return;
             }
             db.collection('friendRequests').add({
                 from: fromId,
