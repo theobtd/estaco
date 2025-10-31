@@ -540,7 +540,7 @@
           console.error("Error adding comment: ", error);
         });
     }
-    
+
     // Function to load comments for a post
     function loadComments(postId) {
       db.collection('posts').doc(postId).collection('comments')
@@ -554,7 +554,7 @@
             const commentHTML = `
               <div class="comment">
                 <div class="comment-author-picture">
-                  ${getInitialsFallback(comment.authorName)}
+                  ${getCommentAuthorPicture(comment.authorId)}
                 </div>
                 <div class="comment-content">
                   <div class="comment-author-name">${comment.authorName}</div>
@@ -565,6 +565,25 @@
             commentsList.innerHTML += commentHTML;
           });
         });
+    }
+    
+    // Function to get the author's profile picture for comments
+    function getCommentAuthorPicture(authorId) {
+      return db.collection('users').doc(authorId).get().then((userDoc) => {
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          const profilePictureURL = userData.profilePictureURL;
+          if (profilePictureURL) {
+            return `<img src="${profilePictureURL}" alt="Profile Picture" class="comment-author-picture">`;
+          } else {
+            return getInitialsFallback(userData.displayName || "Unknown User");
+          }
+        } else {
+          return getInitialsFallback("Unknown User");
+        }
+      }).catch(() => {
+        return getInitialsFallback("Unknown User");
+      });
     }
 
     // Load posts when page loads
