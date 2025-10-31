@@ -156,33 +156,47 @@
             db.collection('friendRequests').where('to', '==', userId).get()
                 .then(snapshot => {
                     pendingFriendRequestsDiv.innerHTML = '';
+                    const promises = [];
                     snapshot.forEach(doc => {
                         const request = doc.data();
-                        const requestDiv = document.createElement('div');
-                        requestDiv.className = 'pending-friend';
-                        requestDiv.innerText = request.fromName; // Assuming you save fromName in requests
-                        const acceptButton = document.createElement('button');
-                        acceptButton.className = 'friend-button';
-                        acceptButton.innerText = 'Accept';
-                        acceptButton.onclick = () => acceptFriendRequest(request.from, userId);
-                        requestDiv.appendChild(acceptButton);
-                        pendingFriendRequestsDiv.appendChild(requestDiv);
+                        const promise = db.collection('users').doc(request.from).get()
+                            .then(userDoc => {
+                                const fromName = userDoc.data().name;
+                                const requestDiv = document.createElement('div');
+                                requestDiv.className = 'pending-friend';
+                                requestDiv.innerText = fromName;
+                                const acceptButton = document.createElement('button');
+                                acceptButton.className = 'friend-button';
+                                acceptButton.innerText = 'Accept';
+                                acceptButton.onclick = () => acceptFriendRequest(request.from, userId);
+                                requestDiv.appendChild(acceptButton);
+                                pendingFriendRequestsDiv.appendChild(requestDiv);
+                            });
+                        promises.push(promise);
                     });
+                    return Promise.all(promises);
                 });
         }
 
-                // Load current friends
+        // Load current friends
         function loadCurrentFriends(userId) {
             db.collection('friends').doc(userId).get()
                 .then(doc => {
                     const friends = doc.data()?.friends || [];
                     currentFriendsDiv.innerHTML = '';
+                    const promises = [];
                     friends.forEach(friend => {
-                        const friendDiv = document.createElement('div');
-                        friendDiv.className = 'friend';
-                        friendDiv.innerText = friend.name; // Assuming you save friend names
-                        currentFriendsDiv.appendChild(friendDiv);
+                        const promise = db.collection('users').doc(friend.uid).get()
+                            .then(userDoc => {
+                                const friendName = userDoc.data().name;
+                                const friendDiv = document.createElement('div');
+                                friendDiv.className = 'friend';
+                                friendDiv.innerText = friendName;
+                                currentFriendsDiv.appendChild(friendDiv);
+                            });
+                        promises.push(promise);
                     });
+                    return Promise.all(promises);
                 });
         }
 
@@ -232,25 +246,35 @@
 
         // Accept friend request
         function acceptFriendRequest(fromId, toId) {
-            const friendData = { uid: fromId, name: fromId }; // Modify as necessary
-            // Add the friend to both users' friend lists
-            db.collection('friends').doc(toId).set({
-                friends: firebase.firestore.FieldValue.arrayUnion(friendData)
-            }, { merge: true });
-            db.collection('friends').doc(fromId).set({
-                friends: firebase.firestore.FieldValue.arrayUnion({ uid: toId, name: toId }) // Modify as necessary
-            }, { merge: true });
-            // Remove the friend request
-            db.collection('friendRequests').where('from', '==', fromId).where('to', '==', toId).get()
-                .then(snapshot => {
-                    snapshot.forEach(doc => {
-                        doc.ref.delete();
-                    });
+            // Fetch the name of the user sending the request
+            db.collection('users').doc(fromId).get()
+                .then(fromUserDoc => {
+                    const fromName = fromUserDoc.data().name;
+                    // Fetch the name of the current user
+                    db.collection('users').doc(toId).get()
+                        .then(toUserDoc => {
+                            const toName = toUserDoc.data().name;
+                            // Add the friend to both users' friend lists
+                            db.collection('friends').doc(toId).set({
+                                friends: firebase.firestore.FieldValue.arrayUnion({ uid: fromId, name: fromName })
+                            }, { merge: true });
+                            db.collection('friends').doc(fromId).set({
+                                friends: firebase.firestore.FieldValue.arrayUnion({ uid: toId, name: toName })
+                            }, { merge: true });
+                            // Remove the friend request
+                            db.collection('friendRequests').where('from', '==', fromId).where('to', '==', toId).get()
+                                .then(snapshot => {
+                                    snapshot.forEach(doc => {
+                                        doc.ref.delete();
+                                    });
+                                });
+                            alert('Friend request accepted!');
+                            loadPendingRequests(toId);
+                            loadCurrentFriends(toId);
+                        });
                 });
-            alert('Friend request accepted!');
-            loadPendingRequests(toId);
-            loadCurrentFriends(toId);
         }
+
 
         // Display user information
         auth.onAuthStateChanged((user) => {
