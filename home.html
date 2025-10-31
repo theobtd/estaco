@@ -50,7 +50,7 @@
     .post-author-picture {
       width: 40px;
       height: 40px;
-      border-radius: 15%; /* Rounded square */
+      border-radius: 15%;
       margin-right: 10px;
     }
   </style>
@@ -194,11 +194,15 @@
               db.collection('users').doc(post.authorId).get()
                 .then((userDoc) => {
                   let userData = userDoc.data();
-                  let profilePictureURL = userData && userData.profilePictureURL ? userData.profilePictureURL : 'https://via.placeholder.com/40'; // Fallback placeholder
+                  let profilePictureURL = userData && userData.profilePictureURL ? userData.profilePictureURL : null;
+                  let profilePictureHTML = profilePictureURL
+                    ? `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">`
+                    : getInitialsFallback(post.authorName);
+              
                   let postHTML = `
                     <div class="post">
                       <div class="post-header">
-                        <img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">
+                        ${profilePictureHTML}
                         <h4>${post.authorName}</h4>
                       </div>
                       <p>${post.content}</p>
@@ -216,7 +220,7 @@
                   let postHTML = `
                     <div class="post">
                       <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <img src="https://via.placeholder.com/40" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 15%; margin-right: 10px;">
+                        ${getInitialsFallback(post.authorName)}
                         <h4>${post.authorName}</h4>
                       </div>
                       <p>${post.content}</p>
@@ -233,6 +237,30 @@
         .catch((error) => {
           errorMessage.textContent = error.message;
         });
+    }
+
+    function getInitialsFallback(name) {
+      const firstLetter = name.charAt(0).toUpperCase();
+      const pastelColors = ['#FFD1DC', '#FFE4B5', '#B5EAD7', '#C7CEEA', '#E2F0CB', '#FFB7B2'];
+      const colorIndex = name.charCodeAt(0) % pastelColors.length;
+      const backgroundColor = pastelColors[colorIndex];
+      return `
+        <div style="
+          width: 40px;
+          height: 40px;
+          border-radius: 15%;
+          background-color: ${backgroundColor};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #333;
+          font-weight: bold;
+          font-size: 20px;
+          margin-right: 10px;
+        ">
+          ${firstLetter}
+        </div>
+      `;
     }
 
     // Load posts when page loads
