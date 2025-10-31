@@ -194,16 +194,29 @@
                     .then(snapshot => {
                         if (!snapshot.empty) {
                             const friendUser = snapshot.docs[0].data();
-                            sendRequest(auth.currentUser.uid, friendUser.uid, friendName);
+                            // Check if friendUser has a valid uid
+                            if (friendUser && friendUser.uid) {
+                                sendRequest(auth.currentUser.uid, friendUser.uid, friendUser.name); // Use friendUser.name for the name
+                            } else {
+                                alert('User not found or has no valid UID');
+                            }
                         } else {
                             alert('User not found');
                         }
+                    })
+                    .catch(error => {
+                        console.error('Error searching for user: ', error);
+                        alert('An error occurred while searching for the user.');
                     });
             }
         });
 
         // Function to send friend request
         function sendRequest(fromId, toId, fromName) {
+            if (!toId) {
+                console.error('Cannot send friend request: toId is undefined.');
+                return; // Exit if toId is not defined
+            }
             db.collection('friendRequests').add({
                 from: fromId,
                 to: toId,
@@ -213,6 +226,7 @@
                 alert('Friend request sent!');
             }).catch(error => {
                 console.error('Error sending friend request: ', error);
+                alert('Failed to send friend request.');
             });
         }
 
