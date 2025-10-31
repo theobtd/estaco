@@ -530,24 +530,6 @@
           commentInput.value = '';
         }
       }
-    
-      // Handle reply button click
-      if (e.target.classList.contains('reply-button')) {
-        const commentId = e.target.getAttribute('data-comment-id');
-        const replyInputDiv = document.querySelector(`.reply-input[data-comment-id="${commentId}"]`);
-        replyInputDiv.style.display = replyInputDiv.style.display === 'none' ? 'block' : 'none'; // Toggle display
-      }
-    
-      // Handle reply submission
-      if (e.target.classList.contains('reply-submit')) {
-        const commentId = e.target.getAttribute('data-comment-id');
-        const replyInput = document.querySelector(`.reply-text[data-comment-id="${commentId}"]`);
-        const content = replyInput.value.trim();
-        if (content) {
-          addReply(commentId, content);
-          replyInput.value = '';
-        }
-      }
     });
     
     // Function to add a comment to Firestore
@@ -592,14 +574,8 @@
                   <div class="comment-content">
                     <div class="comment-author-name">${comment.authorName}</div>
                     <div>${comment.content}</div>
-                    <button class="reply-button" data-comment-id="${doc.id}">Reply</button>
-                    <div class="reply-input" style="display: none;">
-                      <input type="text" class="reply-text" placeholder="Write a reply..." data-comment-id="${doc.id}">
-                      <button class="reply-submit" data-comment-id="${doc.id}">Post Reply</button>
-                    </div>
                   </div>
                 </div>
-                <div class="replies" id="replies-${doc.id}"></div>
               `;
               commentsList.innerHTML += commentHTML;
             });
@@ -611,71 +587,6 @@
         })
         .catch((error) => {
           console.error("Error loading comments: ", error);
-        });
-    }
-    
-    // Add event listener for reply buttons
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('reply-button')) {
-        const commentId = e.target.getAttribute('data-comment-id');
-        const replyInput = document.querySelector(`.reply-input input[data-comment-id="${commentId}"]`);
-        const replyDiv = document.querySelector(`.reply-input[data-comment-id="${commentId}"]`);
-        replyDiv.style.display = replyDiv.style.display === 'none' ? 'block' : 'none'; // Toggle display
-      }
-    
-      if (e.target.classList.contains('reply-submit')) {
-        const commentId = e.target.getAttribute('data-comment-id');
-        const replyInput = document.querySelector(`.reply-text[data-comment-id="${commentId}"]`);
-        const content = replyInput.value.trim();
-        if (content) {
-          addReply(commentId, content);
-          replyInput.value = '';
-        }
-      }
-    });
-    
-    // Function to add a reply to Firestore
-    function addReply(commentId, content) {
-      const user = auth.currentUser;
-      if (!user) return;
-    
-      const reply = {
-        authorId: user.uid,
-        authorName: user.displayName || "Unknown User",
-        content: content,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      };
-    
-      db.collection('posts').doc(postId).collection('comments').doc(commentId).collection('replies').add(reply)
-        .then(() => {
-          loadReplies(commentId); // Reload replies after adding a new reply
-        })
-        .catch((error) => {
-          console.error("Error adding reply: ", error);
-        });
-    }
-    
-    // Function to load replies for a comment
-    function loadReplies(commentId) {
-      db.collection('posts').doc(postId).collection('comments').doc(commentId).collection('replies')
-        .orderBy('timestamp', 'asc')
-        .get()
-        .then((querySnapshot) => {
-          const repliesList = document.getElementById(`replies-${commentId}`);
-          repliesList.innerHTML = '';
-    
-          querySnapshot.forEach((doc) => {
-            const reply = doc.data();
-            const replyHTML = `
-              <div class="reply">
-                <strong>${reply.authorName}</strong>: ${reply.content}
-              </div>
-            `;
-            repliesList.innerHTML += replyHTML;
-          });
-        })
-        .catch((error) => {
-          console.error("Error loading replies: ", error);
         });
     }
     
