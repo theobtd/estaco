@@ -331,7 +331,6 @@
         // Optimistic UI update: Assume success
         const postRef = db.collection('posts').doc(postId);
         const wasSelected = button.classList.contains('selected');
-        const countEl = document.getElementById(`reaction-count-${postId}`);
     
         // Toggle the selected class
         const likeButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="like"]`);
@@ -348,34 +347,48 @@
           button.classList.add('selected');
         }
     
-        // Optimistic count update
-        if (countEl) {
-          const counts = countEl.textContent.match(/(\d+) likes, (\d+) loves, (\d+) laughs/);
-          let likeCount = counts ? parseInt(counts[1]) : 0;
-          let loveCount = counts ? parseInt(counts[2]) : 0;
-          let laughCount = counts ? parseInt(counts[3]) : 0;
-        
-          // Get the previous reaction (if any)
-          const prevReaction = Array.from(document.querySelectorAll(`.reaction-button[data-post-id="${postId}"].selected`))
-            .map(btn => btn.getAttribute('data-reaction'))[0];
-        
-          // If there was a previous reaction, decrement its count
-          if (prevReaction) {
-            if (prevReaction === 'like') likeCount--;
-            if (prevReaction === 'love') loveCount--;
-            if (prevReaction === 'laugh') laughCount--;
+        // Only update counts for the author's posts
+        db.collection('posts').doc(postId).get().then((doc) => {
+          if (doc.exists) {
+            const post = doc.data();
+            if (post.authorId === user.uid) {
+              // Count reactions
+              const reactions = post.reactions || {};
+              let likeCount = 0, loveCount = 0, laughCount = 0;
+              Object.values(reactions).forEach(r => {
+                if (r === 'like') likeCount++;
+                if (r === 'love') loveCount++;
+                if (r === 'laugh') laughCount++;
+              });
+    
+              // Get the previous reaction (if any)
+              const prevReaction = reactions[user.uid];
+    
+              // If there was a previous reaction, decrement its count
+              if (prevReaction) {
+                if (prevReaction === 'like') likeCount--;
+                if (prevReaction === 'love') loveCount--;
+                if (prevReaction === 'laugh') laughCount--;
+              }
+    
+              // If the clicked button was not selected, increment its count
+              if (!wasSelected) {
+                if (reaction === 'like') likeCount++;
+                if (reaction === 'love') loveCount++;
+                if (reaction === 'laugh') laughCount++;
+              }
+    
+              // Update the UI for the author
+              const likeCountEl = likeButton ? likeButton.querySelector('.reaction-count') : null;
+              const loveCountEl = loveButton ? loveButton.querySelector('.reaction-count') : null;
+              const laughCountEl = laughButton ? laughButton.querySelector('.reaction-count') : null;
+    
+              if (likeCountEl) likeCountEl.textContent = likeCount;
+              if (loveCountEl) loveCountEl.textContent = loveCount;
+              if (laughCountEl) laughCountEl.textContent = laughCount;
+            }
           }
-        
-          // If the clicked button was not selected, increment its count
-          if (!wasSelected) {
-            if (reaction === 'like') likeCount++;
-            if (reaction === 'love') loveCount++;
-            if (reaction === 'laugh') laughCount++;
-          }
-        
-          countEl.textContent = `${likeCount} likes, ${loveCount} loves, ${laughCount} laughs`;
-        }
-
+        });
     
         // Perform the Firestore transaction
         db.runTransaction((transaction) => {
@@ -404,28 +417,26 @@
             if (reaction === 'love' && loveButton) loveButton.classList.add('selected');
             if (reaction === 'laugh' && laughButton) laughButton.classList.add('selected');
           }
-          // Revert count
-          if (countEl) {
-            const counts = countEl.textContent.match(/(\d+) likes, (\d+) loves, (\d+) laughs/);
-            let likeCount = counts ? parseInt(counts[1]) : 0;
-            let loveCount = counts ? parseInt(counts[2]) : 0;
-            let laughCount = counts ? parseInt(counts[3]) : 0;
-          
-            // If there was a previous reaction, increment its count
-            if (prevReaction) {
-              if (prevReaction === 'like') likeCount++;
-              if (prevReaction === 'love') loveCount++;
-              if (prevReaction === 'laugh') laughCount++;
-            }
-          
-            // If the clicked button was not selected, decrement its count
-            if (!wasSelected) {
-              if (reaction === 'like') likeCount--;
-              if (reaction === 'love') loveCount--;
-              if (reaction === 'laugh') laughCount--;
-            }
-          
-            countEl.textContent = `${likeCount} likes, ${loveCount} loves, ${laughCount} laughs`;
+          // Revert count for author
+          if (post.authorId === user.uid) {
+            db.collection('posts').doc(postId).get().then((doc) => {
+              if (doc.exists) {
+                const post = doc.data();
+                const reactions = post.reactions || {};
+                let likeCount = 0, loveCount = 0, laughCount = 0;
+                Object.values(reactions).forEach(r => {
+                  if (r === 'like') likeCount++;
+                  if (r === 'love') loveCount++;
+                  if (r === 'laugh') laughCount++;
+                });
+                const likeCountEl = likeButton ? likeButton.querySelector('.reaction-count') : null;
+                const loveCountEl = loveButton ? loveButton.querySelector('.reaction-count') : null;
+                const laughCountEl = laughButton ? laughButton.querySelector('.reaction-count') : null;
+                if (likeCountEl) likeCountEl.textContent = likeCount;
+                if (loveCountEl) loveCountEl.textContent = loveCount;
+                if (laughCountEl) laughCountEl.textContent = laughCount;
+              }
+            });
           }
         });
       }
