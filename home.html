@@ -553,7 +553,7 @@
     
           querySnapshot.forEach((doc) => {
             const comment = doc.data();
-            const promise = getCommentAuthorPicture(comment.authorId).then((profilePictureHTML) => {
+            const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
               const commentHTML = `
                 <div class="comment">
                   <div class="comment-author-picture">
@@ -579,7 +579,7 @@
     }
     
     // Function to get the author's profile picture for comments
-    function getCommentAuthorPicture(authorId) {
+    function getCommentAuthorPicture(authorId, authorName) {
       return db.collection('users').doc(authorId).get().then((userDoc) => {
         if (userDoc.exists) {
           const userData = userDoc.data();
@@ -588,7 +588,7 @@
             return `<img src="${profilePictureURL}" alt="Profile Picture" class="comment-author-picture">`;
           } else {
             // Use displayName for the initials fallback
-            return getInitialsFallback(userData.displayName || "Unknown User");
+            return getInitialsFallback(authorName || "Unknown User");
           }
         } else {
           return getInitialsFallback("Unknown User");
