@@ -294,6 +294,7 @@
                         ${profilePictureHTML}
                         <h4>${post.authorName}</h4>
                       </div>
+                      <span style="font-size: 12px; color: #666;">${formatTimestamp(post.timestamp.toDate())}</span>
                       <p>${post.content}</p>
                       ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
                       <div class="reactions">
@@ -332,6 +333,7 @@
                         ${getInitialsFallback(post.authorName)}
                         <h4>${post.authorName}</h4>
                       </div>
+                      <span style="font-size: 12px; color: #666;">${formatTimestamp(post.timestamp.toDate())}</span>
                       <p>${post.content}</p>
                       ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
                       <div class="reactions">
@@ -596,6 +598,11 @@
       }).catch(() => {
         return getInitialsFallback("Unknown User");
       });
+    }
+
+    function formatTimestamp(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleString(); // You can customize the format as needed
     }
 
     // Load posts when page loads
