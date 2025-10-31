@@ -269,11 +269,12 @@
           // Build the query
           let postsQuery = db.collection('posts').orderBy('timestamp', 'desc');
     
+          // Build the query
+          let postsQuery = db.collection('posts').orderBy('timestamp', 'desc');
           if (friendIds.length === 0) {
-            postsQuery = postsQuery.where('authorId', '==', user.uid);
+              postsQuery = postsQuery.where('authorId', '==', user.uid);
           } else {
-            // Otherwise, show posts from friends and the user
-            postsQuery = postsQuery.where('authorId', 'in', friendIds);
+              postsQuery = postsQuery.where('authorId', 'in', friendIds);
           }
     
           // Fetch posts
