@@ -238,7 +238,6 @@
                     postHTML += `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">`;
                   }
                   postHTML += `</div>`;
-                  feed.innerHTML += postHTML;
                 })
                 .catch((error) => {
                   console.error('Error fetching user data:', error);
@@ -264,6 +263,15 @@
           errorMessage.textContent = error.message;
         });
     }
+
+    db.collection('posts').onSnapshot((snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'modified') {
+          updateReactionCounts(change.doc.id);
+        }
+      });
+    });
+
 
     function getInitialsFallback(name) {
       const firstLetter = name.charAt(0).toUpperCase();
