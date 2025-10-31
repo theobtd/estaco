@@ -39,7 +39,7 @@
     <button id="back-to-home-button" class="button">Back to Home</button>
     <div class="profile-info">
         <img id="profile-picture" src="" alt="Profile Picture" style="max-width: 100px; border-radius: 50%;">
-        <input type="file" id="update-profile-pic" accept="image/*">
+        <input type="file" id="update-profile-pic" accept="image/*" style="display: none;">
         <button id="update-profile-pic-button" class="button">Update Profile Picture</button>
         <p><strong>Name:</strong> <span id="user-name"></span></p>
         <p><strong>Email:</strong> <span id="user-email"></span></p>
@@ -98,7 +98,12 @@
         
         // Update profile picture
         document.getElementById('update-profile-pic-button').addEventListener('click', () => {
-          const newProfilePicFile = document.getElementById('update-profile-pic').files[0];
+          const fileInput = document.getElementById('update-profile-pic');
+          fileInput.click(); // Programmatically trigger the file input
+        });
+        
+        document.getElementById('update-profile-pic').addEventListener('change', (event) => {
+          const newProfilePicFile = event.target.files[0];
           if (newProfilePicFile) {
             const user = auth.currentUser;
             const storageRef = storage.ref();
