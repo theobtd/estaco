@@ -53,6 +53,20 @@
       border-radius: 15%;
       margin-right: 10px;
     }
+    .reactions {
+      margin-top: 10px;
+    }
+    .reaction-button {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    .reaction-count {
+      font-size: 14px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -132,7 +146,8 @@
           authorId: user.uid,
           authorName: authorName,
           content: content,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          reactions: {}
         };
     
         // Upload post to Firestore
@@ -198,7 +213,8 @@
                   let profilePictureHTML = profilePictureURL
                     ? `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">`
                     : getInitialsFallback(post.authorName);
-              
+
+                  // Inside the forEach loop of loadPosts()
                   let postHTML = `
                     <div class="post">
                       <div class="post-header">
@@ -206,7 +222,17 @@
                         <h4>${post.authorName}</h4>
                       </div>
                       <p>${post.content}</p>
+                      <div class="reactions">
+                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="like">👍</button>
+                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="love">❤️</button>
+                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="laugh">😂</button>
+                        <span class="reaction-count" id="reaction-count-${doc.id}"></span>
+                      </div>
+                    </div>
                   `;
+                  // After adding the postHTML to the feed, call updateReactionCounts
+                  feed.innerHTML += postHTML;
+                  updateReactionCounts(doc.id);
                   // Only add img tag if photoURL exists
                   if (post.photoURL) {
                     postHTML += `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">`;
@@ -262,6 +288,55 @@
         </div>
       `;
     }
+
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('reaction-button')) {
+        const postId = e.target.getAttribute('data-post-id');
+        const reaction = e.target.getAttribute('data-reaction');
+        const user = auth.currentUser;
+        if (!user) return;
+    
+        const postRef = db.collection('posts').doc(postId);
+        db.runTransaction((transaction) => {
+          return transaction.get(postRef).then((doc) => {
+            if (!doc.exists) throw "Post does not exist!";
+            const postData = doc.data();
+            const reactions = postData.reactions || {};
+            const userReaction = reactions[user.uid];
+    
+            if (userReaction === reaction) {
+              // User is removing their reaction
+              delete reactions[user.uid];
+            } else {
+              // User is adding/changing their reaction
+              reactions[user.uid] = reaction;
+            }
+    
+            transaction.update(postRef, { reactions });
+          });
+        }).then(() => {
+          updateReactionCounts(postId);
+        }).catch((error) => {
+          console.error("Transaction failed: ", error);
+        });
+      }
+    });
+    
+    function updateReactionCounts(postId) {
+      const postRef = db.collection('posts').doc(postId);
+      postRef.get().then((doc) => {
+        if (doc.exists) {
+          const reactions = doc.data().reactions || {};
+          const counts = {
+            like: 0, love: 0, laugh: 0
+          };
+          Object.values(reactions).forEach((r) => counts[r]++);
+          const countEl = document.getElementById(`reaction-count-${postId}`);
+          countEl.textContent = `${counts.like} likes, ${counts.love} loves, ${counts.laugh} laughs`;
+        }
+      });
+    }
+
 
     // Load posts when page loads
     window.onload = loadPosts;
