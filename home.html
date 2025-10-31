@@ -64,7 +64,8 @@
       margin-right: 5px;
     }
     .reaction-count {
-      font-size: 14px;
+      font-size: 12px;
+      margin-left: 3px;
       color: #666;
     }
     .reaction-button.selected {
@@ -227,6 +228,21 @@
                   let loveClass = userReaction === 'love' ? 'selected' : '';
                   let laughClass = userReaction === 'laugh' ? 'selected' : '';
                   
+                  // Count reactions
+                  const reactions = post.reactions || {};
+                  let likeCount = 0, loveCount = 0, laughCount = 0;
+                  Object.values(reactions).forEach(reaction => {
+                    if (reaction === 'like') likeCount++;
+                    if (reaction === 'love') loveCount++;
+                    if (reaction === 'laugh') laughCount++;
+                  });
+                  
+                  // Only show counts if the current user is the author
+                  const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
+                  const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
+                  const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
+                  const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
+                  
                   let postHTML = `
                     <div class="post">
                       <div class="post-header">
@@ -236,9 +252,9 @@
                       <p>${post.content}</p>
                       ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
                       <div class="reactions">
-                        <button class="reaction-button ${likeClass}" data-post-id="${doc.id}" data-reaction="like">👍</button>
-                        <button class="reaction-button ${loveClass}" data-post-id="${doc.id}" data-reaction="love">❤️</button>
-                        <button class="reaction-button ${laughClass}" data-post-id="${doc.id}" data-reaction="laugh">😂</button>
+                        <button class="reaction-button ${likeClass}" data-post-id="${doc.id}" data-reaction="like">👍${likeCountHTML}</button>
+                        <button class="reaction-button ${loveClass}" data-post-id="${doc.id}" data-reaction="love">❤️${loveCountHTML}</button>
+                        <button class="reaction-button ${laughClass}" data-post-id="${doc.id}" data-reaction="laugh">😂${laughCountHTML}</button>
                       </div>
                     </div>
                   `;
