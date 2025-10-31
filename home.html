@@ -180,6 +180,7 @@
 
     // Check if user is signed in and verified
     auth.onAuthStateChanged((user) => {
+      console.log("Auth state changed, user:", user);
       if (!user || !user.emailVerified) {
         alert('Please sign in and verify your email to access the home feed.');
         window.location.href = 'index.html';
@@ -521,6 +522,7 @@
     
     // Function to add a comment to Firestore
     function addComment(postId, content) {
+      console.log("loadPosts called!");
       const user = auth.currentUser;
       if (!user) return;
     
