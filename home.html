@@ -50,7 +50,7 @@
     .post-author-picture {
       width: 40px;
       height: 40px;
-      border-radius: 50%;
+      border-radius: 15%; /* Rounded square */
       margin-right: 10px;
     }
   </style>
@@ -216,7 +216,7 @@
                   let postHTML = `
                     <div class="post">
                       <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <img src="https://via.placeholder.com/40" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                        <img src="https://via.placeholder.com/40" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 15%; margin-right: 10px;">
                         <h4>${post.authorName}</h4>
                       </div>
                       <p>${post.content}</p>
