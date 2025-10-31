@@ -67,6 +67,11 @@
       font-size: 14px;
       color: #666;
     }
+    .reaction-button.selected {
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      padding: 2px 4px;
+    }
   </style>
 </head>
 <body>
@@ -214,7 +219,14 @@
                     ? `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">`
                     : getInitialsFallback(post.authorName);
 
-                  // Inside the forEach loop of loadPosts()
+                  // Get the current user's reaction for this post
+                  const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
+                  
+                  // Generate reaction buttons, highlighting the user's reaction
+                  let likeClass = userReaction === 'like' ? 'selected' : '';
+                  let loveClass = userReaction === 'love' ? 'selected' : '';
+                  let laughClass = userReaction === 'laugh' ? 'selected' : '';
+                  
                   let postHTML = `
                     <div class="post">
                       <div class="post-header">
@@ -224,9 +236,9 @@
                       <p>${post.content}</p>
                       ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
                       <div class="reactions">
-                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="like">👍</button>
-                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="love">❤️</button>
-                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="laugh">😂</button>
+                        <button class="reaction-button ${likeClass}" data-post-id="${doc.id}" data-reaction="like">👍</button>
+                        <button class="reaction-button ${loveClass}" data-post-id="${doc.id}" data-reaction="love">❤️</button>
+                        <button class="reaction-button ${laughClass}" data-post-id="${doc.id}" data-reaction="laugh">😂</button>
                         <span class="reaction-count" id="reaction-count-${doc.id}"></span>
                       </div>
                     </div>
@@ -237,7 +249,14 @@
                 })
                 .catch((error) => {
                   console.error('Error fetching user data:', error);
-                  // Fallback if user data cannot be fetched
+                  // Get the current user's reaction for this post
+                  const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
+                  
+                  // Generate reaction buttons, highlighting the user's reaction
+                  let likeClass = userReaction === 'like' ? 'selected' : '';
+                  let loveClass = userReaction === 'love' ? 'selected' : '';
+                  let laughClass = userReaction === 'laugh' ? 'selected' : '';
+                  
                   let postHTML = `
                     <div class="post">
                       <div style="display: flex; align-items: center; margin-bottom: 10px;">
@@ -247,9 +266,9 @@
                       <p>${post.content}</p>
                       ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
                       <div class="reactions">
-                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="like">👍</button>
-                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="love">❤️</button>
-                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="laugh">😂</button>
+                        <button class="reaction-button ${likeClass}" data-post-id="${doc.id}" data-reaction="like">👍</button>
+                        <button class="reaction-button ${loveClass}" data-post-id="${doc.id}" data-reaction="love">❤️</button>
+                        <button class="reaction-button ${laughClass}" data-post-id="${doc.id}" data-reaction="laugh">😂</button>
                         <span class="reaction-count" id="reaction-count-${doc.id}"></span>
                       </div>
                     </div>
