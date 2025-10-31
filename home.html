@@ -108,12 +108,12 @@
     postButton.addEventListener('click', () => {
       const content = postContent.value;
       const photoFile = postPhoto.files[0];
-  
+    
       if (!content) {
         errorMessage.textContent = 'Post content cannot be empty.';
         return;
       }
-  
+    
       const user = auth.currentUser;
       user.reload().then(() => {
         const authorName = user.displayName || "Unknown User";
@@ -123,7 +123,7 @@
           content: content,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
-  
+    
         // Upload post to Firestore
         db.collection('posts').add(post)
           .then((docRef) => {
@@ -132,11 +132,9 @@
               const storageRef = storage.ref();
               const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
               const uploadTask = photoRef.put(photoFile);
-  
+    
               uploadTask.on('state_changed',
-                (snapshot) => {
-                  // Optional: Track upload progress
-                },
+                null,
                 (error) => {
                   console.error('Upload error:', error);
                   errorMessage.textContent = 'Failed to upload photo.';
@@ -145,15 +143,23 @@
                   // Upload complete, get the download URL
                   uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
                     // Update the post with the photo URL
-                    db.collection('posts').doc(docRef.id).update({ photoURL: downloadURL });
+                    db.collection('posts').doc(docRef.id).update({ photoURL: downloadURL })
+                      .then(() => {
+                        alert('Post created!');
+                        postContent.value = '';
+                        postPhoto.value = '';
+                        loadPosts(); // Reload posts after photo URL is updated
+                      });
                   });
                 }
               );
+            } else {
+              // No photo, just reload posts
+              alert('Post created!');
+              postContent.value = '';
+              postPhoto.value = '';
+              loadPosts();
             }
-            alert('Post created!');
-            postContent.value = '';
-            postPhoto.value = '';
-            loadPosts();
           })
           .catch((error) => {
             errorMessage.textContent = error.message;
