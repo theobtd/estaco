@@ -40,7 +40,7 @@
     <h1>Your Profile</h1>
     <button id="back-to-home-button" class="button">Back to Home</button>
     <div class="profile-info">
-        <img id="profile-picture" src="" alt="Profile Picture" style="max-width: 100px; border-radius: 50%;">
+        <img id="profile-picture" src="" alt="Profile Picture" style="max-width: 100px; border-radius: 15%;">
         <input type="file" id="update-profile-pic" accept="image/*" style="display: none;">
         <button id="update-profile-pic-button" class="button">Update Profile Picture</button>
         <p><strong>Name:</strong> <span id="user-name"></span></p>
@@ -129,19 +129,14 @@
         
               // Initialize Cropper.js
               cropper = new Cropper(cropperImage, {
-                aspectRatio: 1,
+                aspectRatio: 1, // Square aspect ratio
                 viewMode: 1,
                 dragMode: 'move',
                 guides: true,
                 highlight: false,
-                cropBoxMovable: false,
-                cropBoxResizable: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
                 modal: true,
-                ready() {
-                  // Set cropper to be a circle
-                  cropper.setAspectRatio(1);
-                  cropper.setDragMode('move');
-                }
               });
             };
             reader.readAsDataURL(file);
