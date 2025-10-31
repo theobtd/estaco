@@ -263,11 +263,19 @@
           // Include the user's own UID
           friendIds.push(user.uid);
     
-          // Fetch posts only from friends and the user
-          db.collection('posts')
-            .where('authorId', 'in', friendIds)
-            .orderBy('timestamp', 'desc')
-            .get()
+          // Build the query
+          let postsQuery = db.collection('posts').orderBy('timestamp', 'desc');
+    
+          // If the user has no friends, only show their own posts
+          if (friendIds.length === 1) {
+            postsQuery = postsQuery.where('authorId', '==', user.uid);
+          } else {
+            // Otherwise, show posts from friends and the user
+            postsQuery = postsQuery.where('authorId', 'in', friendIds);
+          }
+    
+          // Fetch posts
+          postsQuery.get()
             .then((querySnapshot) => {
               feed.innerHTML = '<h3>Your Feed</h3>';
               if (querySnapshot.empty) {
