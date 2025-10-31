@@ -190,15 +190,16 @@
         sendFriendRequestButton.addEventListener('click', () => {
             const friendName = searchFriendInput.value.trim();
             if (friendName) {
+                console.log(`Searching for user with name: ${friendName}`); // Log the search name
                 db.collection('users').where('name', '==', friendName).get()
                     .then(snapshot => {
+                        console.log(`Found ${snapshot.size} user(s) with name: ${friendName}`); // Log number of users found
                         if (!snapshot.empty) {
                             const friendUser = snapshot.docs[0].data();
-                            // Check if friendUser has a valid uid
                             if (friendUser && friendUser.uid) {
-                                sendRequest(auth.currentUser.uid, friendUser.uid, friendUser.name); // Use friendUser.name for the name
+                                sendRequest(auth.currentUser.uid, friendUser.uid, friendUser.name);
                             } else {
-                                alert('User not found or has no valid UID');
+                                alert('User found but has no valid UID');
                             }
                         } else {
                             alert('User not found');
@@ -208,6 +209,8 @@
                         console.error('Error searching for user: ', error);
                         alert('An error occurred while searching for the user.');
                     });
+            } else {
+                alert('Please enter a name to search');
             }
         });
 
