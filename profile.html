@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <title>Estaco - Profile</title>
     <style>
         body {
@@ -51,6 +53,18 @@
         <button id="logout-button" class="button">Log Out</button>
     </div>
 
+    <!-- Add this inside your <body>, after the profile-info div -->
+    <div id="cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
+      <div style="max-width: 500px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px;">
+        <h3>Crop Profile Picture</h3>
+        <div style="width: 100%; height: 400px;">
+          <img id="cropper-image" style="max-width: 100%;">
+        </div>
+        <button id="crop-done-button" class="button" style="margin-top: 10px;">Crop and Upload</button>
+        <button id="crop-cancel-button" class="button" style="margin-top: 10px; background-color: #f44336;">Cancel</button>
+      </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
@@ -96,39 +110,90 @@
           }
         });
         
-        // Update profile picture
+        // Upload profile picture
         document.getElementById('update-profile-pic-button').addEventListener('click', () => {
           const fileInput = document.getElementById('update-profile-pic');
-          fileInput.click(); // Programmatically trigger the file input
+          fileInput.click();
         });
         
+        let cropper;
         document.getElementById('update-profile-pic').addEventListener('change', (event) => {
-          const newProfilePicFile = event.target.files[0];
-          if (newProfilePicFile) {
-            const user = auth.currentUser;
-            const storageRef = storage.ref();
-            const profilePicRef = storageRef.child(`profilePictures/${user.uid}`);
-            const uploadTask = profilePicRef.put(newProfilePicFile);
+          const file = event.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const modal = document.getElementById('cropper-modal');
+              const cropperImage = document.getElementById('cropper-image');
+              cropperImage.src = e.target.result;
+              modal.style.display = 'block';
         
-            uploadTask.on('state_changed',
-              null,
-              (error) => {
-                console.error('Upload error:', error);
-                document.getElementById('error-message').textContent = 'Failed to upload profile picture.';
-              },
-              () => {
-                uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                  // Update Firestore
-                  db.collection('users').doc(user.uid).update({
-                    profilePictureURL: downloadURL
-                  })
-                  .then(() => {
-                    document.getElementById('profile-picture').src = downloadURL;
-                    document.getElementById('success-message').textContent = 'Profile picture updated!';
-                  });
-                });
-              }
-            );
+              // Initialize Cropper.js
+              cropper = new Cropper(cropperImage, {
+                aspectRatio: 1,
+                viewMode: 1,
+                dragMode: 'move',
+                guides: true,
+                highlight: false,
+                cropBoxMovable: false,
+                cropBoxResizable: false,
+                modal: true,
+                ready() {
+                  // Set cropper to be a circle
+                  cropper.setAspectRatio(1);
+                  cropper.setDragMode('move');
+                }
+              });
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+        
+        // Handle crop done
+        document.getElementById('crop-done-button').addEventListener('click', () => {
+          if (cropper) {
+            const canvas = cropper.getCroppedCanvas({
+              width: 200,
+              height: 200,
+              fillColor: '#fff',
+              imageSmoothingEnabled: true,
+              imageSmoothingQuality: 'high',
+            });
+            if (canvas) {
+              canvas.toBlob((blob) => {
+                const user = auth.currentUser;
+                const storageRef = storage.ref();
+                const profilePicRef = storageRef.child(`profilePictures/${user.uid}`);
+                const uploadTask = profilePicRef.put(blob);
+        
+                uploadTask.on('state_changed',
+                  null,
+                  (error) => {
+                    console.error('Upload error:', error);
+                    document.getElementById('error-message').textContent = 'Failed to upload profile picture.';
+                  },
+                  () => {
+                    uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                      db.collection('users').doc(user.uid).update({
+                        profilePictureURL: downloadURL
+                      }).then(() => {
+                        document.getElementById('profile-picture').src = downloadURL;
+                        document.getElementById('success-message').textContent = 'Profile picture updated!';
+                        document.getElementById('cropper-modal').style.display = 'none';
+                        cropper.destroy();
+                      });
+                    });
+                  }
+                );
+              }, 'image/jpeg');
+            }
+          }
+        });
+        
+        // Handle cancel
+        document.getElementById('crop-cancel-button').addEventListener('click', () => {
+          document.getElementById('cropper-modal').style.display = 'none';
+          if (cropper) {
+            cropper.destroy();
           }
         });
 
