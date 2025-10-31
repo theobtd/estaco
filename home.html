@@ -42,6 +42,17 @@
     #error-message {
       color: red;
     }
+    .post-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .post-author-picture {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
   </style>
 </head>
 <body>
@@ -179,17 +190,43 @@
           } else {
             querySnapshot.forEach((doc) => {
               const post = doc.data();
-              let postHTML = `
-                <div class="post">
-                  <h4>${post.authorName}</h4>
-                  <p>${post.content}</p>
-              `;
-              // Only add img tag if photoURL exists
-              if (post.photoURL) {
-                postHTML += `<img src="${post.photoURL}" style="max-width: 100%;">`;
-              }
-              postHTML += `</div>`;
-              feed.innerHTML += postHTML;
+              // Fetch author's profile picture
+              db.collection('users').doc(post.authorId).get()
+                .then((userDoc) => {
+                  let userData = userDoc.data();
+                  let profilePictureURL = userData && userData.profilePictureURL ? userData.profilePictureURL : 'https://via.placeholder.com/40'; // Fallback placeholder
+                  let postHTML = `
+                    <div class="post">
+                      <div class="post-header">
+                        <img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">
+                        <h4>${post.authorName}</h4>
+                      </div>
+                      <p>${post.content}</p>
+                  `;
+                  // Only add img tag if photoURL exists
+                  if (post.photoURL) {
+                    postHTML += `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">`;
+                  }
+                  postHTML += `</div>`;
+                  feed.innerHTML += postHTML;
+                })
+                .catch((error) => {
+                  console.error('Error fetching user data:', error);
+                  // Fallback if user data cannot be fetched
+                  let postHTML = `
+                    <div class="post">
+                      <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <img src="https://via.placeholder.com/40" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                        <h4>${post.authorName}</h4>
+                      </div>
+                      <p>${post.content}</p>
+                  `;
+                  if (post.photoURL) {
+                    postHTML += `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">`;
+                  }
+                  postHTML += `</div>`;
+                  feed.innerHTML += postHTML;
+                });
             });
           }
         })
