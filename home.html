@@ -222,6 +222,7 @@
                         <h4>${post.authorName}</h4>
                       </div>
                       <p>${post.content}</p>
+                      ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
                       <div class="reactions">
                         <button class="reaction-button" data-post-id="${doc.id}" data-reaction="like">👍</button>
                         <button class="reaction-button" data-post-id="${doc.id}" data-reaction="love">❤️</button>
@@ -233,11 +234,6 @@
                   // After adding the postHTML to the feed, call updateReactionCounts
                   feed.innerHTML += postHTML;
                   updateReactionCounts(doc.id);
-                  // Only add img tag if photoURL exists
-                  if (post.photoURL) {
-                    postHTML += `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">`;
-                  }
-                  postHTML += `</div>`;
                 })
                 .catch((error) => {
                   console.error('Error fetching user data:', error);
@@ -249,10 +245,15 @@
                         <h4>${post.authorName}</h4>
                       </div>
                       <p>${post.content}</p>
+                      ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
+                      <div class="reactions">
+                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="like">👍</button>
+                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="love">❤️</button>
+                        <button class="reaction-button" data-post-id="${doc.id}" data-reaction="laugh">😂</button>
+                        <span class="reaction-count" id="reaction-count-${doc.id}"></span>
+                      </div>
+                    </div>
                   `;
-                  if (post.photoURL) {
-                    postHTML += `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">`;
-                  }
                   postHTML += `</div>`;
                   feed.innerHTML += postHTML;
                 });
@@ -263,15 +264,6 @@
           errorMessage.textContent = error.message;
         });
     }
-
-    db.collection('posts').onSnapshot((snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'modified') {
-          updateReactionCounts(change.doc.id);
-        }
-      });
-    });
-
 
     function getInitialsFallback(name) {
       const firstLetter = name.charAt(0).toUpperCase();
