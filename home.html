@@ -335,23 +335,34 @@
           button.classList.add('selected');
         }
     
-        // Optimistic count update (optional)
+        // Optimistic count update
         if (countEl) {
           const counts = countEl.textContent.match(/(\d+) likes, (\d+) loves, (\d+) laughs/);
           let likeCount = counts ? parseInt(counts[1]) : 0;
           let loveCount = counts ? parseInt(counts[2]) : 0;
           let laughCount = counts ? parseInt(counts[3]) : 0;
-    
-          if (reaction === 'like') {
-            likeCount += wasSelected ? -1 : 1;
-          } else if (reaction === 'love') {
-            loveCount += wasSelected ? -1 : 1;
-          } else if (reaction === 'laugh') {
-            laughCount += wasSelected ? -1 : 1;
+        
+          // Get the previous reaction (if any)
+          const prevReaction = Array.from(document.querySelectorAll(`.reaction-button[data-post-id="${postId}"].selected`))
+            .map(btn => btn.getAttribute('data-reaction'))[0];
+        
+          // If there was a previous reaction, decrement its count
+          if (prevReaction) {
+            if (prevReaction === 'like') likeCount--;
+            if (prevReaction === 'love') loveCount--;
+            if (prevReaction === 'laugh') laughCount--;
           }
-    
+        
+          // If the clicked button was not selected, increment its count
+          if (!wasSelected) {
+            if (reaction === 'like') likeCount++;
+            if (reaction === 'love') loveCount++;
+            if (reaction === 'laugh') laughCount++;
+          }
+        
           countEl.textContent = `${likeCount} likes, ${loveCount} loves, ${laughCount} laughs`;
         }
+
     
         // Perform the Firestore transaction
         db.runTransaction((transaction) => {
@@ -380,9 +391,28 @@
             if (reaction === 'love' && loveButton) loveButton.classList.add('selected');
             if (reaction === 'laugh' && laughButton) laughButton.classList.add('selected');
           }
-          // Revert count (optional)
+          // Revert count
           if (countEl) {
-            updateReactionCounts(postId);
+            const counts = countEl.textContent.match(/(\d+) likes, (\d+) loves, (\d+) laughs/);
+            let likeCount = counts ? parseInt(counts[1]) : 0;
+            let loveCount = counts ? parseInt(counts[2]) : 0;
+            let laughCount = counts ? parseInt(counts[3]) : 0;
+          
+            // If there was a previous reaction, increment its count
+            if (prevReaction) {
+              if (prevReaction === 'like') likeCount++;
+              if (prevReaction === 'love') loveCount++;
+              if (prevReaction === 'laugh') laughCount++;
+            }
+          
+            // If the clicked button was not selected, decrement its count
+            if (!wasSelected) {
+              if (reaction === 'like') likeCount--;
+              if (reaction === 'love') loveCount--;
+              if (reaction === 'laugh') laughCount--;
+            }
+          
+            countEl.textContent = `${likeCount} likes, ${loveCount} loves, ${laughCount} laughs`;
           }
         });
       }
