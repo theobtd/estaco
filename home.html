@@ -584,6 +584,23 @@
       return date.toLocaleString(); // You can customize the format as needed
     }
 
+    // Function to log the current user's friends to the console
+    function logUserFriends(userId) {
+        db.collection('friends').doc(userId).get()
+            .then((doc) => {
+                if (doc.exists) {
+                    const friends = doc.data()?.friends || [];
+                    console.log("User's friends:", friends);
+                } else {
+                    console.log("No friends document found for this user.");
+                }
+            })
+            .catch((error) => {
+                console.error("Error fetching friends:", error);
+            });
+    }
+
+
     // Load posts when page loads
     window.onload = loadPosts;
   </script>
