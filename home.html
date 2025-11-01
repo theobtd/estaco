@@ -590,11 +590,33 @@
     // Function to log the current user's friends and their posts to the console
     async function logUserFriendsWithPosts(userId) {
         try {
+            console.log("User and friends' posts:");
+    
+            // Log the current user and their posts
+            const userPostsSnapshot = await db.collection('posts')
+                .where('authorId', '==', userId)
+                .orderBy('timestamp', 'desc')
+                .get();
+    
+            const userPosts = userPostsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+    
+            console.log(`- User: ${auth.currentUser.displayName || "Current User"}`);
+            if (userPosts.length > 0) {
+                console.log("  Posts:");
+                userPosts.forEach(post => {
+                    console.log(`  - Post ID: ${post.id}, Content: "${post.content}"`);
+                });
+            } else {
+                console.log("  No posts found.");
+            }
+    
+            // Log the user's friends and their posts
             const friendsDoc = await db.collection('friends').doc(userId).get();
             if (friendsDoc.exists) {
                 const friends = friendsDoc.data()?.friends || [];
-                console.log("User's friends and their posts:");
-    
                 for (const friend of friends) {
                     const postsSnapshot = await db.collection('posts')
                         .where('authorId', '==', friend.uid)
@@ -620,11 +642,9 @@
                 console.log("No friends document found for this user.");
             }
         } catch (error) {
-            console.error("Error fetching friends or posts:", error);
+            console.error("Error fetching user/friends or posts:", error);
         }
     }
-
-
 
     // Load posts when page loads
     window.onload = loadPosts;
