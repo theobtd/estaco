@@ -255,93 +255,99 @@
 
     // Load posts from Firestore
     function loadPosts() {
-      db.collection('posts')
-        .orderBy('timestamp', 'desc')
-        .get()
-        .then((querySnapshot) => {
-          feed.innerHTML = '<h3>Your Feed</h3>';
-          if (querySnapshot.empty) {
-            feed.innerHTML += '<p>No posts yet. Create one!</p>';
-          } else {
-            // Create an array to hold promises for fetching user data
-            const userPromises = [];
-            const postsData = [];
+        const user = auth.currentUser;
+        if (!user) return;
     
-            querySnapshot.forEach((doc) => {
-              const post = doc.data();
-              post.id = doc.id; // Store post ID for later use
-              postsData.push(post);
-              // Push user data fetch promise
-              userPromises.push(
-                db.collection('users').doc(post.authorId).get().then((userDoc) => {
-                  post.authorData = userDoc.data(); // Attach author data directly to post
+        logUserFriendsWithPosts(user.uid).then(friendIds => {
+            // Include the current user's ID in the query
+            friendIds.push(user.uid);
+            
+            db.collection('posts')
+                .where('authorId', 'in', friendIds) // Query for posts authored by the user or friends
+                .orderBy('timestamp', 'desc')
+                .get()
+                .then((querySnapshot) => {
+                    feed.innerHTML = '<h3>Your Feed</h3>';
+                    if (querySnapshot.empty) {
+                        feed.innerHTML += '<p>No posts yet. Create one!</p>';
+                    } else {
+                        const userPromises = [];
+                        const postsData = [];
+    
+                        querySnapshot.forEach((doc) => {
+                            const post = doc.data();
+                            post.id = doc.id; // Store post ID for later use
+                            postsData.push(post);
+                            userPromises.push(
+                                db.collection('users').doc(post.authorId).get().then((userDoc) => {
+                                    post.authorData = userDoc.data(); // Attach author data directly to post
+                                })
+                            );
+                        });
+    
+                        Promise.all(userPromises).then(() => {
+                            postsData.forEach((post) => {
+                                const profilePictureURL = post.authorData && post.authorData.profilePictureURL ? post.authorData.profilePictureURL : null;
+                                const profilePictureHTML = profilePictureURL ? 
+                                    `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">` : 
+                                    getInitialsFallback(post.authorName);
+    
+                                // Get the current user's reaction for this post
+                                const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
+                                const likeClass = userReaction === 'like' ? 'selected' : '';
+                                const loveClass = userReaction === 'love' ? 'selected' : '';
+                                const laughClass = userReaction === 'laugh' ? 'selected' : '';
+    
+                                const reactions = post.reactions || {};
+                                let likeCount = 0, loveCount = 0, laughCount = 0;
+                                Object.values(reactions).forEach(reaction => {
+                                    if (reaction === 'like') likeCount++;
+                                    if (reaction === 'love') loveCount++;
+                                    if (reaction === 'laugh') laughCount++;
+                                });
+    
+                                const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
+                                const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
+                                const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
+                                const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
+    
+                                let postHTML = `
+                                    <div class="post">
+                                        <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="display: flex; align-items: center;">
+                                                ${profilePictureHTML}
+                                                <h4 style="margin: 0;">${post.authorName}</h4>
+                                            </div>
+                                            <span style="font-size: 12px; color: #666; margin-left: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
+                                        </div>
+                                        <p>${post.content}</p>
+                                        ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
+                                        <div class="reactions">
+                                            <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
+                                            <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
+                                            <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
+                                        </div>
+                                        <div class="comments-section">
+                                            <div class="comment-form">
+                                                <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${post.id}">
+                                                <button class="comment-button" data-post-id="${post.id}">Post</button>
+                                            </div>
+                                            <div class="comments-list" id="comments-${post.id}">
+                                                <!-- Comments will be loaded here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+    
+                                feed.innerHTML += postHTML; // Append each post directly
+                                loadComments(post.id); // Load comments for each post
+                            });
+                        });
+                    }
                 })
-              );
-            });
-    
-            // Wait for all user data to be fetched before displaying posts
-            Promise.all(userPromises).then(() => {
-              postsData.forEach((post) => {
-                const profilePictureURL = post.authorData && post.authorData.profilePictureURL ? post.authorData.profilePictureURL : null;
-                const profilePictureHTML = profilePictureURL ? 
-                  `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">` : 
-                  getInitialsFallback(post.authorName);
-    
-                // Get the current user's reaction for this post
-                const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
-                const likeClass = userReaction === 'like' ? 'selected' : '';
-                const loveClass = userReaction === 'love' ? 'selected' : '';
-                const laughClass = userReaction === 'laugh' ? 'selected' : '';
-    
-                const reactions = post.reactions || {};
-                let likeCount = 0, loveCount = 0, laughCount = 0;
-                Object.values(reactions).forEach(reaction => {
-                  if (reaction === 'like') likeCount++;
-                  if (reaction === 'love') loveCount++;
-                  if (reaction === 'laugh') laughCount++;
+                .catch((error) => {
+                    errorMessage.textContent = error.message;
                 });
-    
-                const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
-                const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
-                const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
-                const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
-    
-                let postHTML = `
-                  <div class="post">
-                    <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
-                      <div style="display: flex; align-items: center;">
-                        ${profilePictureHTML}
-                        <h4 style="margin: 0;">${post.authorName}</h4>
-                      </div>
-                      <span style="font-size: 12px; color: #666; margin-left: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
-                    </div>
-                    <p>${post.content}</p>
-                    ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
-                    <div class="reactions">
-                      <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
-                      <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
-                      <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
-                    </div>
-                    <div class="comments-section">
-                      <div class="comment-form">
-                        <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${post.id}">
-                        <button class="comment-button" data-post-id="${post.id}">Post</button>
-                      </div>
-                      <div class="comments-list" id="comments-${post.id}">
-                        <!-- Comments will be loaded here -->
-                      </div>
-                    </div>
-                  </div>
-                `;
-    
-                feed.innerHTML += postHTML; // Append each post directly
-                loadComments(post.id); // Load comments for each post
-              });
-            });
-          }
-        })
-        .catch((error) => {
-          errorMessage.textContent = error.message;
         });
     }
 
@@ -589,9 +595,8 @@
 
     // Function to log the current user's friends and their posts to the console
     async function logUserFriendsWithPosts(userId) {
+        let friendIds = [];
         try {
-            console.log("User and friends' posts:");
-    
             // Log the current user and their posts
             const userPostsSnapshot = await db.collection('posts')
                 .where('authorId', '==', userId)
@@ -616,10 +621,10 @@
             // Log the user's friends and their posts
             const friendsDoc = await db.collection('friends').doc(userId).get();
             if (friendsDoc.exists) {
-                const friends = friendsDoc.data()?.friends || [];
-                for (const friend of friends) {
+                friendIds = friendsDoc.data()?.friends.map(friend => friend.uid) || [];
+                for (const friend of friendIds) {
                     const postsSnapshot = await db.collection('posts')
-                        .where('authorId', '==', friend.uid)
+                        .where('authorId', '==', friend)
                         .orderBy('timestamp', 'desc')
                         .get();
     
@@ -628,7 +633,7 @@
                         ...doc.data()
                     }));
     
-                    console.log(`- Friend: ${friend.name}`);
+                    console.log(`- Friend: ${friend}`);
                     if (posts.length > 0) {
                         console.log("  Posts:");
                         posts.forEach(post => {
@@ -644,6 +649,7 @@
         } catch (error) {
             console.error("Error fetching user/friends or posts:", error);
         }
+        return friendIds; // Return the list of friend IDs
     }
 
     // Load posts when page loads
