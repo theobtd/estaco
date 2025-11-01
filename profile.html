@@ -278,16 +278,31 @@
         }
 
         function removeFriend(userId, friendUid) {
-            // Remove friend from current user's friend list
-            db.collection('friends').doc(userId).update({
-                friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendUid })
-            });
-            // Remove current user from friend's friend list
-            db.collection('friends').doc(friendUid).update({
-                friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userId })
-            });
-            // Reload the friend list
-            loadCurrentFriends(userId);
+            // Fetch the friend's name
+            db.collection('users').doc(friendUid).get()
+                .then((friendDoc) => {
+                    if (friendDoc.exists) {
+                        const friendName = friendDoc.data().name;
+                        // Remove friend from current user's friend list
+                        db.collection('friends').doc(userId).update({
+                            friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName })
+                        });
+                        // Remove current user from friend's friend list
+                        db.collection('users').doc(userId).get()
+                            .then((userDoc) => {
+                                const userName = userDoc.data().name;
+                                db.collection('friends').doc(friendUid).update({
+                                    friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName })
+                                });
+                                // Reload the friend list
+                                loadCurrentFriends(userId);
+                            });
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error removing friend: ", error);
+                    alert("Failed to remove friend.");
+                });
         }
 
         // Display user information
