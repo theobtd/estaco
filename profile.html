@@ -269,10 +269,16 @@
                                     snapshot.forEach(doc => {
                                         doc.ref.delete();
                                     });
+                                    // Remove the accepted request from the DOM
+                                    const pendingRequests = document.querySelectorAll('.pending-friend');
+                                    pendingRequests.forEach(requestDiv => {
+                                        if (requestDiv.textContent.includes(fromName)) {
+                                            requestDiv.remove();
+                                        }
+                                    });
+                                    alert('Friend request accepted!');
+                                    loadCurrentFriends(toId);
                                 });
-                            alert('Friend request accepted!');
-                            loadPendingRequests(toId);
-                            loadCurrentFriends(toId);
                         });
                 });
         }
