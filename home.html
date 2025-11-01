@@ -252,13 +252,6 @@
 
     // Load posts from Firestore
     function loadPosts() {
-      const user = auth.currentUser;
-      if (!user) return;
-    
-      // Fetch and log friends list
-      const friendIds = await getFriendsList(user.uid);
-      console.log("Current user's friends (including self):", friendIds);
-      
       db.collection('posts')
         .orderBy('timestamp', 'desc')
         .get()
@@ -589,22 +582,6 @@
     function formatTimestamp(timestamp) {
       const date = new Date(timestamp);
       return date.toLocaleString(); // You can customize the format as needed
-    }
-
-    async function getFriendsList(userId) {
-      try {
-        const friendsDoc = await db.collection('friends').doc(userId).get();
-        if (friendsDoc.exists) {
-          const friends = friendsDoc.data().friends || [];
-          const friendIds = friends.map(friend => friend.uid);
-          return [userId, ...friendIds]; // Include current user
-        } else {
-          return [userId]; // If no friends, return only the current user
-        }
-      } catch (error) {
-        console.error("Error fetching friends list:", error);
-        return [userId]; // Fallback: only current user
-      }
     }
 
     // Load posts when page loads
