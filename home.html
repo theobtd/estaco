@@ -256,7 +256,7 @@
     let lastVisiblePost = null; // To keep track of the last fetched post
     const postLimit = 10; // Number of posts to load at a time
     
-    function loadPosts() {
+    async function loadPosts() {
         const user = auth.currentUser;
         if (!user) return;
     
