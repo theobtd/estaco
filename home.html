@@ -251,42 +251,40 @@
     });
 
     // Load posts from Firestore
-    async function loadPosts() {
-      const user = auth.currentUser;
-      if (!user) return;
-    
-      const friendIds = await getFriendsList(user.uid);
-    
+    function loadPosts() {
       db.collection('posts')
-        .where('authorId', 'in', friendIds)
         .orderBy('timestamp', 'desc')
         .get()
         .then((querySnapshot) => {
           feed.innerHTML = '<h3>Your Feed</h3>';
           if (querySnapshot.empty) {
-            feed.innerHTML += '<p>No posts from your friends yet. Create one!</p>';
+            feed.innerHTML += '<p>No posts yet. Create one!</p>';
           } else {
+            // Create an array to hold promises for fetching user data
             const userPromises = [];
             const postsData = [];
     
             querySnapshot.forEach((doc) => {
               const post = doc.data();
-              post.id = doc.id;
+              post.id = doc.id; // Store post ID for later use
               postsData.push(post);
+              // Push user data fetch promise
               userPromises.push(
                 db.collection('users').doc(post.authorId).get().then((userDoc) => {
-                  post.authorData = userDoc.data();
+                  post.authorData = userDoc.data(); // Attach author data directly to post
                 })
               );
             });
     
+            // Wait for all user data to be fetched before displaying posts
             Promise.all(userPromises).then(() => {
               postsData.forEach((post) => {
                 const profilePictureURL = post.authorData && post.authorData.profilePictureURL ? post.authorData.profilePictureURL : null;
-                const profilePictureHTML = profilePictureURL ?
-                  `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">` :
+                const profilePictureHTML = profilePictureURL ? 
+                  `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">` : 
                   getInitialsFallback(post.authorName);
     
+                // Get the current user's reaction for this post
                 const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
                 const likeClass = userReaction === 'like' ? 'selected' : '';
                 const loveClass = userReaction === 'love' ? 'selected' : '';
@@ -327,13 +325,14 @@
                         <button class="comment-button" data-post-id="${post.id}">Post</button>
                       </div>
                       <div class="comments-list" id="comments-${post.id}">
+                        <!-- Comments will be loaded here -->
                       </div>
                     </div>
                   </div>
                 `;
     
-                feed.innerHTML += postHTML;
-                loadComments(post.id);
+                feed.innerHTML += postHTML; // Append each post directly
+                loadComments(post.id); // Load comments for each post
               });
             });
           }
@@ -584,14 +583,6 @@
       const date = new Date(timestamp);
       return date.toLocaleString(); // You can customize the format as needed
     }
-
-    async function getFriendsList(userId) {
-      const friendsDoc = await db.collection('friends').doc(userId).get();
-      const friends = friendsDoc.data()?.friends || [];
-      const friendIds = friends.map(friend => friend.uid);
-      return [userId, ...friendIds]; // Include current user
-    }
-
 
     // Load posts when page loads
     window.onload = loadPosts;
