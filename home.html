@@ -180,10 +180,13 @@
 
     // Check if user is signed in and verified
     auth.onAuthStateChanged((user) => {
-      if (!user || !user.emailVerified) {
-        alert('Please sign in and verify your email to access the home feed.');
-        window.location.href = 'index.html';
-      }
+        if (!user || !user.emailVerified) {
+            alert('Please sign in and verify your email to access the home feed.');
+            window.location.href = 'index.html';
+        } else {
+            logUserFriends(user.uid); // Log the user's friends
+            loadPosts(); // Load posts as usual
+        }
     });
 
     // Create a new post
