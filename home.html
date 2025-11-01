@@ -253,103 +253,117 @@
       });
     });
 
-    // Load posts from Firestore
+    let lastVisiblePost = null; // To keep track of the last fetched post
+    const postLimit = 10; // Number of posts to load at a time
+    
     function loadPosts() {
         const user = auth.currentUser;
         if (!user) return;
     
-        logUserFriendsWithPosts(user.uid).then(friendIds => {
-            // Include the current user's ID in the query
-            friendIds.push(user.uid);
-            
-            db.collection('posts')
-                .where('authorId', 'in', friendIds) // Query for posts authored by the user or friends
-                .orderBy('timestamp', 'desc')
-                .get()
-                .then((querySnapshot) => {
-                    feed.innerHTML = '<h3>Your Feed</h3>';
-                    if (querySnapshot.empty) {
-                        feed.innerHTML += '<p>No posts yet. Create one!</p>';
-                    } else {
-                        const userPromises = [];
-                        const postsData = [];
+        const friendIds = await logUserFriendsWithPosts(user.uid);
+        friendIds.push(user.uid); // Include current user's ID
     
-                        querySnapshot.forEach((doc) => {
-                            const post = doc.data();
-                            post.id = doc.id; // Store post ID for later use
-                            postsData.push(post);
-                            userPromises.push(
-                                db.collection('users').doc(post.authorId).get().then((userDoc) => {
-                                    post.authorData = userDoc.data(); // Attach author data directly to post
-                                })
-                            );
-                        });
+        // Create the query
+        let query = db.collection('posts')
+            .where('authorId', 'in', friendIds)
+            .orderBy('timestamp', 'desc')
+            .limit(postLimit); // Limit to the number of posts
     
-                        Promise.all(userPromises).then(() => {
-                            postsData.forEach((post) => {
-                                const profilePictureURL = post.authorData && post.authorData.profilePictureURL ? post.authorData.profilePictureURL : null;
-                                const profilePictureHTML = profilePictureURL ? 
-                                    `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">` : 
-                                    getInitialsFallback(post.authorName);
+        if (lastVisiblePost) {
+            query = query.startAfter(lastVisiblePost); // Start after the last fetched post
+        }
     
-                                // Get the current user's reaction for this post
-                                const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
-                                const likeClass = userReaction === 'like' ? 'selected' : '';
-                                const loveClass = userReaction === 'love' ? 'selected' : '';
-                                const laughClass = userReaction === 'laugh' ? 'selected' : '';
+        query.get().then((querySnapshot) => {
+            if (querySnapshot.empty) {
+                feed.innerHTML += '<p>No more posts to load.</p>';
+                return;
+            }
     
-                                const reactions = post.reactions || {};
-                                let likeCount = 0, loveCount = 0, laughCount = 0;
-                                Object.values(reactions).forEach(reaction => {
-                                    if (reaction === 'like') likeCount++;
-                                    if (reaction === 'love') loveCount++;
-                                    if (reaction === 'laugh') laughCount++;
-                                });
+            const postsData = [];
+            querySnapshot.forEach((doc) => {
+                const post = doc.data();
+                post.id = doc.id; // Store post ID
+                postsData.push(post);
+                lastVisiblePost = doc; // Update the last visible post
+            });
     
-                                const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
-                                const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
-                                const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
-                                const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
-    
-                                let postHTML = `
-                                    <div class="post">
-                                        <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
-                                            <div style="display: flex; align-items: center;">
-                                                ${profilePictureHTML}
-                                                <h4 style="margin: 0;">${post.authorName}</h4>
-                                            </div>
-                                            <span style="font-size: 12px; color: #666; margin-left: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
-                                        </div>
-                                        <p>${post.content}</p>
-                                        ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
-                                        <div class="reactions">
-                                            <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
-                                            <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
-                                            <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
-                                        </div>
-                                        <div class="comments-section">
-                                            <div class="comment-form">
-                                                <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${post.id}">
-                                                <button class="comment-button" data-post-id="${post.id}">Post</button>
-                                            </div>
-                                            <div class="comments-list" id="comments-${post.id}">
-                                                <!-- Comments will be loaded here -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-    
-                                feed.innerHTML += postHTML; // Append each post directly
-                                loadComments(post.id); // Load comments for each post
-                            });
-                        });
-                    }
-                })
-                .catch((error) => {
-                    errorMessage.textContent = error.message;
-                });
+            // Render posts as before
+            renderPosts(postsData);
+        }).catch((error) => {
+            errorMessage.textContent = error.message;
         });
     }
+    
+    // Function to render posts
+    function renderPosts(postsData) {
+        postsData.forEach((post) => {
+            const profilePictureURL = post.authorData && post.authorData.profilePictureURL ? post.authorData.profilePictureURL : null;
+            const profilePictureHTML = profilePictureURL ? 
+                `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">` : 
+                getInitialsFallback(post.authorName);
+    
+            // Get the current user's reaction for this post
+            const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
+            const likeClass = userReaction === 'like' ? 'selected' : '';
+            const loveClass = userReaction === 'love' ? 'selected' : '';
+            const laughClass = userReaction === 'laugh' ? 'selected' : '';
+    
+            const reactions = post.reactions || {};
+            let likeCount = 0, loveCount = 0, laughCount = 0;
+            Object.values(reactions).forEach(reaction => {
+                if (reaction === 'like') likeCount++;
+                if (reaction === 'love') loveCount++;
+                if (reaction === 'laugh') laughCount++;
+            });
+    
+            const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
+            const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
+            const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
+            const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
+    
+            let postHTML = `
+                <div class="post">
+                    <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center;">
+                            ${profilePictureHTML}
+                            <h4 style="margin: 0;">${post.authorName}</h4>
+                        </div>
+                        <span style="font-size: 12px; color: #666; margin-left: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
+                    </div>
+                    <p>${post.content}</p>
+                    ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
+                    <div class="reactions">
+                        <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
+                        <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
+                        <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
+                    </div>
+                    <div class="comments-section">
+                        <div class="comment-form">
+                            <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${post.id}">
+                            <button class="comment-button" data-post-id="${post.id}">Post</button>
+                        </div>
+                        <div class="comments-list" id="comments-${post.id}">
+                            <!-- Comments will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            `;
+    
+            // Append each post directly to the feed
+            feed.innerHTML += postHTML;
+    
+            // Load comments for each post
+            loadComments(post.id);
+        });
+    }
+    
+    // Load more posts when the button is clicked
+    document.getElementById('load-more-button').addEventListener('click', () => {
+        loadPosts();
+    });
+    
+    // Call loadPosts initially to load the first batch
+    loadPosts();
 
     function getInitialsFallback(name) {
       const firstLetter = name.charAt(0).toUpperCase();
