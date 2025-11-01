@@ -251,27 +251,33 @@
     });
 
     // Load posts from Firestore
-    function loadPosts() {
+    async function loadPosts() {
+      const user = auth.currentUser;
+      if (!user) return;
+    
+      // Get the list of friend UIDs (including the user's own UID)
+      const friendIds = await getUserFriends(user.uid);
+    
+      // Query posts only from friends or the user
       db.collection('posts')
+        .where('authorId', 'in', friendIds)
         .orderBy('timestamp', 'desc')
         .get()
         .then((querySnapshot) => {
           feed.innerHTML = '<h3>Your Feed</h3>';
           if (querySnapshot.empty) {
-            feed.innerHTML += '<p>No posts yet. Create one!</p>';
+            feed.innerHTML += '<p>No posts from your friends yet. Create one!</p>';
           } else {
-            // Create an array to hold promises for fetching user data
             const userPromises = [];
             const postsData = [];
     
             querySnapshot.forEach((doc) => {
               const post = doc.data();
-              post.id = doc.id; // Store post ID for later use
+              post.id = doc.id;
               postsData.push(post);
-              // Push user data fetch promise
               userPromises.push(
                 db.collection('users').doc(post.authorId).get().then((userDoc) => {
-                  post.authorData = userDoc.data(); // Attach author data directly to post
+                  post.authorData = userDoc.data();
                 })
               );
             });
@@ -582,6 +588,14 @@
     function formatTimestamp(timestamp) {
       const date = new Date(timestamp);
       return date.toLocaleString(); // You can customize the format as needed
+    }
+
+    async function getUserFriends(userId) {
+      const friendsDoc = await db.collection('friends').doc(userId).get();
+      const friends = friendsDoc.data()?.friends || [];
+      const friendIds = friends.map(friend => friend.uid);
+      friendIds.push(userId); // Include the user's own posts
+      return friendIds;
     }
 
     // Load posts when page loads
