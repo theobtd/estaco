@@ -257,6 +257,7 @@
     
       // Get the list of friend UIDs (including the user's own UID)
       const friendIds = await getUserFriends(user.uid);
+      console.log("Friend IDs:", friendIds);
     
       // Query posts only from friends or the user
       db.collection('posts')
