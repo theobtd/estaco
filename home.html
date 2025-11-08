@@ -124,27 +124,6 @@
       color: #666;
       margin-top: -15px; /* Adjust as needed to move it closer to the header */
     }
-    #loading-indicator {
-        display: none;
-        text-align: center;
-        padding: 10px;
-        color: #666;
-        font-style: italic;
-    }
-    .loader {
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #4CAF50;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto;
-        display: inline-block;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
   </style>
 </head>
 <body>
@@ -163,10 +142,6 @@
   <div id="feed">
     <h3>Your Feed</h3>
     <p>No posts yet. Create one!</p>
-    <div id="loading-indicator">
-        <div class="loader"></div>
-        <p>Loading more posts...</p>
-    </div>
   </div>
 
 
@@ -286,16 +261,12 @@
     const postLimit = 3; // Number of posts to load at a time
     
     async function loadPosts() {
-        if (isLoading) return;
+        if (isLoading) return; // Prevent multiple simultaneous loads
         isLoading = true;
-    
-        // Show loading indicator
-        document.getElementById('loading-indicator').style.display = 'block';
     
         const user = auth.currentUser;
         if (!user) {
             isLoading = false;
-            document.getElementById('loading-indicator').style.display = 'none';
             return;
         }
     
@@ -315,7 +286,6 @@
             if (querySnapshot.empty) {
                 feed.innerHTML += '<p>No more posts to load.</p>';
                 isLoading = false;
-                document.getElementById('loading-indicator').style.display = 'none';
                 return;
             }
     
@@ -334,11 +304,9 @@
     
             renderPosts(postsData);
             isLoading = false;
-            document.getElementById('loading-indicator').style.display = 'none';
         }).catch((error) => {
             errorMessage.textContent = error.message;
             isLoading = false;
-            document.getElementById('loading-indicator').style.display = 'none';
         });
     }
     
