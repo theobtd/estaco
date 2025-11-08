@@ -371,9 +371,6 @@
     document.getElementById('load-more-button').addEventListener('click', () => {
         loadPosts();
     });
-    
-    // Call loadPosts initially to load the first batch
-    loadPosts();
 
     function getInitialsFallback(name) {
       const firstLetter = name.charAt(0).toUpperCase();
