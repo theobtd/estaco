@@ -138,6 +138,11 @@
       <button id="post-button">Post</button>
       <p id="error-message"></p>
   </div>
+  
+  <div id="feed">
+    <h3>Your Feed</h3>
+    <p>No posts yet. Create one!</p>
+  </div>
 
   <div id="feed">
       <h3>Your Feed</h3>
@@ -167,27 +172,6 @@
     const db = firebase.firestore();
     const storage = firebase.storage();
 
-    firebase.firestore().enablePersistence()
-      .catch((err) => {
-        if (err.code === 'failed-precondition') {
-          console.log("Offline persistence can only be enabled in one tab at a time.");
-        } else if (err.code === 'unimplemented') {
-          console.log("The current browser does not support offline persistence.");
-        }
-      })
-      .then(() => {
-        // Only proceed after offline persistence is enabled
-        auth.onAuthStateChanged((user) => {
-          if (!user || !user.emailVerified) {
-            alert('Please sign in and verify your email to access the home feed.');
-            window.location.href = 'index.html';
-          } else {
-            logUserFriendsWithPosts(user.uid);
-            loadPosts();
-          }
-        });
-      });
-
     // DOM elements
     const postContent = document.getElementById('post-content');
     const postPhoto = document.getElementById('post-photo');
@@ -198,6 +182,17 @@
     const profileButton = document.getElementById('profile-button');
     profileButton.addEventListener('click', () => {
         window.location.href = 'profile.html';
+    });
+
+    // Check if user is signed in and verified
+    auth.onAuthStateChanged((user) => {
+        if (!user || !user.emailVerified) {
+            alert('Please sign in and verify your email to access the home feed.');
+            window.location.href = 'index.html';
+        } else {
+            logUserFriendsWithPosts(user.uid); // Call the new function
+            loadPosts();
+        }
     });
 
     // Create a new post
@@ -268,40 +263,41 @@
     const postLimit = 3; // Number of posts to load at a time
     
     async function loadPosts() {
-      const user = auth.currentUser;
-      if (!user) return;
+        const user = auth.currentUser;
+        if (!user) return;
     
-      try {
         const friendIds = await logUserFriendsWithPosts(user.uid);
         friendIds.push(user.uid); // Include current user's ID
     
+        // Create the query
         let query = db.collection('posts')
-          .where('authorId', 'in', friendIds)
-          .orderBy('timestamp', 'desc')
-          .limit(postLimit);
+            .where('authorId', 'in', friendIds)
+            .orderBy('timestamp', 'desc')
+            .limit(postLimit); // Limit to the number of posts
     
         if (lastVisiblePost) {
-          query = query.startAfter(lastVisiblePost);
+            query = query.startAfter(lastVisiblePost); // Start after the last fetched post
         }
     
-        const querySnapshot = await query.get();
-        if (querySnapshot.empty) {
-          feed.innerHTML += '<p>No more posts to load.</p>';
-          return;
-        }
+        query.get().then((querySnapshot) => {
+            if (querySnapshot.empty) {
+                feed.innerHTML += '<p>No more posts to load.</p>';
+                return;
+            }
     
-        const postsData = [];
-        querySnapshot.forEach((doc) => {
-          postsData.push({ id: doc.id, ...doc.data() });
-          lastVisiblePost = doc;
+            const postsData = [];
+            querySnapshot.forEach((doc) => {
+                const post = doc.data();
+                post.id = doc.id; // Store post ID
+                postsData.push(post);
+                lastVisiblePost = doc; // Update the last visible post
+            });
+    
+            // Render posts as before
+            renderPosts(postsData);
+        }).catch((error) => {
+            errorMessage.textContent = error.message;
         });
-    
-        renderPosts(postsData);
-      } catch (error) {
-        console.error("Error loading posts:", error);
-        // Show a user-friendly message
-        feed.innerHTML = '<p>Could not load posts. You may be offline. Try again later.</p>';
-      }
     }
     
     // Function to render posts
@@ -371,6 +367,9 @@
     document.getElementById('load-more-button').addEventListener('click', () => {
         loadPosts();
     });
+    
+    // Call loadPosts initially to load the first batch
+    loadPosts();
 
     function getInitialsFallback(name) {
       const firstLetter = name.charAt(0).toUpperCase();
@@ -632,115 +631,66 @@
     }
 
     // Function to log the current user's friends and their posts to the console
-    const FRIENDS_CACHE_KEY = 'estaco_friends_cache';
-    const CACHE_EXPIRY_MINUTES = 10; // Cache expires after 10 minutes
-    
     async function logUserFriendsWithPosts(userId) {
-      let friendIds = [];
-    
-      try {
-        // --- Step 1: Check cache for friends list ---
-        const cachedData = localStorage.getItem(FRIENDS_CACHE_KEY);
-        if (cachedData) {
-          const { friends, timestamp } = JSON.parse(cachedData);
-          const now = new Date();
-          const cacheAgeMinutes = (now - new Date(timestamp)) / (1000 * 60);
-    
-          // Use cached friends if still fresh
-          if (cacheAgeMinutes < CACHE_EXPIRY_MINUTES) {
-            console.log("Using cached friends list.");
-            friendIds = friends.map(friend => friend.uid);
-          }
-        }
-    
-        // --- Step 2: Fetch friends list if cache is stale or empty ---
-        if (friendIds.length === 0) {
-          try {
-            const friendsDoc = await db.collection('friends').doc(userId).get();
-            if (friendsDoc.exists) {
-              const friends = friendsDoc.data()?.friends || [];
-              friendIds = friends.map(friend => friend.uid);
-    
-              // Update cache
-              localStorage.setItem(
-                FRIENDS_CACHE_KEY,
-                JSON.stringify({ friends, timestamp: new Date() })
-              );
-            } else {
-              console.log("No friends document found for this user.");
-            }
-          } catch (error) {
-            console.error("Error fetching friends list:", error);
-            // If offline, use cached friends list if available
-            const cachedData = localStorage.getItem(FRIENDS_CACHE_KEY);
-            if (cachedData) {
-              const { friends } = JSON.parse(cachedData);
-              friendIds = friends.map(friend => friend.uid);
-              console.log("Using cached friends list due to offline error.");
-            } else {
-              console.log("No cached friends list available.");
-            }
-          }
-        }
-    
-        // --- Step 3: Log the current user and their posts (unchanged) ---
+        let friendIds = [];
         try {
-          const userPostsSnapshot = await db.collection('posts')
-            .where('authorId', '==', userId)
-            .orderBy('timestamp', 'desc')
-            .get();
+            // Log the current user and their posts
+            const userPostsSnapshot = await db.collection('posts')
+                .where('authorId', '==', userId)
+                .orderBy('timestamp', 'desc')
+                .get();
     
-          const userPosts = userPostsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-    
-          console.log(`- User: ${auth.currentUser.displayName || "Current User"}`);
-          if (userPosts.length > 0) {
-            console.log("  Posts:");
-            userPosts.forEach(post => {
-              console.log(`  - Post ID: ${post.id}, Content: "${post.content}"`);
-            });
-          } else {
-            console.log("  No posts found.");
-          }
-        } catch (error) {
-          console.error("Error fetching user posts:", error);
-        }
-    
-        // --- Step 4: Log the user's friends and their posts (unchanged) ---
-        for (const friend of friendIds) {
-          try {
-            const postsSnapshot = await db.collection('posts')
-              .where('authorId', '==', friend)
-              .orderBy('timestamp', 'desc')
-              .get();
-    
-            const posts = postsSnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
+            const userPosts = userPostsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
             }));
     
-            console.log(`- Friend: ${friend}`);
-            if (posts.length > 0) {
-              console.log("  Posts:");
-              posts.forEach(post => {
-                console.log(`  - Post ID: ${post.id}, Content: "${post.content}"`);
-              });
+            console.log(`- User: ${auth.currentUser.displayName || "Current User"}`);
+            if (userPosts.length > 0) {
+                console.log("  Posts:");
+                userPosts.forEach(post => {
+                    console.log(`  - Post ID: ${post.id}, Content: "${post.content}"`);
+                });
             } else {
-              console.log("  No posts found.");
+                console.log("  No posts found.");
             }
-          } catch (error) {
-            console.error(`Error fetching posts for friend ${friend}:`, error);
-          }
+    
+            // Log the user's friends and their posts
+            const friendsDoc = await db.collection('friends').doc(userId).get();
+            if (friendsDoc.exists) {
+                friendIds = friendsDoc.data()?.friends.map(friend => friend.uid) || [];
+                for (const friend of friendIds) {
+                    const postsSnapshot = await db.collection('posts')
+                        .where('authorId', '==', friend)
+                        .orderBy('timestamp', 'desc')
+                        .get();
+    
+                    const posts = postsSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+    
+                    console.log(`- Friend: ${friend}`);
+                    if (posts.length > 0) {
+                        console.log("  Posts:");
+                        posts.forEach(post => {
+                            console.log(`  - Post ID: ${post.id}, Content: "${post.content}"`);
+                        });
+                    } else {
+                        console.log("  No posts found.");
+                    }
+                }
+            } else {
+                console.log("No friends document found for this user.");
+            }
+        } catch (error) {
+            console.error("Error fetching user/friends or posts:", error);
         }
-    
-      } catch (error) {
-        console.error("Unexpected error in logUserFriendsWithPosts:", error);
-      }
-    
-      return friendIds; // Return the list of friend IDs
+        return friendIds; // Return the list of friend IDs
     }
+
+    // Load posts when page loads
+    window.onload = loadPosts;
   </script>
 </body>
 </html>
