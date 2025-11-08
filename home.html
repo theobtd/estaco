@@ -553,38 +553,55 @@
 
     // Function to load comments for a post
     function loadComments(postId) {
-      db.collection('posts').doc(postId).collection('comments')
-        .orderBy('timestamp', 'asc')
-        .get()
-        .then((querySnapshot) => {
-          const commentsList = document.getElementById(`comments-${postId}`);
-          commentsList.innerHTML = '';
-          const commentPromises = [];
+      const user = auth.currentUser;
+      if (!user) return;
     
-          querySnapshot.forEach((doc) => {
-            const comment = doc.data();
-            const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
-              const commentHTML = `
-                <div class="comment">
-                  <div class="comment-author-picture">
-                    ${profilePictureHTML}
-                  </div>
-                  <div class="comment-content">
-                    <div class="comment-author-name">${comment.authorName}</div>
-                    <div>${comment.content}</div>
-                  </div>
-                </div>
-              `;
-              commentsList.innerHTML += commentHTML;
+      // Get the current user's friends (including themselves)
+      db.collection('friends').doc(user.uid).get()
+        .then((friendsDoc) => {
+          const friends = friendsDoc.data()?.friends || [];
+          const friendIds = friends.map(friend => friend.uid);
+          friendIds.push(user.uid); // Include the current user
+    
+          // Fetch all comments for the post
+          db.collection('posts').doc(postId).collection('comments')
+            .orderBy('timestamp', 'asc')
+            .get()
+            .then((querySnapshot) => {
+              const commentsList = document.getElementById(`comments-${postId}`);
+              commentsList.innerHTML = '';
+              const commentPromises = [];
+    
+              querySnapshot.forEach((doc) => {
+                const comment = doc.data();
+                // Only show comments from friends
+                if (friendIds.includes(comment.authorId)) {
+                  const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
+                    const commentHTML = `
+                      <div class="comment">
+                        <div class="comment-author-picture">
+                          ${profilePictureHTML}
+                        </div>
+                        <div class="comment-content">
+                          <div class="comment-author-name">${comment.authorName}</div>
+                          <div>${comment.content}</div>
+                        </div>
+                      </div>
+                    `;
+                    commentsList.innerHTML += commentHTML;
+                  });
+                  commentPromises.push(promise);
+                }
+              });
+    
+              return Promise.all(commentPromises);
+            })
+            .catch((error) => {
+              console.error("Error loading comments: ", error);
             });
-            commentPromises.push(promise);
-          });
-    
-          // Wait for all profile pictures to be fetched before displaying them
-          return Promise.all(commentPromises);
         })
         .catch((error) => {
-          console.error("Error loading comments: ", error);
+          console.error("Error fetching friends: ", error);
         });
     }
     
