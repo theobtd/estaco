@@ -179,6 +179,18 @@
         } else if (err.code === 'unimplemented') {
           console.log("The current browser does not support offline persistence.");
         }
+      })
+      .then(() => {
+        // Only proceed after offline persistence is enabled
+        auth.onAuthStateChanged((user) => {
+          if (!user || !user.emailVerified) {
+            alert('Please sign in and verify your email to access the home feed.');
+            window.location.href = 'index.html';
+          } else {
+            logUserFriendsWithPosts(user.uid);
+            loadPosts();
+          }
+        });
       });
 
     // DOM elements
@@ -272,41 +284,40 @@
     const postLimit = 3; // Number of posts to load at a time
     
     async function loadPosts() {
-        const user = auth.currentUser;
-        if (!user) return;
+      const user = auth.currentUser;
+      if (!user) return;
     
+      try {
         const friendIds = await logUserFriendsWithPosts(user.uid);
         friendIds.push(user.uid); // Include current user's ID
     
-        // Create the query
         let query = db.collection('posts')
-            .where('authorId', 'in', friendIds)
-            .orderBy('timestamp', 'desc')
-            .limit(postLimit); // Limit to the number of posts
+          .where('authorId', 'in', friendIds)
+          .orderBy('timestamp', 'desc')
+          .limit(postLimit);
     
         if (lastVisiblePost) {
-            query = query.startAfter(lastVisiblePost); // Start after the last fetched post
+          query = query.startAfter(lastVisiblePost);
         }
     
-        query.get().then((querySnapshot) => {
-            if (querySnapshot.empty) {
-                feed.innerHTML += '<p>No more posts to load.</p>';
-                return;
-            }
+        const querySnapshot = await query.get();
+        if (querySnapshot.empty) {
+          feed.innerHTML += '<p>No more posts to load.</p>';
+          return;
+        }
     
-            const postsData = [];
-            querySnapshot.forEach((doc) => {
-                const post = doc.data();
-                post.id = doc.id; // Store post ID
-                postsData.push(post);
-                lastVisiblePost = doc; // Update the last visible post
-            });
-    
-            // Render posts as before
-            renderPosts(postsData);
-        }).catch((error) => {
-            errorMessage.textContent = error.message;
+        const postsData = [];
+        querySnapshot.forEach((doc) => {
+          postsData.push({ id: doc.id, ...doc.data() });
+          lastVisiblePost = doc;
         });
+    
+        renderPosts(postsData);
+      } catch (error) {
+        console.error("Error loading posts:", error);
+        // Show a user-friendly message
+        feed.innerHTML = '<p>Could not load posts. You may be offline. Try again later.</p>';
+      }
     }
     
     // Function to render posts
