@@ -640,10 +640,45 @@
     }
 
     // Function to log the current user's friends and their posts to the console
+    const FRIENDS_CACHE_KEY = 'estaco_friends_cache';
+    const CACHE_EXPIRY_MINUTES = 10; // Cache expires after 10 minutes
+    
     async function logUserFriendsWithPosts(userId) {
         let friendIds = [];
+    
         try {
-            // Log the current user and their posts
+            // --- Step 1: Check cache for friends list ---
+            const cachedData = localStorage.getItem(FRIENDS_CACHE_KEY);
+            if (cachedData) {
+                const { friends, timestamp } = JSON.parse(cachedData);
+                const now = new Date();
+                const cacheAgeMinutes = (now - new Date(timestamp)) / (1000 * 60);
+    
+                // Use cached friends if still fresh
+                if (cacheAgeMinutes < CACHE_EXPIRY_MINUTES) {
+                    console.log("Using cached friends list.");
+                    friendIds = friends.map(friend => friend.uid);
+                }
+            }
+    
+            // --- Step 2: Fetch friends list if cache is stale or empty ---
+            if (friendIds.length === 0) {
+                const friendsDoc = await db.collection('friends').doc(userId).get();
+                if (friendsDoc.exists) {
+                    const friends = friendsDoc.data()?.friends || [];
+                    friendIds = friends.map(friend => friend.uid);
+    
+                    // Update cache
+                    localStorage.setItem(
+                        FRIENDS_CACHE_KEY,
+                        JSON.stringify({ friends, timestamp: new Date() })
+                    );
+                } else {
+                    console.log("No friends document found for this user.");
+                }
+            }
+    
+            // --- Step 3: Log the current user and their posts (unchanged) ---
             const userPostsSnapshot = await db.collection('posts')
                 .where('authorId', '==', userId)
                 .orderBy('timestamp', 'desc')
@@ -664,37 +699,33 @@
                 console.log("  No posts found.");
             }
     
-            // Log the user's friends and their posts
-            const friendsDoc = await db.collection('friends').doc(userId).get();
-            if (friendsDoc.exists) {
-                friendIds = friendsDoc.data()?.friends.map(friend => friend.uid) || [];
-                for (const friend of friendIds) {
-                    const postsSnapshot = await db.collection('posts')
-                        .where('authorId', '==', friend)
-                        .orderBy('timestamp', 'desc')
-                        .get();
+            // --- Step 4: Log the user's friends and their posts (unchanged) ---
+            for (const friend of friendIds) {
+                const postsSnapshot = await db.collection('posts')
+                    .where('authorId', '==', friend)
+                    .orderBy('timestamp', 'desc')
+                    .get();
     
-                    const posts = postsSnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
+                const posts = postsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
     
-                    console.log(`- Friend: ${friend}`);
-                    if (posts.length > 0) {
-                        console.log("  Posts:");
-                        posts.forEach(post => {
-                            console.log(`  - Post ID: ${post.id}, Content: "${post.content}"`);
-                        });
-                    } else {
-                        console.log("  No posts found.");
-                    }
+                console.log(`- Friend: ${friend}`);
+                if (posts.length > 0) {
+                    console.log("  Posts:");
+                    posts.forEach(post => {
+                        console.log(`  - Post ID: ${post.id}, Content: "${post.content}"`);
+                    });
+                } else {
+                    console.log("  No posts found.");
                 }
-            } else {
-                console.log("No friends document found for this user.");
             }
+    
         } catch (error) {
             console.error("Error fetching user/friends or posts:", error);
         }
+    
         return friendIds; // Return the list of friend IDs
     }
 
