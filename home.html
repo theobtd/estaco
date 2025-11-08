@@ -142,8 +142,8 @@
   <div id="feed">
     <h3>Your Feed</h3>
     <p>No posts yet. Create one!</p>
-    <button id="load-more-button" style="margin-top: 10px;">Load More</button>
   </div>
+
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
@@ -287,9 +287,27 @@
                 postsData.push(post);
                 lastVisiblePost = doc; // Update the last visible post
             });
+
+            // Clear the "No posts yet" message if there are posts
+            const noPostsMessage = feed.querySelector('p');
+            if (noPostsMessage && noPostsMessage.textContent === 'No posts yet. Create one!') {
+                noPostsMessage.remove();
+            }
     
             // Render posts as before
             renderPosts(postsData);
+
+            // Add "Load More" button if it doesn't exist
+            if (!document.getElementById('load-more-button')) {
+                const loadMoreButton = document.createElement('button');
+                loadMoreButton.id = 'load-more-button';
+                loadMoreButton.textContent = 'Load More';
+                loadMoreButton.style.marginTop = '10px';
+                feed.appendChild(loadMoreButton);
+                loadMoreButton.addEventListener('click', () => {
+                    loadPosts();
+                });
+            }
         }).catch((error) => {
             errorMessage.textContent = error.message;
         });
