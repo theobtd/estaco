@@ -172,6 +172,15 @@
     const db = firebase.firestore();
     const storage = firebase.storage();
 
+    firebase.firestore().enablePersistence()
+      .catch((err) => {
+        if (err.code === 'failed-precondition') {
+          console.log("Offline persistence can only be enabled in one tab at a time.");
+        } else if (err.code === 'unimplemented') {
+          console.log("The current browser does not support offline persistence.");
+        }
+      });
+
     // DOM elements
     const postContent = document.getElementById('post-content');
     const postPhoto = document.getElementById('post-photo');
