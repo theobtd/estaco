@@ -258,58 +258,52 @@
     const postLimit = 3; // Number of posts to load at a time
     
     async function loadPosts() {
+        if (isLoading) return; // Prevent multiple simultaneous loads
+        isLoading = true;
+    
         const user = auth.currentUser;
-        if (!user) return;
+        if (!user) {
+            isLoading = false;
+            return;
+        }
     
         const friendIds = await logUserFriendsWithPosts(user.uid);
-        friendIds.push(user.uid); // Include current user's ID
+        friendIds.push(user.uid);
     
-        // Create the query
         let query = db.collection('posts')
             .where('authorId', 'in', friendIds)
             .orderBy('timestamp', 'desc')
-            .limit(postLimit); // Limit to the number of posts
+            .limit(postLimit);
     
         if (lastVisiblePost) {
-            query = query.startAfter(lastVisiblePost); // Start after the last fetched post
+            query = query.startAfter(lastVisiblePost);
         }
     
         query.get().then((querySnapshot) => {
             if (querySnapshot.empty) {
                 feed.innerHTML += '<p>No more posts to load.</p>';
+                isLoading = false;
                 return;
             }
     
             const postsData = [];
             querySnapshot.forEach((doc) => {
                 const post = doc.data();
-                post.id = doc.id; // Store post ID
+                post.id = doc.id;
                 postsData.push(post);
-                lastVisiblePost = doc; // Update the last visible post
+                lastVisiblePost = doc;
             });
-
-            // Clear the "No posts yet" message if there are posts
+    
             const noPostsMessage = feed.querySelector('p');
             if (noPostsMessage && noPostsMessage.textContent === 'No posts yet. Create one!') {
                 noPostsMessage.remove();
             }
     
-            // Render posts as before
             renderPosts(postsData);
-
-            // Add "Load More" button if it doesn't exist
-            if (!document.getElementById('load-more-button')) {
-                const loadMoreButton = document.createElement('button');
-                loadMoreButton.id = 'load-more-button';
-                loadMoreButton.textContent = 'Load More';
-                loadMoreButton.style.marginTop = '10px';
-                feed.appendChild(loadMoreButton);
-                loadMoreButton.addEventListener('click', () => {
-                    loadPosts();
-                });
-            }
+            isLoading = false;
         }).catch((error) => {
             errorMessage.textContent = error.message;
+            isLoading = false;
         });
     }
     
@@ -696,6 +690,43 @@
         }
         return friendIds; // Return the list of friend IDs
     }
+
+    // Throttle function to limit how often the scroll event fires
+    function throttle(func, limit) {
+        let lastFunc;
+        let lastRan;
+        return function() {
+            const context = this;
+            const args = arguments;
+            if (!lastRan) {
+                func.apply(context, args);
+                lastRan = Date.now();
+            } else {
+                clearTimeout(lastFunc);
+                lastFunc = setTimeout(function() {
+                    if ((Date.now() - lastRan) >= limit) {
+                        func.apply(context, args);
+                        lastRan = Date.now();
+                    }
+                }, limit - (Date.now() - lastRan));
+            }
+        };
+    }
+    
+    // Function to check if the user has scrolled to the bottom
+    function isAtBottom() {
+        return (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200;
+    }
+    
+    // Add scroll event listener with throttling
+    window.addEventListener('scroll', throttle(function() {
+        if (isAtBottom() && !isLoading) {
+            loadPosts();
+        }
+    }, 500));
+    
+    let isLoading = false; // Flag to prevent multiple simultaneous loads
+
 
     // Load posts when page loads
     window.onload = loadPosts;
