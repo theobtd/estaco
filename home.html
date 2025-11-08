@@ -173,6 +173,9 @@
     const postButton = document.getElementById('post-button');
     const feed = document.getElementById('feed');
     const errorMessage = document.getElementById('error-message');
+
+    let isLoading = false; // Flag to prevent multiple simultaneous loads
+    
     // Navigate to Profile Page
     const profileButton = document.getElementById('profile-button');
     profileButton.addEventListener('click', () => {
@@ -724,9 +727,6 @@
             loadPosts();
         }
     }, 500));
-    
-    let isLoading = false; // Flag to prevent multiple simultaneous loads
-
 
     // Load posts when page loads
     window.onload = loadPosts;
