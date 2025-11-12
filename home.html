@@ -288,10 +288,10 @@
 
     let lastVisiblePost = null; // To keep track of the last fetched post
     const postLimit = 3; // Number of posts to load at a time
-    let isFirstLoad = true;
+    let isFirstLoad = true; // Add this flag at the top with your other variables
     
     async function loadPosts() {
-        if (isLoading) return;
+        if (isLoading) return; // Prevent multiple simultaneous loads
         isLoading = true;
     
         const user = auth.currentUser;
