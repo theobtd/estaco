@@ -135,6 +135,7 @@
       <h3>Create a Post</h3>
       <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
       <input type="file" id="post-photo" accept="image/*">
+      <input type="file" id="post-video" accept="video/*"> <!-- Add this line -->
       <button id="post-button">Post</button>
       <p id="error-message"></p>
   </div>
@@ -170,6 +171,7 @@
     const postContent = document.getElementById('post-content');
     const postPhoto = document.getElementById('post-photo');
     const postButton = document.getElementById('post-button');
+    const postVideo = document.getElementById('post-video');
     const feed = document.getElementById('feed');
     const errorMessage = document.getElementById('error-message');
 
@@ -194,66 +196,94 @@
 
     // Create a new post
     postButton.addEventListener('click', () => {
-      const content = postContent.value;
-      const photoFile = postPhoto.files[0];
+        const content = postContent.value;
+        const photoFile = postPhoto.files[0];
+        const videoFile = postVideo.files[0];
     
-      if (!content) {
-        errorMessage.textContent = 'Post content cannot be empty.';
-        return;
-      }
+        if (!content) {
+            errorMessage.textContent = 'Post content cannot be empty.';
+            return;
+        }
     
-      const user = auth.currentUser;
-      user.reload().then(() => {
-        const authorName = user.displayName || "Unknown User";
-        const post = {
-          authorId: user.uid,
-          authorName: authorName,
-          content: content,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-          reactions: {}
-        };
+        const user = auth.currentUser;
+        user.reload().then(() => {
+            const authorName = user.displayName || "Unknown User";
+            const post = {
+                authorId: user.uid,
+                authorName: authorName,
+                content: content,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                reactions: {}
+            };
     
-        // Upload post to Firestore
-        db.collection('posts').add(post)
-          .then((docRef) => {
-            if (photoFile) {
-              // Upload photo to Firebase Storage
-              const storageRef = storage.ref();
-              const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
-              const uploadTask = photoRef.put(photoFile);
+            // Upload post to Firestore
+            db.collection('posts').add(post)
+                .then((docRef) => {
+                    const uploadPromises = [];
     
-              uploadTask.on('state_changed',
-                null,
-                (error) => {
-                  console.error('Upload error:', error);
-                  errorMessage.textContent = 'Failed to upload photo.';
-                },
-                () => {
-                  // Upload complete, get the download URL
-                  uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                    // Update the post with the photo URL
-                    db.collection('posts').doc(docRef.id).update({ photoURL: downloadURL })
-                      .then(() => {
-                        alert('Post created!');
-                        postContent.value = '';
-                        postPhoto.value = '';
-                        loadPosts(); // Reload posts after photo URL is updated
-                      });
-                  });
-                }
-              );
-            } else {
-              // No photo, just reload posts
-              alert('Post created!');
-              postContent.value = '';
-              postPhoto.value = '';
-              loadPosts();
-            }
-          })
-          .catch((error) => {
-            errorMessage.textContent = error.message;
-          });
-      });
+                    // Upload photo if present
+                    if (photoFile) {
+                        const storageRef = storage.ref();
+                        const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
+                        const uploadTask = photoRef.put(photoFile);
+                        uploadPromises.push(
+                            new Promise((resolve, reject) => {
+                                uploadTask.on('state_changed',
+                                    null,
+                                    (error) => {
+                                        console.error('Upload error:', error);
+                                        reject(error);
+                                    },
+                                    () => {
+                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                            docRef.update({ photoURL: downloadURL }).then(resolve);
+                                        });
+                                    }
+                                );
+                            })
+                        );
+                    }
+    
+                    // Upload video if present
+                    if (videoFile) { // Add this block
+                        const storageRef = storage.ref();
+                        const videoRef = storageRef.child(`postVideos/${docRef.id}`);
+                        const uploadTask = videoRef.put(videoFile);
+                        uploadPromises.push(
+                            new Promise((resolve, reject) => {
+                                uploadTask.on('state_changed',
+                                    null,
+                                    (error) => {
+                                        console.error('Upload error:', error);
+                                        reject(error);
+                                    },
+                                    () => {
+                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                            docRef.update({ videoURL: downloadURL }).then(resolve);
+                                        });
+                                    }
+                                );
+                            })
+                        );
+                    }
+    
+                    // Wait for all uploads to complete
+                    Promise.all(uploadPromises)
+                        .then(() => {
+                            alert('Post created!');
+                            postContent.value = '';
+                            postPhoto.value = '';
+                            postVideo.value = ''; // Add this line
+                            loadPosts();
+                        })
+                        .catch((error) => {
+                            errorMessage.textContent = error.message;
+                        });
+                })
+                .catch((error) => {
+                    errorMessage.textContent = error.message;
+                });
+        });
     });
 
     let lastVisiblePost = null; // To keep track of the last fetched post
@@ -346,6 +376,7 @@
                     </div>
                     <p>${post.content}</p>
                     ${post.photoURL ? `<img src="${post.photoURL}" style="max-width: 100%; margin-top: 10px;">` : ''}
+                    ${post.videoURL ? `<video controls style="max-width: 100%; margin-top: 10px;"><source src="${post.videoURL}" type="video/mp4"></video>` : ''} <!-- Add this line -->
                     <div class="reactions">
                         <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
                         <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
