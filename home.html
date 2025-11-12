@@ -334,7 +334,7 @@
                 const post = doc.data();
                 post.id = doc.id;
                 postsData.push(post);
-                lastVisiblePost = doc;
+                lastVisiblePost = doc; // Update lastVisiblePost for pagination
             });
     
             renderPosts(postsData);
@@ -342,7 +342,7 @@
             // After the first load, set the flag to false and load more posts
             if (isFirstLoad) {
                 isFirstLoad = false;
-                loadPosts();
+                setTimeout(() => loadPosts(), 100); // Small delay to ensure DOM is ready
             }
     
             isLoading = false;
