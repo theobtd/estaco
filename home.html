@@ -288,9 +288,10 @@
 
     let lastVisiblePost = null; // To keep track of the last fetched post
     const postLimit = 3; // Number of posts to load at a time
+    let isFirstLoad = true;
     
     async function loadPosts() {
-        if (isLoading) return; // Prevent multiple simultaneous loads
+        if (isLoading) return;
         isLoading = true;
     
         const user = auth.currentUser;
@@ -304,16 +305,26 @@
     
         let query = db.collection('posts')
             .where('authorId', 'in', friendIds)
-            .orderBy('timestamp', 'desc')
-            .limit(postLimit);
+            .orderBy('timestamp', 'desc');
     
         if (lastVisiblePost) {
             query = query.startAfter(lastVisiblePost);
         }
     
+        // Load only 1 post on the first load
+        if (isFirstLoad) {
+            query = query.limit(1);
+        } else {
+            query = query.limit(postLimit);
+        }
+    
         query.get().then((querySnapshot) => {
             if (querySnapshot.empty) {
-                feed.innerHTML += '<p>No more posts to load.</p>';
+                if (!feed.querySelector('.post')) {
+                    feed.innerHTML = '<p>No posts yet. Create one!</p>';
+                } else {
+                    feed.innerHTML += '<p>No more posts to load.</p>';
+                }
                 isLoading = false;
                 return;
             }
@@ -326,11 +337,14 @@
                 lastVisiblePost = doc;
             });
     
-            if (querySnapshot.empty && !feed.querySelector('.post')) {
-                feed.innerHTML = '<p>No posts yet. Create one!</p>';
+            renderPosts(postsData);
+    
+            // After the first load, set the flag to false and load more posts
+            if (isFirstLoad) {
+                isFirstLoad = false;
+                loadPosts();
             }
     
-            renderPosts(postsData);
             isLoading = false;
         }).catch((error) => {
             errorMessage.textContent = error.message;
