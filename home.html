@@ -273,7 +273,7 @@
                                                   photoURL: downloadURL,
                                                   mediaOrientation: isHorizontal ? 'horizontal' : 'vertical'
                                               }).then(resolve);
-                                          }:
+                                          };
                                         });
                                     }
                                 );
@@ -449,16 +449,7 @@
                         <span style="font-size: 12px; color: #666; margin-left: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
                     </div>
                     <p>${post.content}</p>
-                    ${post.photoURL ?
-                      `<div class="media-container media-${post.mediaOrientation || 'horizontal'}">
-                        <img src="${post.photoURL}" class="post-media">
-                      </div>` : ''}
-                    ${post.videoURL ?
-                      `<div class="media-container media-${post.mediaOrientation || 'horizontal'}">
-                        <video controls class="post-media">
-                          <source src="${post.videoURL}" type="video/mp4">
-                        </video>
-                      </div>` : ''}
+                    ${mediaHTML}
                     <div class="reactions">
                         <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
                         <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
