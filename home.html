@@ -143,7 +143,19 @@
       height: 600px;
       margin: 0 auto;
     }
-    
+    .orientation-button {
+      padding: 8px 12px;
+      margin-right: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #f9f9f9;
+      cursor: pointer;
+    }
+    .orientation-button.selected {
+      background: #4CAF50;
+      color: white;
+      border-color: #4CAF50;
+    }
     .media-container img,
     .media-container video {
       position: absolute;
@@ -164,7 +176,11 @@
       <h3>Create a Post</h3>
       <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
       <input type="file" id="post-photo" accept="image/*">
-      <input type="file" id="post-video" accept="video/*"> <!-- Add this line -->
+      <input type="file" id="post-video" accept="video/*">
+      <div id="video-orientation-buttons" style="display: none; margin: 10px 0;">
+        <button class="orientation-button selected" data-orientation="horizontal">Horizontal</button>
+        <button class="orientation-button" data-orientation="vertical">Vertical</button>
+      </div>
       <button id="post-button">Post</button>
       <p id="error-message"></p>
   </div>
@@ -282,29 +298,30 @@
                     }
     
                     // Upload video if present
-                    if (videoFile) { // Add this block
-                        const storageRef = storage.ref();
-                        const videoRef = storageRef.child(`postVideos/${docRef.id}`);
-                        const uploadTask = videoRef.put(videoFile);
-                        uploadPromises.push(
-                            new Promise((resolve, reject) => {
-                                uploadTask.on('state_changed',
-                                    null,
-                                    (error) => {
-                                        console.error('Upload error:', error);
-                                        reject(error);
-                                    },
-                                    () => {
-                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                          docRef.update({
-                                              videoURL: downloadURL,
-                                              mediaOrientation: 'horizontal'
-                                          }).then(resolve);
-                                        });
-                                    }
-                                );
-                            })
-                        );
+                    if (videoFile) {
+                      const storageRef = storage.ref();
+                      const videoRef = storageRef.child(`postVideos/${docRef.id}`);
+                      const uploadTask = videoRef.put(videoFile);
+                      uploadPromises.push(
+                        new Promise((resolve, reject) => {
+                          uploadTask.on('state_changed',
+                            null,
+                            (error) => {
+                              console.error('Upload error:', error);
+                              reject(error);
+                            },
+                            () => {
+                              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                const orientation = getSelectedOrientation();
+                                docRef.update({
+                                  videoURL: downloadURL,
+                                  mediaOrientation: orientation
+                                }).then(resolve);
+                              });
+                            }
+                          );
+                        })
+                      );
                     }
     
                     // Wait for all uploads to complete
@@ -849,6 +866,23 @@
             observer.observe(post);
         });
     }
+
+    postVideo.addEventListener('change', () => {
+      const videoOrientationButtons = document.getElementById('video-orientation-buttons');
+      videoOrientationButtons.style.display = postVideo.files.length > 0 ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('.orientation-button').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.orientation-button').forEach(b => b.classList.remove('selected'));
+        button.classList.add('selected');
+      });
+    });
+
+    const getSelectedOrientation = () => {
+      const selectedButton = document.querySelector('.orientation-button.selected');
+      return selectedButton ? selectedButton.getAttribute('data-orientation') : 'horizontal';
+    };
 
     // Load posts when page loads
     window.onload = loadPosts;
