@@ -992,14 +992,7 @@
 
     postPhoto.addEventListener('change', (event) => {
       const file = event.target.files[0];
-      if (!file) return;
-      
-      resizeAndCompressImage(file, 1024, 1024, 0.8, (compressedBlob) => {
-        const compressedFile = new File([compressedBlob], file.name, { type: 'image/jpeg' });
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(compressedFile);
-        postPhoto.files = dataTransfer.files;
-    
+      if (file) {
         const reader = new FileReader();
         reader.onload = (e) => {
           const modal = document.getElementById('image-cropper-modal');
@@ -1091,39 +1084,6 @@
       };
       video.src = URL.createObjectURL(file);
     }
-
-    function resizeAndCompressImage(file, maxWidth, maxHeight, quality, callback) {
-      const img = new Image();
-      const reader = new FileReader();
-    
-      reader.onload = (e) => {
-        img.src = e.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-    
-          // Resize if necessary
-          if (width > maxWidth || height > maxHeight) {
-            const ratio = Math.min(maxWidth / width, maxHeight / height);
-            width *= ratio;
-            height *= ratio;
-          }
-    
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-    
-          // Compress and return as a Blob
-          canvas.toBlob((blob) => {
-            callback(blob);
-          }, 'image/jpeg', quality);
-        };
-      };
-      reader.readAsDataURL(file);
-    }
-
 
     // Load posts when page loads
     window.onload = loadPosts;
