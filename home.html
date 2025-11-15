@@ -176,6 +176,19 @@
       cursor: pointer;
       font-size: 12px;
     }
+    .crop-orientation-button {
+      padding: 8px 12px;
+      margin-right: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #f9f9f9;
+      cursor: pointer;
+    }
+    .crop-orientation-button.selected {
+      background: #4CAF50;
+      color: white;
+      border-color: #4CAF50;
+    }
   </style>
 </head>
 <body>
@@ -199,6 +212,10 @@
   <div id="image-cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
     <div style="max-width: 500px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px;">
       <h3>Adjust Image</h3>
+      <div style="margin-bottom: 10px;">
+        <button class="crop-orientation-button selected" data-orientation="horizontal">Horizontal</button>
+        <button class="crop-orientation-button" data-orientation="vertical">Vertical</button>
+      </div>
       <div style="width: 100%; height: 400px;">
         <img id="cropper-image" style="max-width: 100%;">
       </div>
@@ -290,34 +307,32 @@
     
                     // Upload photo if present
                     if (photoFile) {
-                        const storageRef = storage.ref();
-                        const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
-                        const uploadTask = photoRef.put(photoFile);
-                        uploadPromises.push(
-                            new Promise((resolve, reject) => {
-                                uploadTask.on('state_changed',
-                                    null,
-                                    (error) => {
-                                        console.error('Upload error:', error);
-                                        reject(error);
-                                    },
-                                    () => {
-                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                          const img = new Image();
-                                          img.src = downloadURL;
-                                          img.onload = function() {
-                                              const isHorizontal = this.naturalWidth > this.naturalHeight;
-                                              docRef.update({
-                                                  photoURL: downloadURL,
-                                                  mediaOrientation: isHorizontal ? 'horizontal' : 'vertical'
-                                              }).then(resolve);
-                                          };
-                                        });
-                                    }
-                                );
-                            })
-                        );
+                      const storageRef = storage.ref();
+                      const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
+                      const uploadTask = photoRef.put(photoFile);
+                      uploadPromises.push(
+                        new Promise((resolve, reject) => {
+                          uploadTask.on('state_changed',
+                            null,
+                            (error) => {
+                              console.error('Upload error:', error);
+                              reject(error);
+                            },
+                            () => {
+                              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                // Use the selected orientation from the file input
+                                const orientation = postPhoto.getAttribute('data-orientation') || 'horizontal';
+                                docRef.update({
+                                  photoURL: downloadURL,
+                                  mediaOrientation: orientation
+                                }).then(resolve);
+                              });
+                            }
+                          );
+                        })
+                      );
                     }
+
     
                     // Upload video if present
                     if (videoFile) {
@@ -969,9 +984,12 @@
           cropperImage.src = e.target.result;
           modal.style.display = 'block';
     
+          // Default to horizontal
+          let cropperAspectRatio = 16 / 9; // Horizontal aspect ratio
+    
           // Initialize Cropper.js
-          const cropper = new Cropper(cropperImage, {
-            aspectRatio: NaN, // Allow any aspect ratio
+          let cropper = new Cropper(cropperImage, {
+            aspectRatio: cropperAspectRatio,
             viewMode: 1,
             dragMode: 'move',
             guides: true,
@@ -979,6 +997,23 @@
             cropBoxMovable: true,
             cropBoxResizable: true,
             modal: true,
+          });
+    
+          // Toggle orientation buttons
+          document.querySelectorAll('.crop-orientation-button').forEach(button => {
+            button.addEventListener('click', () => {
+              document.querySelectorAll('.crop-orientation-button').forEach(b => b.classList.remove('selected'));
+              button.classList.add('selected');
+    
+              // Update cropper aspect ratio
+              const orientation = button.getAttribute('data-orientation');
+              if (orientation === 'horizontal') {
+                cropperAspectRatio = 16 / 9; // Horizontal
+              } else {
+                cropperAspectRatio = 9 / 16; // Vertical
+              }
+              cropper.setAspectRatio(cropperAspectRatio);
+            });
           });
     
           // Handle "Done" button
@@ -991,6 +1026,10 @@
               const dataTransfer = new DataTransfer();
               dataTransfer.items.add(croppedFile);
               postPhoto.files = dataTransfer.files;
+    
+              // Save the selected orientation to use later
+              const selectedOrientation = document.querySelector('.crop-orientation-button.selected').getAttribute('data-orientation');
+              postPhoto.setAttribute('data-orientation', selectedOrientation);
     
               // Hide the modal and clean up
               modal.style.display = 'none';
