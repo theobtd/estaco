@@ -166,14 +166,6 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     const storage = firebase.storage();
-    firebase.firestore().enablePersistence()
-      .catch((err) => {
-        if (err.code === 'failed-precondition') {
-          console.warn("Firestore offline persistence failed. This is expected in multiple tabs.");
-        } else if (err.code === 'unimplemented') {
-          console.warn("Firestore offline persistence is not supported in this browser.");
-        }
-      });
 
     // DOM elements
     const postContent = document.getElementById('post-content');
@@ -299,76 +291,67 @@
     let isFirstLoad = true; // Add this flag at the top with your other variables
     
     async function loadPosts() {
-      if (isLoading) return;
-      isLoading = true;
+        if (isLoading) return; // Prevent multiple simultaneous loads
+        isLoading = true;
     
-      const user = auth.currentUser;
-      if (!user) {
-        isLoading = false;
-        return;
-      }
-    
-      const friendIds = await logUserFriendsWithPosts(user.uid);
-      friendIds.push(user.uid);
-    
-      let query = db.collection('posts')
-        .where('authorId', 'in', friendIds)
-        .orderBy('timestamp', 'desc');
-    
-      if (lastVisiblePost) {
-        query = query.startAfter(lastVisiblePost);
-      }
-    
-      // Load only 1 post on the first load
-      if (isFirstLoad) {
-        query = query.limit(1);
-      } else {
-        query = query.limit(postLimit);
-      }
-    
-      // Try to get data from cache first
-      query.get({ source: 'cache' })
-        .then((querySnapshot) => {
-          if (querySnapshot.empty) {
-            // If cache is empty, fetch from server
-            return query.get({ source: 'server' });
-          }
-          return querySnapshot;
-        })
-        .then((querySnapshot) => {
-          if (querySnapshot.empty) {
-            if (!feed.querySelector('.post')) {
-              feed.innerHTML = '<p>No posts yet. Create one!</p>';
-            } else {
-              feed.innerHTML += '<p>No more posts to load.</p>';
-            }
+        const user = auth.currentUser;
+        if (!user) {
             isLoading = false;
             return;
-          }
+        }
     
-          const postsData = [];
-          querySnapshot.forEach((doc) => {
-            const post = doc.data();
-            post.id = doc.id;
-            postsData.push(post);
-            lastVisiblePost = doc;
-          });
+        const friendIds = await logUserFriendsWithPosts(user.uid);
+        friendIds.push(user.uid);
     
-          renderPosts(postsData);
+        let query = db.collection('posts')
+            .where('authorId', 'in', friendIds)
+            .orderBy('timestamp', 'desc');
     
-          if (isFirstLoad) {
-            isFirstLoad = false;
-            setTimeout(() => loadPosts(), 100);
-          }
+        if (lastVisiblePost) {
+            query = query.startAfter(lastVisiblePost);
+        }
     
-          isLoading = false;
-        })
-        .catch((error) => {
-          errorMessage.textContent = error.message;
-          isLoading = false;
+        // Load only 1 post on the first load
+        if (isFirstLoad) {
+            query = query.limit(1);
+        } else {
+            query = query.limit(postLimit);
+        }
+    
+        query.get().then((querySnapshot) => {
+            if (querySnapshot.empty) {
+                if (!feed.querySelector('.post')) {
+                    feed.innerHTML = '<p>No posts yet. Create one!</p>';
+                } else {
+                    feed.innerHTML += '<p>No more posts to load.</p>';
+                }
+                isLoading = false;
+                return;
+            }
+    
+            const postsData = [];
+            querySnapshot.forEach((doc) => {
+                const post = doc.data();
+                post.id = doc.id;
+                postsData.push(post);
+                lastVisiblePost = doc; // Update lastVisiblePost for pagination
+            });
+    
+            renderPosts(postsData);
+    
+            // After the first load, set the flag to false and load more posts
+            if (isFirstLoad) {
+                isFirstLoad = false;
+                setTimeout(() => loadPosts(), 100); // Small delay to ensure DOM is ready
+            }
+    
+            isLoading = false;
+        }).catch((error) => {
+            errorMessage.textContent = error.message;
+            isLoading = false;
         });
     }
-
+    
     // Function to render posts
     function renderPosts(postsData) {
         postsData.forEach((post) => {
