@@ -313,56 +313,58 @@
     
                     // Upload photo if present
                     if (photoFile) {
-                        const storageRef = storage.ref();
-                        const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
-                        const uploadTask = photoRef.put(photoFile);
-                        uploadPromises.push(
-                            new Promise((resolve, reject) => {
-                                uploadTask.on('state_changed',
-                                    null,
-                                    (error) => {
-                                        console.error('Upload error:', error);
-                                        reject(error);
-                                    },
-                                    () => {
-                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                            const orientation = postPhoto.getAttribute('data-orientation') || 'horizontal';
-                                            docRef.update({
-                                                photoURL: downloadURL,
-                                                mediaOrientation: orientation
-                                            }).then(() => resolve(downloadURL)); // Resolve with the download URL
-                                        });
-                                    }
-                                );
-                            })
-                        );
+                      const storageRef = storage.ref();
+                      const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
+                      const uploadTask = photoRef.put(photoFile);
+                      uploadPromises.push(
+                        new Promise((resolve, reject) => {
+                          uploadTask.on('state_changed',
+                            null,
+                            (error) => {
+                              console.error('Upload error:', error);
+                              reject(error);
+                            },
+                            () => {
+                              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                // Use the selected orientation from the file input
+                                const orientation = postPhoto.getAttribute('data-orientation') || 'horizontal';
+                                docRef.update({
+                                  photoURL: downloadURL,
+                                  mediaOrientation: orientation
+                                }).then(resolve);
+                              });
+                            }
+                          );
+                        })
+                      );
                     }
-                    
+
+    
                     // Upload video if present
                     if (videoFile) {
-                        const storageRef = storage.ref();
-                        const videoRef = storageRef.child(`postVideos/${docRef.id}`);
-                        const uploadTask = videoRef.put(videoFile);
-                        uploadPromises.push(
-                            new Promise((resolve, reject) => {
-                                uploadTask.on('state_changed',
-                                    null,
-                                    (error) => {
-                                        console.error('Upload error:', error);
-                                        reject(error);
-                                    },
-                                    () => {
-                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                            const orientation = getSelectedOrientation();
-                                            docRef.update({
-                                                videoURL: downloadURL,
-                                                mediaOrientation: orientation
-                                            }).then(() => resolve(downloadURL)); // Resolve with the download URL
-                                        });
-                                    }
-                                );
-                            })
-                        );
+                      const storageRef = storage.ref();
+                      const videoRef = storageRef.child(`postVideos/${docRef.id}`);
+                      const uploadTask = videoRef.put(videoFile);
+                      uploadPromises.push(
+                        new Promise((resolve, reject) => {
+                          uploadTask.on('state_changed',
+                            null,
+                            (error) => {
+                              console.error('Upload error:', error);
+                              reject(error);
+                            },
+                            () => {
+                              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                const orientation = getSelectedOrientation();
+                                docRef.update({
+                                  videoURL: downloadURL,
+                                  mediaOrientation: orientation
+                                }).then(resolve);
+                              });
+                            }
+                          );
+                        })
+                      );
                     }
     
                     // Wait for all uploads to complete
@@ -371,30 +373,8 @@
                             alert('Post created!');
                             postContent.value = '';
                             postPhoto.value = '';
-                            postVideo.value = '';
-                    
-                            // Create a post object to render
-                            const newPost = {
-                                id: docRef.id,
-                                authorId: user.uid,
-                                authorName: authorName,
-                                content: content,
-                                timestamp: new Date(),
-                                reactions: {},
-                                mediaOrientation: postPhoto.getAttribute('data-orientation') || 'horizontal',
-                            };
-                    
-                            if (photoFile) {
-                                newPost.photoURL = downloadURL; // You'll need to get this from the upload promise
-                            } else if (videoFile) {
-                                newPost.videoURL = downloadURL; // You'll need to get this from the upload promise
-                            }
-                    
-                            // Render the new post
-                            renderPost(newPost);
-                    
-                            // Reset the file input attributes
-                            postPhoto.removeAttribute('data-orientation');
+                            postVideo.value = ''; // Add this line
+                            loadPosts();
                         })
                         .catch((error) => {
                             errorMessage.textContent = error.message;
@@ -1084,86 +1064,6 @@
         reader.readAsDataURL(file);
       }
     });
-
-    // Function to render a single post
-    function renderPost(post) {
-      const profilePictureURL = post.authorData && post.authorData.profilePictureURL ? post.authorData.profilePictureURL : null;
-      const profilePictureHTML = profilePictureURL ?
-          `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">` :
-          getInitialsFallback(post.authorName);
-    
-      // Get the current user's reaction for this post
-      const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
-      const likeClass = userReaction === 'like' ? 'selected' : '';
-      const loveClass = userReaction === 'love' ? 'selected' : '';
-      const laughClass = userReaction === 'laugh' ? 'selected' : '';
-    
-      const reactions = post.reactions || {};
-      let likeCount = 0, loveCount = 0, laughCount = 0;
-      Object.values(reactions).forEach(reaction => {
-          if (reaction === 'like') likeCount++;
-          if (reaction === 'love') loveCount++;
-          if (reaction === 'laugh') laughCount++;
-      });
-    
-      const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
-      const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
-      const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
-      const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
-      let mediaHTML = '';
-      if (post.photoURL) {
-        const orientation = post.mediaOrientation || 'horizontal';
-        mediaHTML = `
-          <div class="media-container media-${orientation}">
-            <img src="${post.photoURL}" class="post-media">
-          </div>
-        `;
-      } else if (post.videoURL) {
-        const orientation = post.mediaOrientation || 'horizontal';
-        mediaHTML = `
-          <div class="media-container media-${orientation}">
-            <video controls class="post-media">
-              <source src="${post.videoURL}" type="video/mp4">
-            </video>
-          </div>
-        `;
-      }
-    
-      let postHTML = `
-          <div class="post" data-post-id="${post.id}">
-              <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
-                  <div style="display: flex; align-items: center;">
-                      ${profilePictureHTML}
-                      <h4 style="margin: 0;">${post.authorName}</h4>
-                  </div>
-                  <div style="display: flex; align-items: center;">
-                      <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
-                      ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
-                  </div>
-              </div>
-              <p>${post.content}</p>
-              ${mediaHTML}
-              <div class="reactions">
-                  <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
-                  <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
-                  <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
-              </div>
-              <div class="comments-section">
-                  <div class="comment-form">
-                      <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${post.id}">
-                      <button class="comment-button" data-post-id="${post.id}">Post</button>
-                  </div>
-                  <div class="comments-list" id="comments-${post.id}">
-                      <!-- Comments will be loaded here -->
-                  </div>
-              </div>
-          </div>
-      `;
-    
-      // Prepend the new post to the feed
-      feed.insertAdjacentHTML('afterbegin', postHTML);
-    }
-
 
     // Load posts when page loads
     window.onload = loadPosts;
