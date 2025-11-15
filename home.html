@@ -913,9 +913,19 @@
         });
     }
 
-    postVideo.addEventListener('change', () => {
-      const videoOrientationButtons = document.getElementById('video-orientation-buttons');
-      videoOrientationButtons.style.display = postVideo.files.length > 0 ? 'block' : 'none';
+    postVideo.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+    
+      checkVideoDuration(file, (isValid) => {
+        if (!isValid) {
+          errorMessage.textContent = "Video must be 10 seconds or shorter.";
+          postVideo.value = ''; // Clear the file input
+          document.getElementById('video-orientation-buttons').style.display = 'none';
+        } else {
+          document.getElementById('video-orientation-buttons').style.display = 'block';
+        }
+      });
     });
 
     document.querySelectorAll('.orientation-button').forEach(button => {
@@ -1064,6 +1074,16 @@
         reader.readAsDataURL(file);
       }
     });
+
+    function checkVideoDuration(file, callback) {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        callback(video.duration <= 10);
+      };
+      video.src = URL.createObjectURL(file);
+    }
 
     // Load posts when page loads
     window.onload = loadPosts;
