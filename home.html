@@ -205,7 +205,7 @@
   <div id="post-form">
       <h3>Create a Post</h3>
       <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
-      <input type="file" id="post-photo" accept="image/*">
+      <input type="file" id="post-photo" accept="image/*" multiple>
       <input type="file" id="post-video" accept="video/*">
       <div id="video-orientation-buttons" style="display: none; margin: 10px 0;">
         <button class="orientation-button selected" data-orientation="horizontal">Horizontal</button>
@@ -266,6 +266,7 @@
     const errorMessage = document.getElementById('error-message');
 
     let isLoading = false; // Flag to prevent multiple simultaneous loads
+    let selectedImageFiles = []; // Global array to store selected images
     
     // Navigate to Profile Page
     const profileButton = document.getElementById('profile-button');
@@ -286,104 +287,104 @@
 
     // Create a new post
     postButton.addEventListener('click', () => {
-        const content = postContent.value;
-        const photoFile = postPhoto.files[0];
-        const videoFile = postVideo.files[0];
+      const content = postContent.value;
+      const videoFile = postVideo.files[0];
     
-        if (!content) {
-            errorMessage.textContent = 'Post content cannot be empty.';
-            return;
-        }
+      if (!content && selectedImageFiles.length === 0 && !videoFile) {
+        errorMessage.textContent = 'Post content cannot be empty.';
+        return;
+      }
     
-        const user = auth.currentUser;
-        user.reload().then(() => {
-            const authorName = user.displayName || "Unknown User";
-            const post = {
-                authorId: user.uid,
-                authorName: authorName,
-                content: content,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                reactions: {}
-            };
+      const user = auth.currentUser;
+      user.reload().then(() => {
+        const authorName = user.displayName || "Unknown User";
+        const post = {
+          authorId: user.uid,
+          authorName: authorName,
+          content: content,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          reactions: {},
+          imageURLs: [], // Initialize as empty array
+        };
     
-            // Upload post to Firestore
-            db.collection('posts').add(post)
-                .then((docRef) => {
-                    const uploadPromises = [];
+        // Upload post to Firestore
+        db.collection('posts').add(post)
+          .then((docRef) => {
+            const uploadPromises = [];
     
-                    // Upload photo if present
-                    if (photoFile) {
-                      const storageRef = storage.ref();
-                      const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
-                      const uploadTask = photoRef.put(photoFile);
-                      uploadPromises.push(
-                        new Promise((resolve, reject) => {
-                          uploadTask.on('state_changed',
-                            null,
-                            (error) => {
-                              console.error('Upload error:', error);
-                              reject(error);
-                            },
-                            () => {
-                              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                // Use the selected orientation from the file input
-                                const orientation = postPhoto.getAttribute('data-orientation') || 'horizontal';
-                                docRef.update({
-                                  photoURL: downloadURL,
-                                  mediaOrientation: orientation
-                                }).then(resolve);
-                              });
-                            }
-                          );
-                        })
-                      );
-                    }
-
-    
-                    // Upload video if present
-                    if (videoFile) {
-                      const storageRef = storage.ref();
-                      const videoRef = storageRef.child(`postVideos/${docRef.id}`);
-                      const uploadTask = videoRef.put(videoFile);
-                      uploadPromises.push(
-                        new Promise((resolve, reject) => {
-                          uploadTask.on('state_changed',
-                            null,
-                            (error) => {
-                              console.error('Upload error:', error);
-                              reject(error);
-                            },
-                            () => {
-                              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                const orientation = getSelectedOrientation();
-                                docRef.update({
-                                  videoURL: downloadURL,
-                                  mediaOrientation: orientation
-                                }).then(resolve);
-                              });
-                            }
-                          );
-                        })
-                      );
-                    }
-    
-                    // Wait for all uploads to complete
-                    Promise.all(uploadPromises)
-                        .then(() => {
-                            alert('Post created!');
-                            postContent.value = '';
-                            postPhoto.value = '';
-                            postVideo.value = ''; // Add this line
-                            loadPosts();
-                        })
-                        .catch((error) => {
-                            errorMessage.textContent = error.message;
+            // Upload all images
+            if (selectedImageFiles.length > 0) {
+              selectedImageFiles.forEach((file, index) => {
+                const storageRef = storage.ref();
+                const photoRef = storageRef.child(`postPhotos/${docRef.id}_${index}`);
+                const uploadTask = photoRef.put(file);
+                uploadPromises.push(
+                  new Promise((resolve, reject) => {
+                    uploadTask.on('state_changed',
+                      null,
+                      (error) => {
+                        console.error('Upload error:', error);
+                        reject(error);
+                      },
+                      () => {
+                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                          post.imageURLs.push(downloadURL);
+                          resolve();
                         });
+                      }
+                    );
+                  })
+                );
+              });
+            }
+    
+            // Upload video if present (unchanged)
+            if (videoFile) {
+              const storageRef = storage.ref();
+              const videoRef = storageRef.child(`postVideos/${docRef.id}`);
+              const uploadTask = videoRef.put(videoFile);
+              uploadPromises.push(
+                new Promise((resolve, reject) => {
+                  uploadTask.on('state_changed',
+                    null,
+                    (error) => {
+                      console.error('Upload error:', error);
+                      reject(error);
+                    },
+                    () => {
+                      uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                        docRef.update({
+                          videoURL: downloadURL,
+                          mediaOrientation: getSelectedOrientation()
+                        }).then(resolve);
+                      });
+                    }
+                  );
                 })
-                .catch((error) => {
-                    errorMessage.textContent = error.message;
-                });
-        });
+              );
+            }
+    
+            // Wait for all uploads to complete
+            Promise.all(uploadPromises)
+              .then(() => {
+                if (post.imageURLs.length > 0) {
+                  docRef.update({ imageURLs: post.imageURLs });
+                }
+                alert('Post created!');
+                postContent.value = '';
+                postPhoto.value = '';
+                postVideo.value = '';
+                selectedImageFiles = []; // Clear the array
+                loadPosts();
+              })
+              .catch((error) => {
+                errorMessage.textContent = error.message;
+              });
+          })
+          .catch((error) => {
+            errorMessage.textContent = error.message;
+          });
+      });
     });
 
     let lastVisiblePost = null; // To keep track of the last fetched post
@@ -991,8 +992,9 @@
     }
 
     postPhoto.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      if (file) {
+      const files = Array.from(event.target.files);
+      if (files.length > 0) {
+        selectedImageFiles.push(...files);
         const reader = new FileReader();
         reader.onload = (e) => {
           const modal = document.getElementById('image-cropper-modal');
