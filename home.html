@@ -206,6 +206,7 @@
       <h3>Create a Post</h3>
       <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
       <input type="file" id="post-photo" accept="image/*" multiple>
+      <div id="image-preview" style="display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0;"></div>
       <input type="file" id="post-video" accept="video/*">
       <div id="video-orientation-buttons" style="display: none; margin: 10px 0;">
         <button class="orientation-button selected" data-orientation="horizontal">Horizontal</button>
@@ -995,6 +996,7 @@
       const files = Array.from(event.target.files);
       if (files.length > 0) {
         selectedImageFiles.push(...files);
+        updateImagePreview();
         const reader = new FileReader();
         reader.onload = (e) => {
           const modal = document.getElementById('image-cropper-modal');
@@ -1071,11 +1073,32 @@
             modal.style.display = 'none';
             cropper.destroy();
             postPhoto.value = ''; // Clear the file input
+            selectedImageFiles = [];
+            updateImagePreview();
           };
         };
         reader.readAsDataURL(file);
       }
     });
+
+    function updateImagePreview() {
+      const previewContainer = document.getElementById('image-preview');
+      previewContainer.innerHTML = ''; // Clear existing previews
+    
+      selectedImageFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.style.maxWidth = '100px';
+          img.style.maxHeight = '100px';
+          img.style.borderRadius = '4px';
+          img.style.objectFit = 'cover';
+          previewContainer.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
 
     function checkVideoDuration(file, callback) {
       const video = document.createElement('video');
