@@ -195,6 +195,16 @@
       color: white;
       border-color: #4CAF50;
     }
+    .image-carousel {
+        display: flex;
+        overflow-x: auto;
+        gap: 10px;
+        padding: 10px 0;
+    }
+    .image-carousel img {
+        max-height: 400px;
+        flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -205,7 +215,8 @@
   <div id="post-form">
       <h3>Create a Post</h3>
       <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
-      <input type="file" id="post-photo" accept="image/*">
+      <input type="file" id="post-photo" accept="image/*" multiple>
+      <div id="image-preview" style="display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0;"></div>
       <input type="file" id="post-video" accept="video/*">
       <div id="video-orientation-buttons" style="display: none; margin: 10px 0;">
         <button class="orientation-button selected" data-orientation="horizontal">Horizontal</button>
@@ -287,10 +298,10 @@
     // Create a new post
     postButton.addEventListener('click', () => {
         const content = postContent.value;
-        const photoFile = postPhoto.files[0];
+        const photoFiles = postPhoto.files; // Now an array
         const videoFile = postVideo.files[0];
     
-        if (!content) {
+        if (!content && photoFiles.length === 0 && !videoFile) {
             errorMessage.textContent = 'Post content cannot be empty.';
             return;
         }
@@ -303,7 +314,8 @@
                 authorName: authorName,
                 content: content,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                reactions: {}
+                reactions: {},
+                imageURLs: [], // Initialize as empty array
             };
     
             // Upload post to Firestore
@@ -311,69 +323,68 @@
                 .then((docRef) => {
                     const uploadPromises = [];
     
-                    // Upload photo if present
-                    if (photoFile) {
-                      const storageRef = storage.ref();
-                      const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
-                      const uploadTask = photoRef.put(photoFile);
-                      uploadPromises.push(
-                        new Promise((resolve, reject) => {
-                          uploadTask.on('state_changed',
-                            null,
-                            (error) => {
-                              console.error('Upload error:', error);
-                              reject(error);
-                            },
-                            () => {
-                              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                // Use the selected orientation from the file input
-                                const orientation = postPhoto.getAttribute('data-orientation') || 'horizontal';
-                                docRef.update({
-                                  photoURL: downloadURL,
-                                  mediaOrientation: orientation
-                                }).then(resolve);
-                              });
-                            }
-                          );
-                        })
-                      );
+                    // Upload all images
+                    if (photoFiles.length > 0) {
+                        Array.from(photoFiles).forEach((file, index) => {
+                            const storageRef = storage.ref();
+                            const photoRef = storageRef.child(`postPhotos/${docRef.id}_${index}`);
+                            const uploadTask = photoRef.put(file);
+                            uploadPromises.push(
+                                new Promise((resolve, reject) => {
+                                    uploadTask.on('state_changed',
+                                        null,
+                                        (error) => {
+                                            console.error('Upload error:', error);
+                                            reject(error);
+                                        },
+                                        () => {
+                                            uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                                post.imageURLs.push(downloadURL);
+                                                resolve();
+                                            });
+                                        }
+                                    );
+                                })
+                            );
+                        });
                     }
-
     
-                    // Upload video if present
+                    // Upload video if present (unchanged)
                     if (videoFile) {
-                      const storageRef = storage.ref();
-                      const videoRef = storageRef.child(`postVideos/${docRef.id}`);
-                      const uploadTask = videoRef.put(videoFile);
-                      uploadPromises.push(
-                        new Promise((resolve, reject) => {
-                          uploadTask.on('state_changed',
-                            null,
-                            (error) => {
-                              console.error('Upload error:', error);
-                              reject(error);
-                            },
-                            () => {
-                              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                const orientation = getSelectedOrientation();
-                                docRef.update({
-                                  videoURL: downloadURL,
-                                  mediaOrientation: orientation
-                                }).then(resolve);
-                              });
-                            }
-                          );
-                        })
-                      );
+                        const storageRef = storage.ref();
+                        const videoRef = storageRef.child(`postVideos/${docRef.id}`);
+                        const uploadTask = videoRef.put(videoFile);
+                        uploadPromises.push(
+                            new Promise((resolve, reject) => {
+                                uploadTask.on('state_changed',
+                                    null,
+                                    (error) => {
+                                        console.error('Upload error:', error);
+                                        reject(error);
+                                    },
+                                    () => {
+                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                            docRef.update({
+                                                videoURL: downloadURL,
+                                                mediaOrientation: getSelectedOrientation()
+                                            }).then(resolve);
+                                        });
+                                    }
+                                );
+                            })
+                        );
                     }
     
                     // Wait for all uploads to complete
                     Promise.all(uploadPromises)
                         .then(() => {
+                            if (post.imageURLs.length > 0) {
+                                docRef.update({ imageURLs: post.imageURLs });
+                            }
                             alert('Post created!');
                             postContent.value = '';
                             postPhoto.value = '';
-                            postVideo.value = ''; // Add this line
+                            postVideo.value = '';
                             loadPosts();
                         })
                         .catch((error) => {
@@ -480,24 +491,23 @@
             const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
 
             let mediaHTML = '';
-            if (post.photoURL) {
-              const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
-              mediaHTML = `
-                <div class="media-container media-${orientation}">
-                  <img src="${post.photoURL}" class="post-media">
-                </div>
-              `;
+            if (post.imageURLs && post.imageURLs.length > 0) {
+                mediaHTML = `
+                    <div class="media-container">
+                        <div class="image-carousel">
+                            ${post.imageURLs.map(url => `<img src="${url}" class="post-media">`).join('')}
+                        </div>
+                    </div>
+                `;
             } else if (post.videoURL) {
-              const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
-              mediaHTML = `
-                <div class="media-container media-${orientation}">
-                  <video controls class="post-media">
-                    <source src="${post.videoURL}" type="video/mp4">
-                  </video>
-                </div>
-              `;
+                mediaHTML = `
+                    <div class="media-container media-${post.mediaOrientation || 'horizontal'}>
+                        <video controls class="post-media">
+                            <source src="${post.videoURL}" type="video/mp4">
+                        </video>
+                    </div>
+                `;
             }
-
     
             let postHTML = `
                 <div class="post" data-post-id="${post.id}">
@@ -953,41 +963,47 @@
     
     // Define the deletePost function
     async function deletePost(postId) {
-      try {
-        const postRef = db.collection('posts').doc(postId);
-        const postDoc = await postRef.get();
-        if (!postDoc.exists) {
-          console.error('Post does not exist');
-          return;
+        try {
+            const postRef = db.collection('posts').doc(postId);
+            const postDoc = await postRef.get();
+            if (!postDoc.exists) {
+                console.error('Post does not exist');
+                return;
+            }
+    
+            const postData = postDoc.data();
+            const storage = firebase.storage();
+    
+            // Delete all images
+            if (postData.imageURLs) {
+                await Promise.all(
+                    postData.imageURLs.map(url => {
+                        const photoRef = storage.refFromURL(url);
+                        return photoRef.delete();
+                    })
+                );
+            }
+    
+            // Delete video if present (unchanged)
+            if (postData.videoURL) {
+                const videoRef = storage.refFromURL(postData.videoURL);
+                await videoRef.delete();
+            }
+    
+            // Delete the post document
+            await postRef.delete();
+    
+            // Remove the post from the UI
+            const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+            if (postElement) {
+                postElement.remove();
+            }
+    
+            alert('Post deleted successfully!');
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            alert('Failed to delete post. Please try again.');
         }
-    
-        const postData = postDoc.data();
-        const storage = firebase.storage();
-    
-        // Delete media from Storage if it exists
-        if (postData.photoURL) {
-          const photoRef = storage.refFromURL(postData.photoURL);
-          await photoRef.delete();
-        }
-        if (postData.videoURL) {
-          const videoRef = storage.refFromURL(postData.videoURL);
-          await videoRef.delete();
-        }
-    
-        // Delete the post document
-        await postRef.delete();
-    
-        // Remove the post from the UI
-        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-        if (postElement) {
-          postElement.remove();
-        }
-    
-        alert('Post deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting post:', error);
-        alert('Failed to delete post. Please try again.');
-      }
     }
 
     postPhoto.addEventListener('change', (event) => {
