@@ -482,22 +482,22 @@
             const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
 
             let mediaHTML = '';
-            if (post.photoURL) {
-              const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
-              mediaHTML = `
-                <div class="media-container media-${orientation}">
-                  <img src="${post.photoURL}" class="post-media">
-                </div>
-              `;
+            if (post.imageURLs && post.imageURLs.length > 0) {
+                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
+                mediaHTML = '<div class="media-container media-' + orientation + '">';
+                post.imageURLs.forEach((url) => {
+                    mediaHTML += `<img src="${url}" class="post-media" alt="Post Image">`;
+                });
+                mediaHTML += '</div>';
             } else if (post.videoURL) {
-              const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
-              mediaHTML = `
-                <div class="media-container media-${orientation}">
-                  <video controls class="post-media">
-                    <source src="${post.videoURL}" type="video/mp4">
-                  </video>
-                </div>
-              `;
+                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
+                mediaHTML = `
+                  <div class="media-container media-${orientation}">
+                    <video controls class="post-media">
+                      <source src="${post.videoURL}" type="video/mp4">
+                    </video>
+                  </div>
+                `;
             }
 
     
