@@ -195,6 +195,39 @@
       color: white;
       border-color: #4CAF50;
     }
+    .carousel {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .carousel-inner {
+        display: flex;
+        overflow: hidden;
+        width: 100%;
+        max-height: 400px; /* Adjust based on your design */
+    }
+    
+    .carousel-item {
+        min-width: 100%; /* Make items take full width */
+        transition: transform 0.5s ease;
+    }
+    
+    .carousel-item img {
+        width: 100%;
+        height: auto; /* Maintain aspect ratio */
+    }
+    
+    .carousel-control-prev,
+    .carousel-control-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        background-color: rgba(255, 255, 255, 0.5); /* Slightly transparent */
+        border: none;
+        border-radius: 50%;
+        padding: 10px;
+    }
   </style>
 </head>
 <body>
@@ -480,26 +513,38 @@
             const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
             const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
             const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
-
+    
             let mediaHTML = '';
             if (post.imageURLs && post.imageURLs.length > 0) {
-                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
-                mediaHTML = '<div class="media-container media-' + orientation + '">';
-                post.imageURLs.forEach((url) => {
-                    mediaHTML += `<img src="${url}" class="post-media" alt="Post Image">`;
-                });
-                mediaHTML += '</div>';
-            } else if (post.videoURL) {
-                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
                 mediaHTML = `
-                  <div class="media-container media-${orientation}">
-                    <video controls class="post-media">
-                      <source src="${post.videoURL}" type="video/mp4">
-                    </video>
-                  </div>
-                `;
+                    <div class="carousel">
+                        <div class="carousel-inner">`;
+                post.imageURLs.forEach((url, index) => {
+                    const isActive = index === 0 ? " active" : "";
+                    mediaHTML += `
+                        <div class="carousel-item${isActive}">
+                            <img src="${url}" class="post-media" alt="Post Image">
+                        </div>`;
+                });
+                mediaHTML += `
+                        </div>
+                        <a class="carousel-control-prev" href="#" role="button" data-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                        <a class="carousel-control-next" href="#" role="button" data-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                    </div>`;
+            } else if (post.videoURL) {
+                mediaHTML = `
+                    <div class="media-container">
+                        <video controls class="post-media">
+                            <source src="${post.videoURL}" type="video/mp4">
+                        </video>
+                    </div>`;
             }
-
     
             let postHTML = `
                 <div class="post" data-post-id="${post.id}">
@@ -529,8 +574,7 @@
                             <!-- Comments will be loaded here -->
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
     
             // Append each post directly to the feed
             feed.innerHTML += postHTML;
@@ -538,7 +582,33 @@
             // Load comments for each post
             loadComments(post.id);
         });
-        setupIntersectionObserver();
+    
+        // Initialize carousel controls after rendering
+        setupCarousels();
+    }
+    
+    // Set up carousel functionality
+    function setupCarousels() {
+        const carousels = document.querySelectorAll('.carousel');
+        carousels.forEach(carousel => {
+            const prevButton = carousel.querySelector('.carousel-control-prev');
+            const nextButton = carousel.querySelector('.carousel-control-next');
+            const items = carousel.querySelectorAll('.carousel-item');
+    
+            let currentIndex = 0;
+    
+            prevButton.addEventListener('click', () => {
+                items[currentIndex].classList.remove('active');
+                currentIndex = (currentIndex === 0) ? items.length - 1 : currentIndex - 1;
+                items[currentIndex].classList.add('active');
+            });
+    
+            nextButton.addEventListener('click', () => {
+                items[currentIndex].classList.remove('active');
+                currentIndex = (currentIndex === items.length - 1) ? 0 : currentIndex + 1;
+                items[currentIndex].classList.add('active');
+            });
+        });
     }
     
     // Call loadPosts initially to load the first batch
