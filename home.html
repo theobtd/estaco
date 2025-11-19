@@ -6,8 +6,6 @@
   <title>Estaco - Home Feed</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -129,17 +127,18 @@
       margin-top: -15px; /* Adjust as needed to move it closer to the header */
     }
     .media-container {
-        position: relative;
-        margin-top: 10px;
-        overflow: hidden;
-        background-color: #f0f0f0;
+      position: relative;
+      margin-top: 10px;
+      overflow: hidden;
+      background-color: #f0f0f0; /* Placeholder color */
     }
-    
-    .media-horizontal,
-    .media-vertical {
-        width: 100%;
-        overflow: hidden;
-        background-color: #f0f0f0;
+    .media-horizontal {
+      width: 100%;
+      max-width: 600px;
+      height: 400px;
+      position: relative;
+      overflow: hidden;
+      background-color: #f0f0f0;
     }
     
     .media-vertical {
@@ -195,52 +194,6 @@
       background: #4CAF50;
       color: white;
       border-color: #4CAF50;
-    }
-    .splide {
-        width: 100%;
-        height: 100%;
-    }
-    
-    .splide__track,
-    .splide__list {
-        width: 100%;
-        height: 100%;
-    }
-    
-    .splide__slide {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-    }
-    
-    .splide__slide img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-        display: block;
-        margin: 0 auto;
-    }
-    
-    .splide__arrows {
-        top: 50%;
-        transform: translateY(-50%);
-    }
-    
-    .splide__arrow--prev {
-        left: 10px;
-    }
-    
-    .splide__arrow--next {
-        right: 10px;
-    }
-    
-    .splide__pagination {
-        bottom: 10px;
-        text-align: center;
-        width: 100%;
     }
   </style>
 </head>
@@ -530,22 +483,12 @@
 
             let mediaHTML = '';
             if (post.imageURLs && post.imageURLs.length > 0) {
-                const orientation = post.mediaOrientation || 'horizontal';
-                mediaHTML = `
-                    <div class="media-container media-${orientation}">
-                        <div class="splide" style="height: 100%;">
-                            <div class="splide__track">
-                                <ul class="splide__list">
-                                    ${post.imageURLs.map(url => `
-                                        <li class="splide__slide">
-                                            <img src="${url}" class="post-media" alt="Post Image">
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
+                mediaHTML = '<div class="media-container media-' + orientation + '">';
+                post.imageURLs.forEach((url) => {
+                    mediaHTML += `<img src="${url}" class="post-media" alt="Post Image">`;
+                });
+                mediaHTML += '</div>';
             } else if (post.videoURL) {
                 const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
                 mediaHTML = `
@@ -591,18 +534,6 @@
     
             // Append each post directly to the feed
             feed.innerHTML += postHTML;
-
-            // Initialize Splide for this post if it has multiple images
-            if (post.imageURLs && post.imageURLs.length > 1) {
-                setTimeout(() => {
-                  const splide = new Splide(`.post[data-post-id="${post.id}"] .splide`, {
-                      type: 'loop',
-                      perPage: 1,
-                      arrows: true,
-                      pagination: true,
-                  }).mount();
-                }, 100);
-            }
     
             // Load comments for each post
             loadComments(post.id);
