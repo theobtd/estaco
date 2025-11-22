@@ -487,7 +487,6 @@
             // After the first load, set the flag to false and load more posts
             if (isFirstLoad) {
                 isFirstLoad = false;
-                setTimeout(() => loadPosts(), 100); // Small delay to ensure DOM is ready
             }
     
             isLoading = false;
@@ -597,27 +596,22 @@
 
             // Initialize Splide for this post if it has multiple images
             if (post.imageURLs && post.imageURLs.length > 1) {
-                const splideElement = document.querySelector(`.post[data-post-id="${post.id}"] .splide`);
-                if (splideElement) {
-                    // Wait for all images to load
-                    const images = splideElement.querySelectorAll('img');
-                    let loaded = 0;
-                    images.forEach(img => {
-                        img.onload = () => {
-                            loaded++;
-                            if (loaded === images.length) {
-                                new Splide(splideElement, {
-                                    type: 'loop',
-                                    perPage: 1,
-                                    arrows: true,
-                                    pagination: true,
-                                    height: '400px',
-                                }).mount();
-                            }
-                        };
-                        // In case image is cached and onload doesn't fire
-                        if (img.complete) img.onload();
+                const postElement = document.querySelector(`.post[data-post-id="${post.id}"]`);
+                if (postElement) {
+                    const observer = new MutationObserver((mutations, obs) => {
+                        const splideElement = postElement.querySelector('.splide');
+                        if (splideElement) {
+                            new Splide(splideElement, {
+                                type: 'loop',
+                                perPage: 1,
+                                arrows: true,
+                                pagination: true,
+                                height: '400px',
+                            }).mount();
+                            obs.disconnect(); // Stop observing after Splide is mounted
+                        }
                     });
+                    observer.observe(postElement, { childList: true, subtree: true });
                 }
             }
 
