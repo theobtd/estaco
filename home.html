@@ -6,8 +6,6 @@
   <title>Estaco - Home Feed</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -197,24 +195,6 @@
       color: white;
       border-color: #4CAF50;
     }
-
-    .splide {
-      margin: 10px 0;
-    }
-    .splide__slide img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    .splide__arrow {
-      background: rgba(0, 0, 0, 0.5);
-      width: 30px;
-      height: 30px;
-    }
-    .splide__arrow svg {
-      fill: white;
-    }
-
   </style>
 </head>
 <body>
@@ -473,30 +453,9 @@
             isLoading = false;
         });
     }
-
-    function initSplides() {
-      document.querySelectorAll('.splide').forEach(splideEl => {
-        new Splide(splideEl, {
-          arrows: true,
-          pagination: false,
-          rewind: true, // Allow infinite loop (optional)
-          rewindByDrag: true, // Allow infinite loop by drag (optional)
-        }).mount();
-      });
-    }
-
-    function destroySplides() {
-      document.querySelectorAll('.splide').forEach(splideEl => {
-        const splide = splideEl.splide;
-        if (splide) {
-          splide.destroy();
-        }
-      });
-    }
     
     // Function to render posts
     function renderPosts(postsData) {
-        destroySplides();
         postsData.forEach((post) => {
             const profilePictureURL = post.authorData && post.authorData.profilePictureURL ? post.authorData.profilePictureURL : null;
             const profilePictureHTML = profilePictureURL ? 
@@ -522,25 +481,16 @@
             const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
             const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
 
-            // Replace the current mediaHTML logic in renderPosts
             let mediaHTML = '';
             if (post.imageURLs && post.imageURLs.length > 0) {
-                const orientation = post.mediaOrientation || 'horizontal';
-                mediaHTML = `
-                  <div class="splide media-${orientation}">
-                    <div class="splide__track">
-                      <ul class="splide__list">
-                        ${post.imageURLs.map(url => `
-                          <li class="splide__slide">
-                            <img src="${url}" class="post-media" alt="Post Image">
-                          </li>
-                        `).join('')}
-                      </ul>
-                    </div>
-                  </div>
-                `;
+                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
+                mediaHTML = '<div class="media-container media-' + orientation + '">';
+                post.imageURLs.forEach((url) => {
+                    mediaHTML += `<img src="${url}" class="post-media" alt="Post Image">`;
+                });
+                mediaHTML += '</div>';
             } else if (post.videoURL) {
-                const orientation = post.mediaOrientation || 'horizontal';
+                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
                 mediaHTML = `
                   <div class="media-container media-${orientation}">
                     <video controls class="post-media">
@@ -549,6 +499,7 @@
                   </div>
                 `;
             }
+
     
             let postHTML = `
                 <div class="post" data-post-id="${post.id}">
@@ -587,7 +538,6 @@
             // Load comments for each post
             loadComments(post.id);
         });
-        initSplides();
         setupIntersectionObserver();
     }
     
