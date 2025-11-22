@@ -514,14 +514,15 @@
                 `;
             } else if (post.videoURL) {
                 mediaHTML = `
-                  <div class="media-container media-vertical">
-                      <div class="video-wrapper" style="position: relative;">
-                          <video class="post-media" data-post-id="${post.id}" muted playsinline>
-                              <source src="${post.videoURL}" type="video/mp4">
-                          </video>
-                          <button class="custom-play-button" data-post-id="${post.id}">▶</button>
-                      </div>
-                  </div>
+                    <div class="media-container media-vertical">
+                        <div class="video-wrapper" style="position: relative;">
+                            <canvas class="video-preview-canvas" data-post-id="${post.id}" style="width: 100%; height: 100%; object-fit: contain; background-color: #f0f0f0;"></canvas>
+                            <video class="post-media" data-post-id="${post.id}" muted playsinline style="display: none;">
+                                <source src="${post.videoURL}" type="video/mp4">
+                            </video>
+                            <button class="custom-play-button" data-post-id="${post.id}">▶</button>
+                        </div>
+                    </div>
                 `;
             }
     
@@ -558,9 +559,16 @@
     
             // Append each post directly to the feed
             feed.innerHTML += postHTML;
-    
+
             // Load comments for each post
             loadComments(post.id);
+
+            if (post.videoURL) {
+                const videoElement = document.querySelector(`.post-media[data-post-id="${post.id}"]`);
+                const canvasElement = document.querySelector(`.video-preview-canvas[data-post-id="${post.id}"]`);
+                videoElement.load(); // Ensure the video starts loading
+                extractVideoPreview(videoElement, canvasElement);
+            }
         });
         setupIntersectionObserver();
     }
@@ -1115,22 +1123,36 @@
     }
 
     document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('custom-play-button') || e.target.classList.contains('post-media')) {
+        if (e.target.classList.contains('custom-play-button') || e.target.classList.contains('post-media') || e.target.classList.contains('video-preview-canvas')) {
             const postId = e.target.getAttribute('data-post-id');
-            const video = e.target.classList.contains('post-media')
-                ? e.target
-                : document.querySelector(`.post-media[data-post-id="${postId}"]`);
+            const video = document.querySelector(`.post-media[data-post-id="${postId}"]`);
+            const canvas = document.querySelector(`.video-preview-canvas[data-post-id="${postId}"]`);
             const playButton = document.querySelector(`.custom-play-button[data-post-id="${postId}"]`);
     
             if (video.paused) {
+                video.style.display = 'block';
+                canvas.style.display = 'none';
                 video.play();
                 playButton.classList.add('hidden');
             } else {
                 video.pause();
+                video.style.display = 'none';
+                canvas.style.display = 'block';
                 playButton.classList.remove('hidden');
             }
         }
     });
+
+    function extractVideoPreview(videoElement, canvasElement) {
+        videoElement.addEventListener('loadeddata', () => {
+            videoElement.currentTime = 0.1; // Seek to a very early time to ensure the first frame is ready
+        }, { once: true });
+    
+        videoElement.addEventListener('seeked', () => {
+            const ctx = canvasElement.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+        }, { once: true });
+    }
 
     // Load posts when page loads
     window.onload = loadPosts;
