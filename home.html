@@ -34,7 +34,7 @@
     }
     #feed {
       margin-top: 20px;
-      padding: 0 20px;
+      width: 100%;
     }
     .post {
       padding: 10px;
@@ -137,13 +137,12 @@
     }
     .media-horizontal,
     .media-vertical {
-        width: 100vw; /* Full viewport width */
-        margin-left: -20px; /* Compensate for body padding */
-        margin-right: -20px; /* Compensate for body padding */
-        height: auto; /* Let height be calculated based on aspect ratio */
-        position: relative;
-        overflow: hidden;
-        background-color: transparent; /* Remove grey background */
+      width: 100%; /* Full width of the parent container */
+      height: auto; /* Let height be calculated based on aspect ratio */
+      position: relative;
+      overflow: hidden;
+      background-color: transparent; /* Remove grey background */
+      margin: 0; /* Remove any default margins */
     }
     
     /* Horizontal media: 16:9 aspect ratio */
@@ -159,12 +158,20 @@
     /* Media inside the container */
     .media-container img,
     .media-container video {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover; /* Use cover to fill the container */
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Use cover to fill the container */
+    }
+    @media (max-width: 600px) {
+        .media-horizontal,
+        .media-vertical {
+            width: 100vw; /* Full viewport width on mobile */
+            margin-left: -20px; /* Compensate for body padding */
+            margin-right: -20px;
+        }
     }
     .orientation-button {
       padding: 8px 12px;
