@@ -541,28 +541,30 @@
 
             let mediaHTML = '';
             if (post.imageURLs && post.imageURLs.length > 0) {
-                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
-                mediaHTML = '<div class="media-container media-' + orientation + '">';
-                post.imageURLs.forEach((url) => {
-                    mediaHTML += `<img src="${url}" class="post-media" alt="Post Image">`;
-                });
-                mediaHTML += '</div>';
-            } else if (post.videoURL) {
-                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
+                const orientation = post.mediaOrientation || 'horizontal';
                 mediaHTML = `
-                  <div class="media-container media-{{orientation}}">
+                  <div class="media-container media-${orientation}">
                     <div class="media-carousel">
-                      {{#each imageURLs}}
+                      ${post.imageURLs.map(url => `
                         <div class="media-slide">
-                          <img src="{{this}}" class="post-media" alt="Post Image">
+                          <img src="${url}" class="post-media" alt="Post Image">
                         </div>
-                      {{/each}}
+                      `).join('')}
                     </div>
-                    {{#if (gt imageURLs.length 1)}}
+                    ${post.imageURLs.length > 1 ? `
                       <button class="carousel-prev">❮</button>
                       <button class="carousel-next">❯</button>
                       <div class="carousel-indicators"></div>
-                    {{/if}}
+                    ` : ''}
+                  </div>
+                `;
+            } else if (post.videoURL) {
+                const orientation = post.mediaOrientation || 'horizontal';
+                mediaHTML = `
+                  <div class="media-container media-${orientation}">
+                    <video controls class="post-media">
+                      <source src="${post.videoURL}" type="video/mp4">
+                    </video>
                   </div>
                 `;
             }
