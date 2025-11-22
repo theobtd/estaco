@@ -6,12 +6,6 @@
   <title>Estaco - Home Feed</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-  <!-- Add Splide CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
-  
-  <!-- Add Splide JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -132,6 +126,12 @@
       color: #666;
       margin-top: -15px; /* Adjust as needed to move it closer to the header */
     }
+    .media-container {
+      position: relative;
+      margin-top: 10px;
+      overflow: hidden;
+      background-color: #f0f0f0; /* Placeholder color */
+    }
     .media-horizontal {
       width: 100%;
       max-width: 600px;
@@ -194,49 +194,6 @@
       background: #4CAF50;
       color: white;
       border-color: #4CAF50;
-    }
-    .splide__slide {
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
-    .splide__slide img {
-        display: block;
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        background-color: #f0f0f0;
-    }
-    .splide__track {
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
-    
-    .splide__list {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-    
-    .media-container {
-        position: relative;
-        width: 100%;
-        height: 400px; /* or your desired height */
-        overflow: hidden;
-        background-color: #f0f0f0;
-    }
-    .splide__arrow {
-        background: rgba(0, 0, 0, 0.5);
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-    }
-    .splide__pagination {
-        bottom: 10px;
     }
   </style>
 </head>
@@ -436,7 +393,7 @@
     let isFirstLoad = true; // Add this flag at the top with your other variables
     
     async function loadPosts() {
-        if (isLoading) return;
+        if (isLoading) return; // Prevent multiple simultaneous loads
         isLoading = true;
     
         const user = auth.currentUser;
@@ -456,8 +413,12 @@
             query = query.startAfter(lastVisiblePost);
         }
     
-        // Always load 3 posts after the first load
-        query = query.limit(postLimit);
+        // Load only 1 post on the first load
+        if (isFirstLoad) {
+            query = query.limit(1);
+        } else {
+            query = query.limit(postLimit);
+        }
     
         query.get().then((querySnapshot) => {
             if (querySnapshot.empty) {
@@ -475,10 +436,17 @@
                 const post = doc.data();
                 post.id = doc.id;
                 postsData.push(post);
-                lastVisiblePost = doc;
+                lastVisiblePost = doc; // Update lastVisiblePost for pagination
             });
     
             renderPosts(postsData);
+    
+            // After the first load, set the flag to false and load more posts
+            if (isFirstLoad) {
+                isFirstLoad = false;
+                setTimeout(() => loadPosts(), 100); // Small delay to ensure DOM is ready
+            }
+    
             isLoading = false;
         }).catch((error) => {
             errorMessage.textContent = error.message;
@@ -515,40 +483,23 @@
 
             let mediaHTML = '';
             if (post.imageURLs && post.imageURLs.length > 0) {
-                const orientation = post.mediaOrientation || 'horizontal';
-                if (post.imageURLs.length > 1) {
-                    // Use Splide for multiple images
-                    mediaHTML = `
-                        <div class="splide media-container media-${orientation}">
-                            <div class="splide__track">
-                                <ul class="splide__list">
-                                    ${post.imageURLs.map(url => `
-                                        <li class="splide__slide">
-                                            <img src="${url}" class="post-media" alt="Post Image" style="width: 100%; height: 100%; object-fit: contain;">
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // Single image: no carousel needed
-                    mediaHTML = `
-                        <div class="media-container media-${orientation}">
-                            <img src="${post.imageURLs[0]}" class="post-media" alt="Post Image">
-                        </div>
-                    `;
-                }
+                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
+                mediaHTML = '<div class="media-container media-' + orientation + '">';
+                post.imageURLs.forEach((url) => {
+                    mediaHTML += `<img src="${url}" class="post-media" alt="Post Image">`;
+                });
+                mediaHTML += '</div>';
             } else if (post.videoURL) {
-                // Video logic remains unchanged
+                const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
                 mediaHTML = `
-                    <div class="media-container media-${orientation}">
-                        <video controls class="post-media">
-                            <source src="${post.videoURL}" type="video/mp4">
-                        </video>
-                    </div>
+                  <div class="media-container media-${orientation}">
+                    <video controls class="post-media">
+                      <source src="${post.videoURL}" type="video/mp4">
+                    </video>
+                  </div>
                 `;
             }
+
     
             let postHTML = `
                 <div class="post" data-post-id="${post.id}">
@@ -583,28 +534,6 @@
     
             // Append each post directly to the feed
             feed.innerHTML += postHTML;
-
-            // Initialize Splide for this post if it has multiple images
-            if (post.imageURLs && post.imageURLs.length > 1) {
-                const postElement = document.querySelector(`.post[data-post-id="${post.id}"]`);
-                if (postElement) {
-                    const observer = new MutationObserver((mutations, obs) => {
-                        const splideElement = postElement.querySelector('.splide');
-                        if (splideElement) {
-                            new Splide(splideElement, {
-                                type: 'loop',
-                                perPage: 1,
-                                arrows: true,
-                                pagination: true,
-                                height: '400px',
-                            }).mount();
-                            obs.disconnect(); // Stop observing after Splide is mounted
-                        }
-                    });
-                    observer.observe(postElement, { childList: true, subtree: true });
-                }
-            }
-
     
             // Load comments for each post
             loadComments(post.id);
@@ -964,29 +893,27 @@
         const options = {
             root: null,
             rootMargin: '0px',
-            threshold: 0.1 // Trigger when 10% of the last post is visible
+            threshold: 0.5 // Trigger when 50% of the post is out of view
         };
     
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
+                if (!entry.isIntersecting) {
                     const postElement = entry.target;
                     const postIndex = Array.from(feed.children).indexOf(postElement);
-                    // Trigger load if the last post is visible
-                    if (postIndex === feed.children.length - 1 && !isLoading) {
+                    // Trigger load if the user scrolls away from post #1, #4, #7, etc.
+                    if ((postIndex + 1) % 3 === 1 && !isLoading) {
                         loadPosts();
                     }
                 }
             });
         }, options);
     
-        // Observe the last post
-        const posts = document.querySelectorAll('.post');
-        if (posts.length > 0) {
-            observer.observe(posts[posts.length - 1]);
-        }
+        // Observe all posts
+        document.querySelectorAll('.post').forEach(post => {
+            observer.observe(post);
+        });
     }
-
 
     postVideo.addEventListener('change', (event) => {
       const file = event.target.files[0];
