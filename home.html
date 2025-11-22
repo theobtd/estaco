@@ -476,12 +476,28 @@
 
     function initSplides() {
       document.querySelectorAll('.splide').forEach(splideEl => {
-        new Splide(splideEl).mount();
+        new Splide(splideEl, {
+          arrows: true,
+          pagination: false,
+          rewind: true, // Allow infinite loop (optional)
+          rewindByDrag: true, // Allow infinite loop by drag (optional)
+        }).mount();
+      });
+    }
+
+    function destroySplides() {
+      document.querySelectorAll('.splide').forEach(splideEl => {
+        const splide = splideEl.splide;
+        if (splide) {
+          splide.destroy();
+        }
       });
     }
     
     // Function to render posts
     function renderPosts(postsData) {
+        destroySplides();
+        feed.innerHTML = '';
         postsData.forEach((post) => {
             const profilePictureURL = post.authorData && post.authorData.profilePictureURL ? post.authorData.profilePictureURL : null;
             const profilePictureHTML = profilePictureURL ? 
