@@ -436,7 +436,7 @@
     let isFirstLoad = true; // Add this flag at the top with your other variables
     
     async function loadPosts() {
-        if (isLoading) return; // Prevent multiple simultaneous loads
+        if (isLoading) return;
         isLoading = true;
     
         const user = auth.currentUser;
@@ -456,12 +456,8 @@
             query = query.startAfter(lastVisiblePost);
         }
     
-        // Load only 1 post on the first load
-        if (isFirstLoad) {
-            query = query.limit(1);
-        } else {
-            query = query.limit(postLimit);
-        }
+        // Always load 3 posts after the first load
+        query = query.limit(postLimit);
     
         query.get().then((querySnapshot) => {
             if (querySnapshot.empty) {
@@ -479,16 +475,10 @@
                 const post = doc.data();
                 post.id = doc.id;
                 postsData.push(post);
-                lastVisiblePost = doc; // Update lastVisiblePost for pagination
+                lastVisiblePost = doc;
             });
     
             renderPosts(postsData);
-    
-            // After the first load, set the flag to false and load more posts
-            if (isFirstLoad) {
-                isFirstLoad = false;
-            }
-    
             isLoading = false;
         }).catch((error) => {
             errorMessage.textContent = error.message;
@@ -974,27 +964,29 @@
         const options = {
             root: null,
             rootMargin: '0px',
-            threshold: 0.5 // Trigger when 50% of the post is out of view
+            threshold: 0.1 // Trigger when 10% of the last post is visible
         };
     
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (!entry.isIntersecting) {
+                if (entry.isIntersecting) {
                     const postElement = entry.target;
                     const postIndex = Array.from(feed.children).indexOf(postElement);
-                    // Trigger load if the user scrolls away from post #1, #4, #7, etc.
-                    if ((postIndex + 1) % 3 === 1 && !isLoading) {
+                    // Trigger load if the last post is visible
+                    if (postIndex === feed.children.length - 1 && !isLoading) {
                         loadPosts();
                     }
                 }
             });
         }, options);
     
-        // Observe all posts
-        document.querySelectorAll('.post').forEach(post => {
-            observer.observe(post);
-        });
+        // Observe the last post
+        const posts = document.querySelectorAll('.post');
+        if (posts.length > 0) {
+            observer.observe(posts[posts.length - 1]);
+        }
     }
+
 
     postVideo.addEventListener('change', (event) => {
       const file = event.target.files[0];
