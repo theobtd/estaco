@@ -132,12 +132,6 @@
       color: #666;
       margin-top: -15px; /* Adjust as needed to move it closer to the header */
     }
-    .media-container {
-      position: relative;
-      margin-top: 10px;
-      overflow: hidden;
-      background-color: #f0f0f0; /* Placeholder color */
-    }
     .media-horizontal {
       width: 100%;
       max-width: 600px;
@@ -201,10 +195,39 @@
       color: white;
       border-color: #4CAF50;
     }
+    .splide__slide {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
     .splide__slide img {
+        display: block;
         width: 100%;
         height: 100%;
         object-fit: contain;
+        background-color: #f0f0f0;
+    }
+    .splide__track {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .splide__list {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    
+    .media-container {
+        position: relative;
+        width: 100%;
+        height: 400px; /* or your desired height */
+        overflow: hidden;
+        background-color: #f0f0f0;
     }
     .splide__arrow {
         background: rgba(0, 0, 0, 0.5);
@@ -512,7 +535,7 @@
                                 <ul class="splide__list">
                                     ${post.imageURLs.map(url => `
                                         <li class="splide__slide">
-                                            <img src="${url}" class="post-media" alt="Post Image">
+                                            <img src="${url}" class="post-media" alt="Post Image" style="width: 100%; height: 100%; object-fit: contain;">
                                         </li>
                                     `).join('')}
                                 </ul>
@@ -574,15 +597,18 @@
 
             // Initialize Splide for this post if it has multiple images
             if (post.imageURLs && post.imageURLs.length > 1) {
-                const splideElement = document.querySelector(`.post[data-post-id="${post.id}"] .splide`);
-                if (splideElement) {
-                    new Splide(splideElement, {
-                        type: 'loop',
-                        perPage: 1,
-                        arrows: true,
-                        pagination: true,
-                    }).mount();
-                }
+                setTimeout(() => {
+                    const splideElement = document.querySelector(`.post[data-post-id="${post.id}"] .splide`);
+                    if (splideElement) {
+                        new Splide(splideElement, {
+                            type: 'loop',
+                            perPage: 1,
+                            arrows: true,
+                            pagination: true,
+                            height: '400px', // Match your media-container height
+                        }).mount();
+                    }
+                }, 50); // Small delay to ensure DOM is ready
             }
     
             // Load comments for each post
