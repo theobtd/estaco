@@ -497,7 +497,6 @@
     // Function to render posts
     function renderPosts(postsData) {
         destroySplides();
-        feed.innerHTML = '';
         postsData.forEach((post) => {
             const profilePictureURL = post.authorData && post.authorData.profilePictureURL ? post.authorData.profilePictureURL : null;
             const profilePictureHTML = profilePictureURL ? 
