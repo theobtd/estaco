@@ -195,6 +195,21 @@
       color: white;
       border-color: #4CAF50;
     }
+    #image-preview-container {
+        display: none;
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #f9f9f9;
+    }
+    #image-preview {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 4px;
+        display: block;
+        margin: 0 auto;
+    }
   </style>
 </head>
 <body>
@@ -376,7 +391,8 @@
                             alert('Post created!');
                             postContent.value = '';
                             postPhoto.value = '';
-                            postVideo.value = ''; // Add this line
+                            postVideo.value = '';
+                            document.getElementById('image-preview-container').style.display = 'none';
                             loadPosts();
                         })
                         .catch((error) => {
@@ -1074,12 +1090,15 @@
     
           // Handle "Cancel" button
           document.getElementById('crop-cancel-button').onclick = () => {
-            modal.style.display = 'none';
-            cropper.destroy();
-            postPhoto.value = ''; // Clear the file input
+              modal.style.display = 'none';
+              cropper.destroy();
+              postPhoto.value = '';
+              document.getElementById('image-preview-container').style.display = 'none';
           };
         };
         reader.readAsDataURL(file);
+      } else {
+        document.getElementById('image-preview-container').style.display = 'none';
       }
     });
 
