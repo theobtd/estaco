@@ -587,7 +587,7 @@
             // Initialize Splide for this post if it has multiple images
             if (post.imageURLs && post.imageURLs.length > 1) {
                 setTimeout(() => {
-                    const splideElement = document.querySelector(`.splide-${post.id}`);
+                    const splideElement = document.querySelector(`.splide.splide-${post.id}`);
                     if (splideElement) {
                         // Destroy any existing Splide instance for this element
                         if (splideElement.splide) {
