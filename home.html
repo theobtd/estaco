@@ -128,30 +128,6 @@
       color: #666;
       margin-top: -15px; /* Adjust as needed to move it closer to the header */
     }
-    .media-container {
-      position: relative;
-      margin-top: 10px;
-      overflow: hidden;
-      background-color: #f0f0f0; /* Placeholder color */
-    }
-    .media-horizontal {
-      width: 100%;
-      max-width: 600px;
-      height: 400px;
-      position: relative;
-      overflow: hidden;
-      background-color: #f0f0f0;
-    }
-    
-    .media-vertical {
-      width: 100%;
-      max-width: 400px;
-      height: 600px;
-      margin: 0 auto;
-      position: relative;
-      overflow: hidden;
-      background-color: #f0f0f0;
-    }
     .orientation-button {
       padding: 8px 12px;
       margin-right: 5px;
@@ -198,20 +174,63 @@
       border-color: #4CAF50;
     }
 
+    /* Splide carousel container */
+    .splide {
+        width: 100%;
+        height: 100%;
+        margin: 0 auto;
+    }
+    
+    /* Splide track (container for slides) */
+    .splide__track {
+        height: 100%;
+    }
+    
+    /* Splide list (wrapper for slides) */
+    .splide__list {
+        height: 100%;
+    }
+    
+    /* Splide slide (each individual slide) */
+    .splide__slide {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    /* Images inside Splide slides */
     .splide__slide img {
         width: 100%;
         height: 100%;
         object-fit: contain;
+        display: block;
     }
-    .splide__arrow {
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
+    
+    /* Media container (horizontal/vertical) */
+    .media-container {
+        position: relative;
+        margin-top: 10px;
+        overflow: hidden;
+        background-color: #f0f0f0;
     }
-    .splide__pagination {
-        bottom: 10px;
+    
+    .media-horizontal {
+        width: 100%;
+        max-width: 600px;
+        height: 400px;
     }
+    
+    .media-vertical {
+        width: 100%;
+        max-width: 400px;
+        height: 600px;
+        margin: 0 auto;
+    }
+
 
   </style>
 </head>
