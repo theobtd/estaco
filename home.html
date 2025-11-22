@@ -979,6 +979,10 @@
             return;
         }
     
+        // Reset the media input and previews
+        document.getElementById('image-preview-container').style.display = 'none';
+        document.getElementById('video-preview-container').style.display = 'none';
+    
         if (file.type.startsWith('image/')) {
             // Handle image
             const reader = new FileReader();
@@ -1048,7 +1052,6 @@
                     postMedia.value = '';
                     document.getElementById('image-preview-container').style.display = 'none';
                     document.getElementById('video-preview-container').style.display = 'none';
-                    document.getElementById('video-orientation-buttons').style.display = 'none';
                 };
             };
             reader.readAsDataURL(file);
@@ -1058,14 +1061,12 @@
                 if (!isValid) {
                     errorMessage.textContent = "Video must be 10 seconds or shorter.";
                     postMedia.value = '';
-                    document.getElementById('video-orientation-buttons').style.display = 'none';
                     document.getElementById('video-preview-container').style.display = 'none';
                 } else {
                     const videoPreview = document.getElementById('video-preview');
                     const videoPreviewContainer = document.getElementById('video-preview-container');
                     videoPreview.src = URL.createObjectURL(file);
                     videoPreviewContainer.style.display = 'block';
-                    document.getElementById('video-orientation-buttons').style.display = 'block';
                     postMedia.setAttribute('data-type', 'video');
                     postMedia.setAttribute('data-orientation', 'vertical');
                 }
