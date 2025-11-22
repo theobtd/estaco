@@ -588,7 +588,7 @@
                 setTimeout(() => {
                     const splideElement = document.querySelector(`.post[data-post-id="${post.id}"] .splide`);
                     if (splideElement) {
-                        const splide = new Splide(splideElement, {
+                        new Splide(splideElement, {
                             type: 'loop',
                             perPage: 1,
                             arrows: true,
