@@ -223,6 +223,33 @@
         cursor: pointer;
         margin: 5px 0;
     }
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .custom-play-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .custom-play-button.hidden {
+        display: none;
+    }
   </style>
 </head>
 <body>
@@ -487,11 +514,14 @@
                 `;
             } else if (post.videoURL) {
                 mediaHTML = `
-                    <div class="media-container media-vertical">
-                        <video controls class="post-media">
-                            <source src="${post.videoURL}" type="video/mp4">
-                        </video>
-                    </div>
+                  <div class="media-container media-vertical">
+                      <div class="video-wrapper" style="position: relative;">
+                          <video class="post-media" data-post-id="${post.id}" muted playsinline>
+                              <source src="${post.videoURL}" type="video/mp4">
+                          </video>
+                          <button class="custom-play-button" data-post-id="${post.id}">▶</button>
+                      </div>
+                  </div>
                 `;
             }
     
@@ -1083,6 +1113,24 @@
       };
       video.src = URL.createObjectURL(file);
     }
+
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('custom-play-button') || e.target.classList.contains('post-media')) {
+            const postId = e.target.getAttribute('data-post-id');
+            const video = e.target.classList.contains('post-media')
+                ? e.target
+                : document.querySelector(`.post-media[data-post-id="${postId}"]`);
+            const playButton = document.querySelector(`.custom-play-button[data-post-id="${postId}"]`);
+    
+            if (video.paused) {
+                video.play();
+                playButton.classList.add('hidden');
+            } else {
+                video.pause();
+                playButton.classList.remove('hidden');
+            }
+        }
+    });
 
     // Load posts when page loads
     window.onload = loadPosts;
