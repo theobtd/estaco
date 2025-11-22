@@ -566,7 +566,7 @@
             // Initialize Splide for this post if it has multiple images
             if (post.imageURLs && post.imageURLs.length > 1) {
                 setTimeout(() => {
-                    const splide = new Splide(`#comments-${post.id} .splide`, {
+                    const splide = new Splide(`.post[data-post-id="${post.id}"] .splide`, {
                         type: 'loop',
                         perPage: 1,
                         arrows: true,
