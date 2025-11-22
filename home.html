@@ -210,6 +210,19 @@
         display: block;
         margin: 0 auto;
     }
+    #post-photo {
+        display: none;
+    }
+    #post-photo-label {
+        display: block;
+        padding: 8px;
+        background: #4CAF50;
+        color: white;
+        border-radius: 4px;
+        text-align: center;
+        cursor: pointer;
+        margin: 5px 0;
+    }
   </style>
 </head>
 <body>
@@ -221,6 +234,9 @@
       <h3>Create a Post</h3>
       <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
       <input type="file" id="post-photo" accept="image/*">
+      <label for="post-photo" id="post-photo-label" style="display: block; padding: 8px; background: #4CAF50; color: white; border-radius: 4px; text-align: center; cursor: pointer; margin: 5px 0;">
+          Select Image
+      </label>
       <div id="image-preview-container" style="display: none; margin: 10px 0;">
           <img id="image-preview" style="max-width: 100%; max-height: 200px; border-radius: 4px;">
       </div>
