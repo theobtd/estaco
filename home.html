@@ -524,7 +524,7 @@
                 const orientation = post.mediaOrientation || 'horizontal';
                 mediaHTML = `
                     <div class="media-container media-${orientation}">
-                        <div class="splide">
+                        <div class="splide splide-${post.id}">
                             <div class="splide__track">
                                 <ul class="splide__list">
                                     ${post.imageURLs.map(url => `
@@ -586,12 +586,22 @@
 
             // Initialize Splide for this post if it has multiple images
             if (post.imageURLs && post.imageURLs.length > 1) {
-                console.log(`[DEBUG] About to initialize Splide for post ${post.id} in 100ms`);
-                const splide = new Splide('.splide', {
-                    type: 'loop',
-                    perPage: 1,
-                }).mount();
-
+                setTimeout(() => {
+                    const splideElement = document.querySelector(`.splide-${post.id}`);
+                    if (splideElement) {
+                        // Destroy any existing Splide instance for this element
+                        if (splideElement.splide) {
+                            splideElement.splide.destroy();
+                        }
+                        // Initialize new Splide instance
+                        new Splide(splideElement, {
+                            type: 'loop',
+                            perPage: 1,
+                            arrows: true,
+                            pagination: true,
+                        }).mount();
+                    }
+                }, 100);
             }
     
             // Load comments for each post
