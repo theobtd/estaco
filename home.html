@@ -292,7 +292,6 @@
     const postContent = document.getElementById('post-content');
     const postMedia = document.getElementById('post-media');
     const postButton = document.getElementById('post-button');
-    const postVideo = document.getElementById('post-video');
     const feed = document.getElementById('feed');
     const errorMessage = document.getElementById('error-message');
 
@@ -913,21 +912,6 @@
             observer.observe(post);
         });
     }
-
-    postVideo.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-    
-      checkVideoDuration(file, (isValid) => {
-        if (!isValid) {
-          errorMessage.textContent = "Video must be 10 seconds or shorter.";
-          postVideo.value = ''; // Clear the file input
-          document.getElementById('video-orientation-buttons').style.display = 'none';
-        } else {
-          document.getElementById('video-orientation-buttons').style.display = 'block';
-        }
-      });
-    });
 
     document.querySelectorAll('.orientation-button').forEach(button => {
       button.addEventListener('click', () => {
