@@ -374,7 +374,7 @@
                         const mediaType = postMedia.getAttribute('data-type');
                         const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
                         const uploadTask = mediaRef.put(mediaFile);
-    
+                    
                         uploadPromises.push(
                             new Promise((resolve, reject) => {
                                 uploadTask.on('state_changed',
@@ -388,33 +388,14 @@
                                             const updateData = mediaType === 'image'
                                                 ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
                                                 : { videoURL: downloadURL, mediaOrientation: 'vertical' }; // Always vertical
-    
-                                            // Add the preview upload logic here
-                                            if (mediaType === 'video') {
-                                                const previewURL = postMedia.getAttribute('data-preview');
-                                                if (previewURL) {
-                                                    fetch(previewURL)
-                                                        .then(r => r.blob())
-                                                        .then((previewBlob) => {
-                                                            const previewRef = storageRef.child(`previews/${docRef.id}`);
-                                                            previewRef.put(previewBlob).then(() => {
-                                                                previewRef.getDownloadURL().then((previewDownloadURL) => {
-                                                                    docRef.update({ videoPreviewURL: previewDownloadURL }).then(resolve);
-                                                                });
-                                                            });
-                                                        });
-                                                } else {
-                                                    docRef.update(updateData).then(resolve);
-                                                }
-                                            } else {
-                                                docRef.update(updateData).then(resolve);
-                                            }
+                                            docRef.update(updateData).then(resolve);
                                         });
                                     }
                                 );
                             })
                         );
                     }
+
     
                     Promise.all(uploadPromises)
                         .then(() => {
@@ -422,7 +403,7 @@
                             postContent.value = '';
                             postMedia.value = '';
                             document.getElementById('image-preview-container').style.display = 'none';
-                            document.getElementById('video-preview-container').style.display = 'none';
+                            document.getElementById('video-orientation-buttons').style.display = 'none';
                             loadPosts();
                         })
                         .catch((error) => {
@@ -537,16 +518,16 @@
                     </div>
                 `;
             } else if (post.videoURL) {
-              mediaHTML = `
+                mediaHTML = `
                   <div class="media-container media-vertical">
                       <div class="video-wrapper" style="position: relative;">
-                          <video class="post-media" data-post-id="${post.id}" muted playsinline poster="${post.videoPreviewURL || ''}">
+                          <video class="post-media" data-post-id="${post.id}" muted playsinline>
                               <source src="${post.videoURL}" type="video/mp4">
                           </video>
                           <button class="custom-play-button" data-post-id="${post.id}">▶</button>
                       </div>
                   </div>
-              `;
+                `;
             }
     
             let postHTML = `
@@ -1110,22 +1091,19 @@
             };
             reader.readAsDataURL(file);
         } else if (file.type.startsWith('video/')) {
+            // Handle video preview
             checkVideoDuration(file, (isValid) => {
                 if (!isValid) {
                     errorMessage.textContent = "Video must be 10 seconds or shorter.";
                     postMedia.value = '';
                     document.getElementById('video-preview-container').style.display = 'none';
                 } else {
-                    generateVideoPreview(file, (previewURL) => {
-                        const videoPreview = document.getElementById('video-preview');
-                        const videoPreviewContainer = document.getElementById('video-preview-container');
-                        videoPreview.src = URL.createObjectURL(file);
-                        videoPreview.poster = previewURL; // Set the preview as poster
-                        videoPreviewContainer.style.display = 'block';
-                        postMedia.setAttribute('data-type', 'video');
-                        postMedia.setAttribute('data-orientation', 'vertical');
-                        postMedia.setAttribute('data-preview', previewURL); // Store for later use
-                    });
+                    const videoPreview = document.getElementById('video-preview');
+                    const videoPreviewContainer = document.getElementById('video-preview-container');
+                    videoPreview.src = URL.createObjectURL(file);
+                    videoPreviewContainer.style.display = 'block';
+                    postMedia.setAttribute('data-type', 'video');
+                    postMedia.setAttribute('data-orientation', 'vertical');
                 }
             });
         }
@@ -1158,30 +1136,6 @@
             }
         }
     });
-
-    function generateVideoPreview(file, callback) {
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        video.muted = true;
-        video.playsInline = true;
-        video.src = URL.createObjectURL(file);
-    
-        video.addEventListener('loadedmetadata', () => {
-            video.currentTime = 0; // Seek to the first frame
-        });
-    
-        video.addEventListener('seeked', () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob((blob) => {
-                const previewURL = URL.createObjectURL(blob);
-                callback(previewURL);
-            }, 'image/jpeg');
-        });
-    }
 
     // Load posts when page loads
     window.onload = loadPosts;
