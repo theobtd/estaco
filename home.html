@@ -508,7 +508,6 @@
         }).mount();
       });
     }
-
     
     // Function to render posts
     function renderPosts(postsData) {
@@ -539,23 +538,32 @@
 
             let mediaHTML = '';
             if (post.imageURLs && post.imageURLs.length > 0) {
-                const orientation = post.mediaOrientation || 'horizontal';
+              const orientation = post.mediaOrientation || 'horizontal';
+              if (post.imageURLs.length > 1) {
+                // Only use carousel for multiple images
                 mediaHTML = `
-                    <div class="media-container media-${orientation}">
-                        <div class="splide splide-${post.id}">
-                            <div class="splide__track">
-                                <ul class="splide__list">
-                                    ${post.imageURLs.map(url => `
-                                        <li class="splide__slide">
-                                            <img src="${url}" class="post-media" alt="Post Image">
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                            </div>
-                        </div>
+                  <div class="media-container media-${orientation}">
+                    <div class="splide splide-${post.id}">
+                      <div class="splide__track">
+                        <ul class="splide__list">
+                          ${post.imageURLs.map(url => `
+                            <li class="splide__slide">
+                              <img src="${url}" class="post-media" alt="Post Image">
+                            </li>
+                          `).join('')}
+                        </ul>
+                      </div>
                     </div>
+                  </div>
                 `;
-                console.log(`[DEBUG] Generated mediaHTML for post ${post.id}:`, mediaHTML);
+              } else {
+                // For single image, just display it directly
+                mediaHTML = `
+                  <div class="media-container media-${orientation}">
+                    <img src="${post.imageURLs[0]}" class="post-media" alt="Post Image">
+                  </div>
+                `;
+              }
             } else if (post.videoURL) {
                 const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
                 mediaHTML = `
@@ -602,16 +610,14 @@
             // Append each post directly to the feed
             feed.innerHTML += postHTML;
 
-            // In your renderPosts function, after appending the post HTML:
+            // Only initialize Splide for posts with multiple images
             if (post.imageURLs && post.imageURLs.length > 1) {
               setTimeout(() => {
                 const splideElement = document.querySelector(`.splide-${post.id}`);
                 if (splideElement) {
-                  // Destroy any existing Splide instance for this element
                   if (splideElement.splide) {
                     splideElement.splide.destroy();
                   }
-                  // Initialize new Splide instance
                   new Splide(splideElement, {
                     type: 'loop',
                     perPage: 1,
@@ -621,7 +627,6 @@
                 }
               }, 100);
             }
-
     
             // Load comments for each post
             loadComments(post.id);
