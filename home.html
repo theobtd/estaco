@@ -6,8 +6,6 @@
   <title>Estaco - Home Feed</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -486,19 +484,11 @@
             let mediaHTML = '';
             if (post.imageURLs && post.imageURLs.length > 0) {
                 const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
-                mediaHTML = `
-                  <div class="splide">
-                    <div class="splide__track">
-                      <ul class="splide__list">
-                        ${post.imageURLs.map(url => `
-                          <li class="splide__slide">
-                            <img src="${url}" class="post-media" alt="Post Image">
-                          </li>
-                        `).join('')}
-                      </ul>
-                    </div>
-                  </div>
-                `;
+                mediaHTML = '<div class="media-container media-' + orientation + '">';
+                post.imageURLs.forEach((url) => {
+                    mediaHTML += `<img src="${url}" class="post-media" alt="Post Image">`;
+                });
+                mediaHTML += '</div>';
             } else if (post.videoURL) {
                 const orientation = post.mediaOrientation || 'horizontal'; // Default to horizontal
                 mediaHTML = `
@@ -548,14 +538,7 @@
             // Load comments for each post
             loadComments(post.id);
         });
-        initSplides();
         setupIntersectionObserver();
-    }
-
-    function initSplides() {
-      document.querySelectorAll('.splide').forEach(splideEl => {
-        new Splide(splideEl).mount();
-      });
     }
     
     // Call loadPosts initially to load the first batch
