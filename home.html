@@ -542,33 +542,40 @@
             let mediaHTML = '';
             if (post.imageURLs && post.imageURLs.length > 0) {
                 const orientation = post.mediaOrientation || 'horizontal';
-                mediaHTML = `
-                  <div class="media-container media-${orientation}">
-                    <div class="media-carousel">
-                      ${post.imageURLs.map(url => `
-                        <div class="media-slide">
-                          <img src="${url}" class="post-media" alt="Post Image">
+                if (post.imageURLs.length > 1) {
+                    // Only use carousel for multiple images
+                    mediaHTML = `
+                        <div class="media-container media-${orientation}">
+                            <div class="media-carousel">
+                                ${post.imageURLs.map(url => `
+                                    <div class="media-slide">
+                                        <img src="${url}" class="post-media" alt="Post Image">
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button class="carousel-prev">❮</button>
+                            <button class="carousel-next">❯</button>
+                            <div class="carousel-indicators"></div>
                         </div>
-                      `).join('')}
-                    </div>
-                    ${post.imageURLs.length > 1 ? `
-                      <button class="carousel-prev">❮</button>
-                      <button class="carousel-next">❯</button>
-                      <div class="carousel-indicators"></div>
-                    ` : ''}
-                  </div>
-                `;
+                    `;
+                } else {
+                    // Single image: no carousel
+                    mediaHTML = `
+                        <div class="media-container media-${orientation}">
+                            <img src="${post.imageURLs[0]}" class="post-media" alt="Post Image">
+                        </div>
+                    `;
+                }
             } else if (post.videoURL) {
                 const orientation = post.mediaOrientation || 'horizontal';
                 mediaHTML = `
-                  <div class="media-container media-${orientation}">
-                    <video controls class="post-media">
-                      <source src="${post.videoURL}" type="video/mp4">
-                    </video>
-                  </div>
+                    <div class="media-container media-${orientation}">
+                        <video controls class="post-media">
+                            <source src="${post.videoURL}" type="video/mp4">
+                        </video>
+                    </div>
                 `;
             }
-
     
             let postHTML = `
                 <div class="post" data-post-id="${post.id}">
@@ -612,60 +619,59 @@
     }
 
     function setupCarousels() {
-      document.querySelectorAll('.media-carousel').forEach((carousel, i) => {
-        const slides = carousel.querySelectorAll('.media-slide');
-        const prevBtn = carousel.parentElement.querySelector('.carousel-prev');
-        const nextBtn = carousel.parentElement.querySelector('.carousel-next');
-        const indicatorsContainer = carousel.parentElement.querySelector('.carousel-indicators');
-        let currentIndex = 0;
+        document.querySelectorAll('.media-carousel').forEach((carousel) => {
+            const slides = carousel.querySelectorAll('.media-slide');
+            const prevBtn = carousel.parentElement.querySelector('.carousel-prev');
+            const nextBtn = carousel.parentElement.querySelector('.carousel-next');
+            const indicatorsContainer = carousel.parentElement.querySelector('.carousel-indicators');
+            if (!slides.length || !indicatorsContainer) return; // Skip if not a multi-image carousel
+            let currentIndex = 0;
     
-        // Create indicators
-        slides.forEach((_, index) => {
-          const indicator = document.createElement('div');
-          indicator.classList.add('carousel-indicator');
-          if (index === 0) indicator.classList.add('active');
-          indicator.addEventListener('click', () => goToSlide(index));
-          indicatorsContainer.appendChild(indicator);
+            // Create indicators
+            slides.forEach((_, index) => {
+                const indicator = document.createElement('div');
+                indicator.classList.add('carousel-indicator');
+                if (index === 0) indicator.classList.add('active');
+                indicator.addEventListener('click', () => goToSlide(index));
+                indicatorsContainer.appendChild(indicator);
+            });
+    
+            const indicators = indicatorsContainer.querySelectorAll('.carousel-indicator');
+    
+            function goToSlide(index) {
+                currentIndex = index;
+                slides.forEach((slide, i) => {
+                    slide.style.transform = `translateX(${100 * (i - index)}%)`;
+                });
+                indicators.forEach((indicator, i) => {
+                    indicator.classList.toggle('active', i === index);
+                });
+            }
+    
+            function nextSlide() {
+                goToSlide((currentIndex + 1) % slides.length);
+            }
+    
+            function prevSlide() {
+                goToSlide((currentIndex - 1 + slides.length) % slides.length);
+            }
+    
+            if (prevBtn) prevBtn.addEventListener('click', prevSlide);
+            if (nextBtn) nextBtn.addEventListener('click', nextSlide);
+    
+            // Optional: Swipe support
+            let touchStartX = 0;
+            let touchEndX = 0;
+            carousel.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, {passive: true});
+            carousel.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                if (touchStartX - touchEndX > 50) nextSlide();
+                if (touchStartX - touchEndX < -50) prevSlide();
+            }, {passive: true});
         });
-    
-        const indicators = indicatorsContainer.querySelectorAll('.carousel-indicator');
-    
-        function goToSlide(index) {
-          currentIndex = index;
-          carousel.style.setProperty('--slide-index', index);
-          slides.forEach((slide, i) => {
-            slide.style.transform = `translateX(${100 * (i - index)}%)`;
-          });
-          indicators.forEach((indicator, i) => {
-            indicator.classList.toggle('active', i === index);
-          });
-        }
-    
-        function nextSlide() {
-          goToSlide((currentIndex + 1) % slides.length);
-        }
-    
-        function prevSlide() {
-          goToSlide((currentIndex - 1 + slides.length) % slides.length);
-        }
-    
-        if (prevBtn) prevBtn.addEventListener('click', prevSlide);
-        if (nextBtn) nextBtn.addEventListener('click', nextSlide);
-    
-        // Optional: Swipe support
-        let touchStartX = 0;
-        let touchEndX = 0;
-        carousel.addEventListener('touchstart', (e) => {
-          touchStartX = e.changedTouches[0].screenX;
-        }, {passive: true});
-        carousel.addEventListener('touchend', (e) => {
-          touchEndX = e.changedTouches[0].screenX;
-          if (touchStartX - touchEndX > 50) nextSlide();
-          if (touchStartX - touchEndX < -50) prevSlide();
-        }, {passive: true});
-      });
     }
-
     
     // Call loadPosts initially to load the first batch
     loadPosts();
