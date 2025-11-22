@@ -587,22 +587,11 @@
             // Initialize Splide for this post if it has multiple images
             if (post.imageURLs && post.imageURLs.length > 1) {
                 console.log(`[DEBUG] About to initialize Splide for post ${post.id} in 100ms`);
-                setTimeout(() => {
-                    const splideElement = document.querySelector(`.post[data-post-id="${post.id}"] .splide`);
-                    console.log(`[DEBUG] Post ID: ${post.id}, Splide element exists:`, !!splideElement);
-                    if (splideElement) {
-                        console.log(`[DEBUG] Initializing Splide for post ${post.id}`);
-                        new Splide(splideElement, {
-                            type: 'loop',
-                            perPage: 1,
-                            arrows: true,
-                            pagination: true,
-                        }).mount();
-                        console.log(`[DEBUG] Splide mounted for post ${post.id}`);
-                    } else {
-                      console.log(`[DEBUG] Splide element not found for post ${post.id}`);
-                    }
-                }, 1000);
+                const splide = new Splide('.splide', {
+                    type: 'loop',
+                    perPage: 1,
+                }).mount();
+
             }
     
             // Load comments for each post
