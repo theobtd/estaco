@@ -210,10 +210,10 @@
         display: block;
         margin: 0 auto;
     }
-    #post-photo {
+    #post-media {
         display: none;
     }
-    #post-photo-label {
+    #post-media-label {
         display: block;
         padding: 8px;
         background: #4CAF50;
@@ -233,17 +233,14 @@
   <div id="post-form">
       <h3>Create a Post</h3>
       <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
-      <input type="file" id="post-photo" accept="image/*">
-      <label for="post-photo" id="post-photo-label" style="display: block; padding: 8px; background: #4CAF50; color: white; border-radius: 4px; text-align: center; cursor: pointer; margin: 5px 0;">
-          Select Image
-      </label>
+      <input type="file" id="post-media" accept="image/*,video/*">
+      <label for="post-media" id="post-media-label">Select Media</label>
       <div id="image-preview-container" style="display: none; margin: 10px 0;">
           <img id="image-preview" style="max-width: 100%; max-height: 200px; border-radius: 4px;">
       </div>
-      <input type="file" id="post-video" accept="video/*">
       <div id="video-orientation-buttons" style="display: none; margin: 10px 0;">
-        <button class="orientation-button selected" data-orientation="horizontal">Horizontal</button>
-        <button class="orientation-button" data-orientation="vertical">Vertical</button>
+          <button class="orientation-button selected" data-orientation="horizontal">Horizontal</button>
+          <button class="orientation-button" data-orientation="vertical">Vertical</button>
       </div>
       <button id="post-button">Post</button>
       <p id="error-message"></p>
@@ -293,7 +290,7 @@
 
     // DOM elements
     const postContent = document.getElementById('post-content');
-    const postPhoto = document.getElementById('post-photo');
+    const postMedia = document.getElementById('post-media');
     const postButton = document.getElementById('post-button');
     const postVideo = document.getElementById('post-video');
     const feed = document.getElementById('feed');
@@ -321,8 +318,7 @@
     // Create a new post
     postButton.addEventListener('click', () => {
         const content = postContent.value;
-        const photoFile = postPhoto.files[0];
-        const videoFile = postVideo.files[0];
+        const mediaFile = postMedia.files[0];
     
         if (!content) {
             errorMessage.textContent = 'Post content cannot be empty.';
@@ -340,75 +336,45 @@
                 reactions: {}
             };
     
-            // Upload post to Firestore
             db.collection('posts').add(post)
                 .then((docRef) => {
                     const uploadPromises = [];
     
-                    // Upload photo if present
-                    if (photoFile) {
-                      const storageRef = storage.ref();
-                      const photoRef = storageRef.child(`postPhotos/${docRef.id}`);
-                      const uploadTask = photoRef.put(photoFile);
-                      uploadPromises.push(
-                        new Promise((resolve, reject) => {
-                          uploadTask.on('state_changed',
-                            null,
-                            (error) => {
-                              console.error('Upload error:', error);
-                              reject(error);
-                            },
-                            () => {
-                              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                // Use the selected orientation from the file input
-                                const orientation = postPhoto.getAttribute('data-orientation') || 'horizontal';
-                                docRef.update({
-                                  photoURL: downloadURL,
-                                  mediaOrientation: orientation
-                                }).then(resolve);
-                              });
-                            }
-                          );
-                        })
-                      );
-                    }
-
+                    if (mediaFile) {
+                        const storageRef = storage.ref();
+                        const mediaType = postMedia.getAttribute('data-type');
+                        const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
+                        const uploadTask = mediaRef.put(mediaFile);
     
-                    // Upload video if present
-                    if (videoFile) {
-                      const storageRef = storage.ref();
-                      const videoRef = storageRef.child(`postVideos/${docRef.id}`);
-                      const uploadTask = videoRef.put(videoFile);
-                      uploadPromises.push(
-                        new Promise((resolve, reject) => {
-                          uploadTask.on('state_changed',
-                            null,
-                            (error) => {
-                              console.error('Upload error:', error);
-                              reject(error);
-                            },
-                            () => {
-                              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                const orientation = getSelectedOrientation();
-                                docRef.update({
-                                  videoURL: downloadURL,
-                                  mediaOrientation: orientation
-                                }).then(resolve);
-                              });
-                            }
-                          );
-                        })
-                      );
+                        uploadPromises.push(
+                            new Promise((resolve, reject) => {
+                                uploadTask.on('state_changed',
+                                    null,
+                                    (error) => {
+                                        console.error('Upload error:', error);
+                                        reject(error);
+                                    },
+                                    () => {
+                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                            const orientation = postMedia.getAttribute('data-orientation') || 'horizontal';
+                                            const updateData = mediaType === 'image'
+                                                ? { photoURL: downloadURL, mediaOrientation: orientation }
+                                                : { videoURL: downloadURL, mediaOrientation: orientation };
+                                            docRef.update(updateData).then(resolve);
+                                        });
+                                    }
+                                );
+                            })
+                        );
                     }
     
-                    // Wait for all uploads to complete
                     Promise.all(uploadPromises)
                         .then(() => {
                             alert('Post created!');
                             postContent.value = '';
-                            postPhoto.value = '';
-                            postVideo.value = '';
+                            postMedia.value = '';
                             document.getElementById('image-preview-container').style.display = 'none';
+                            document.getElementById('video-orientation-buttons').style.display = 'none';
                             loadPosts();
                         })
                         .catch((error) => {
@@ -1025,97 +991,98 @@
       }
     }
 
-    postPhoto.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const preview = document.getElementById('image-preview');
-          const previewContainer = document.getElementById('image-preview-container');
-          preview.src = e.target.result;
-          previewContainer.style.display = 'block';
-          
-          const modal = document.getElementById('image-cropper-modal');
-          const cropperImage = document.getElementById('cropper-image');
-          cropperImage.src = e.target.result;
-          modal.style.display = 'block';
+    postMedia.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+            document.getElementById('image-preview-container').style.display = 'none';
+            document.getElementById('video-orientation-buttons').style.display = 'none';
+            return;
+        }
     
-          // Default to horizontal
-          let cropperAspectRatio = 16 / 9; // Horizontal aspect ratio
+        if (file.type.startsWith('image/')) {
+            // Handle image
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('image-preview');
+                const previewContainer = document.getElementById('image-preview-container');
+                preview.src = e.target.result;
+                previewContainer.style.display = 'block';
     
-          // Initialize Cropper.js
-          let cropper = new Cropper(cropperImage, {
-            aspectRatio: cropperAspectRatio,
-            viewMode: 1,
-            dragMode: 'move',
-            guides: true,
-            highlight: false,
-            cropBoxMovable: true,
-            cropBoxResizable: true,
-            modal: true,
-          });
+                const modal = document.getElementById('image-cropper-modal');
+                const cropperImage = document.getElementById('cropper-image');
+                cropperImage.src = e.target.result;
+                modal.style.display = 'block';
     
-          // Toggle orientation buttons
-          document.querySelectorAll('.crop-orientation-button').forEach(button => {
-            button.addEventListener('click', () => {
-              document.querySelectorAll('.crop-orientation-button').forEach(b => b.classList.remove('selected'));
-              button.classList.add('selected');
+                // Initialize Cropper.js (your existing code)
+                let cropperAspectRatio = 16 / 9;
+                let cropper = new Cropper(cropperImage, {
+                    aspectRatio: cropperAspectRatio,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    guides: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    modal: true,
+                });
     
-              // Update cropper aspect ratio
-              const orientation = button.getAttribute('data-orientation');
-              if (orientation === 'horizontal') {
-                cropperAspectRatio = 16 / 9; // Horizontal
-              } else {
-                cropperAspectRatio = 9 / 16; // Vertical
-              }
-              cropper.setAspectRatio(cropperAspectRatio);
+                // Toggle orientation buttons (your existing code)
+                document.querySelectorAll('.crop-orientation-button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        document.querySelectorAll('.crop-orientation-button').forEach(b => b.classList.remove('selected'));
+                        button.classList.add('selected');
+                        const orientation = button.getAttribute('data-orientation');
+                        cropperAspectRatio = orientation === 'horizontal' ? 16 / 9 : 9 / 16;
+                        cropper.setAspectRatio(cropperAspectRatio);
+                    });
+                });
+    
+                // Handle "Done" button (your existing code)
+                document.getElementById('crop-done-button').onclick = () => {
+                    const selectedOrientation = document.querySelector('.crop-orientation-button.selected').getAttribute('data-orientation');
+                    let width, height;
+                    if (selectedOrientation === 'horizontal') {
+                        width = 600;
+                        height = 400;
+                    } else {
+                        width = 400;
+                        height = 600;
+                    }
+                    const canvas = cropper.getCroppedCanvas({ width, height, fillColor: '#fff', imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
+                    canvas.toBlob((blob) => {
+                        const croppedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(croppedFile);
+                        postMedia.files = dataTransfer.files;
+                        postMedia.setAttribute('data-orientation', selectedOrientation);
+                        postMedia.setAttribute('data-type', 'image');
+                        modal.style.display = 'none';
+                        cropper.destroy();
+                    }, 'image/jpeg');
+                };
+    
+                // Handle "Cancel" button
+                document.getElementById('crop-cancel-button').onclick = () => {
+                    modal.style.display = 'none';
+                    cropper.destroy();
+                    postMedia.value = '';
+                    document.getElementById('image-preview-container').style.display = 'none';
+                };
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type.startsWith('video/')) {
+            // Handle video
+            checkVideoDuration(file, (isValid) => {
+                if (!isValid) {
+                    errorMessage.textContent = "Video must be 10 seconds or shorter.";
+                    postMedia.value = '';
+                    document.getElementById('video-orientation-buttons').style.display = 'none';
+                } else {
+                    document.getElementById('video-orientation-buttons').style.display = 'block';
+                    postMedia.setAttribute('data-type', 'video');
+                }
             });
-          });
-    
-          // Handle "Done" button
-          document.getElementById('crop-done-button').onclick = () => {
-            const selectedOrientation = document.querySelector('.crop-orientation-button.selected').getAttribute('data-orientation');
-            let width, height;
-            if (selectedOrientation === 'horizontal') {
-              width = 600; // Match .media-horizontal width
-              height = 400; // Match .media-horizontal height
-            } else {
-              width = 400; // Match .media-vertical width
-              height = 600; // Match .media-vertical height
-            }
-          
-            // Crop the image to the exact dimensions
-            const canvas = cropper.getCroppedCanvas({
-              width: width,
-              height: height,
-              fillColor: '#fff',
-              imageSmoothingEnabled: true,
-              imageSmoothingQuality: 'high',
-            });
-          
-            canvas.toBlob((blob) => {
-              const croppedFile = new File([blob], file.name, { type: 'image/jpeg' });
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(croppedFile);
-              postPhoto.files = dataTransfer.files;
-              postPhoto.setAttribute('data-orientation', selectedOrientation);
-              modal.style.display = 'none';
-              cropper.destroy();
-            }, 'image/jpeg');
-          };
-    
-          // Handle "Cancel" button
-          document.getElementById('crop-cancel-button').onclick = () => {
-              modal.style.display = 'none';
-              cropper.destroy();
-              postPhoto.value = '';
-              document.getElementById('image-preview-container').style.display = 'none';
-          };
-        };
-        reader.readAsDataURL(file);
-      } else {
-        document.getElementById('image-preview-container').style.display = 'none';
-      }
+        }
     });
 
     function checkVideoDuration(file, callback) {
