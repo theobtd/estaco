@@ -374,7 +374,7 @@
                         const mediaType = postMedia.getAttribute('data-type');
                         const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
                         const uploadTask = mediaRef.put(mediaFile);
-    
+                    
                         uploadPromises.push(
                             new Promise((resolve, reject) => {
                                 uploadTask.on('state_changed',
@@ -385,30 +385,17 @@
                                     },
                                     () => {
                                         uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                            const updateData = { mediaOrientation: postMedia.getAttribute('data-orientation') };
-                                            if (mediaType === 'image') {
-                                                updateData.photoURL = downloadURL;
-                                            } else if (mediaType === 'video') {
-                                                updateData.videoURL = downloadURL;
-                                                // Extract and upload thumbnail
-                                                extractVideoThumbnail(mediaFile, (thumbnailBlob) => {
-                                                    const thumbnailRef = storageRef.child(`thumbnails/${docRef.id}`);
-                                                    thumbnailRef.put(thumbnailBlob).then(() => {
-                                                        thumbnailRef.getDownloadURL().then((thumbnailURL) => {
-                                                            updateData.thumbnailURL = thumbnailURL;
-                                                            docRef.update(updateData).then(resolve);
-                                                        });
-                                                    }).catch(reject);
-                                                });
-                                            } else {
-                                                docRef.update(updateData).then(resolve);
-                                            }
+                                            const updateData = mediaType === 'image'
+                                                ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                                                : { videoURL: downloadURL, mediaOrientation: 'vertical' }; // Always vertical
+                                            docRef.update(updateData).then(resolve);
                                         });
                                     }
                                 );
                             })
                         );
                     }
+
     
                     Promise.all(uploadPromises)
                         .then(() => {
@@ -416,7 +403,7 @@
                             postContent.value = '';
                             postMedia.value = '';
                             document.getElementById('image-preview-container').style.display = 'none';
-                            document.getElementById('video-preview-container').style.display = 'none';
+                            document.getElementById('video-orientation-buttons').style.display = 'none';
                             loadPosts();
                         })
                         .catch((error) => {
@@ -1149,25 +1136,6 @@
             }
         }
     });
-
-    function extractVideoThumbnail(videoFile, callback) {
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        video.onloadedmetadata = () => {
-            video.currentTime = 0; // Seek to the first frame
-        };
-        video.onseeked = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob((blob) => {
-                callback(blob);
-            }, 'image/jpeg');
-        };
-        video.src = URL.createObjectURL(videoFile);
-    }
 
     // Load posts when page loads
     window.onload = loadPosts;
