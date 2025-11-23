@@ -531,15 +531,17 @@
                     </div>
                 `;
             } else if (post.videoURL) {
+                const orientation = post.mediaOrientation || 'vertical';
                 mediaHTML = `
-                  <div class="media-container media-vertical">
-                      <div class="video-wrapper" style="position: relative;">
-                          <video class="post-media" data-post-id="${post.id}" muted playsinline>
-                              <source src="${post.videoURL}" type="video/mp4">
-                          </video>
-                          <button class="custom-play-button" data-post-id="${post.id}">▶</button>
-                      </div>
-                  </div>
+                    <div class="media-container media-${orientation}">
+                        <img src="${post.thumbnailURL}" class="video-thumbnail" data-post-id="${post.id}" style="cursor: pointer; width: 100%; height: 100%; object-fit: cover;">
+                        <div class="video-wrapper" style="display: none; position: relative; width: 100%; height: 100%;">
+                            <video class="post-media" data-post-id="${post.id}" muted playsinline style="width: 100%; height: 100%; object-fit: cover;">
+                                <source src="${post.videoURL}" type="video/mp4">
+                            </video>
+                            <button class="custom-play-button" data-post-id="${post.id}">▶</button>
+                        </div>
+                    </div>
                 `;
             }
     
@@ -1168,6 +1170,18 @@
         };
         video.src = URL.createObjectURL(videoFile);
     }
+
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('video-thumbnail')) {
+            const postId = e.target.getAttribute('data-post-id');
+            const thumbnail = e.target;
+            const videoWrapper = thumbnail.nextElementSibling;
+            thumbnail.style.display = 'none';
+            videoWrapper.style.display = 'block';
+            videoWrapper.querySelector('video').play();
+            videoWrapper.querySelector('.custom-play-button').classList.add('hidden');
+        }
+    });
 
     // Load posts when page loads
     window.onload = loadPosts;
