@@ -372,30 +372,74 @@
                     if (mediaFile) {
                         const storageRef = storage.ref();
                         const mediaType = postMedia.getAttribute('data-type');
-                        const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
-                        const uploadTask = mediaRef.put(mediaFile);
-                    
-                        uploadPromises.push(
-                            new Promise((resolve, reject) => {
-                                uploadTask.on('state_changed',
-                                    null,
-                                    (error) => {
-                                        console.error('Upload error:', error);
-                                        reject(error);
-                                    },
-                                    () => {
-                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                            const updateData = mediaType === 'image'
-                                                ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                                                : { videoURL: downloadURL, mediaOrientation: 'vertical' }; // Always vertical
-                                            docRef.update(updateData).then(resolve);
-                                        });
-                                    }
+    
+                        if (mediaType === 'video') {
+                            // Extract thumbnail
+                            extractVideoThumbnail(mediaFile, (thumbnailBlob) => {
+                                const thumbnailFile = new File([thumbnailBlob], 'thumbnail.jpg', { type: 'image/jpeg' });
+                                const mediaRef = storageRef.child(`videos/${docRef.id}`);
+                                const thumbnailRef = storageRef.child(`thumbnails/${docRef.id}`);
+    
+                                // Upload video
+                                const uploadTask = mediaRef.put(mediaFile);
+                                // Upload thumbnail
+                                const thumbnailUploadTask = thumbnailRef.put(thumbnailFile);
+    
+                                uploadPromises.push(
+                                    new Promise((resolve, reject) => {
+                                        uploadTask.on('state_changed',
+                                            null,
+                                            (error) => {
+                                                console.error('Upload error:', error);
+                                                reject(error);
+                                            },
+                                            () => {
+                                                uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                                    docRef.update({ videoURL: downloadURL, mediaOrientation: 'vertical' }).then(resolve);
+                                                });
+                                            }
+                                        );
+                                    }),
+                                    new Promise((resolve, reject) => {
+                                        thumbnailUploadTask.on('state_changed',
+                                            null,
+                                            (error) => {
+                                                console.error('Thumbnail upload error:', error);
+                                                reject(error);
+                                            },
+                                            () => {
+                                                thumbnailUploadTask.snapshot.ref.getDownloadURL().then((thumbnailURL) => {
+                                                    docRef.update({ videoThumbnailURL: thumbnailURL }).then(resolve);
+                                                });
+                                            }
+                                        );
+                                    })
                                 );
-                            })
-                        );
+                            });
+                        } else {
+                            // Handle image upload as before
+                            const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
+                            const uploadTask = mediaRef.put(mediaFile);
+    
+                            uploadPromises.push(
+                                new Promise((resolve, reject) => {
+                                    uploadTask.on('state_changed',
+                                        null,
+                                        (error) => {
+                                            console.error('Upload error:', error);
+                                            reject(error);
+                                        },
+                                        () => {
+                                            uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                                const updateData = { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                                                docRef.update(updateData).then(resolve);
+                                            });
+                                        }
+                                    );
+                                })
+                            );
+                        }
                     }
-
     
                     Promise.all(uploadPromises)
                         .then(() => {
@@ -403,7 +447,7 @@
                             postContent.value = '';
                             postMedia.value = '';
                             document.getElementById('image-preview-container').style.display = 'none';
-                            document.getElementById('video-orientation-buttons').style.display = 'none';
+                            document.getElementById('video-preview-container').style.display = 'none';
                             loadPosts();
                         })
                         .catch((error) => {
@@ -518,15 +562,16 @@
                     </div>
                 `;
             } else if (post.videoURL) {
+                const thumbnailStyle = post.videoThumbnailURL ? `background-image: url('${post.videoThumbnailURL}'); background-size: cover;` : '';
                 mediaHTML = `
-                  <div class="media-container media-vertical">
-                      <div class="video-wrapper" style="position: relative;">
-                          <video class="post-media" data-post-id="${post.id}" muted playsinline>
-                              <source src="${post.videoURL}" type="video/mp4">
-                          </video>
-                          <button class="custom-play-button" data-post-id="${post.id}">▶</button>
-                      </div>
-                  </div>
+                    <div class="media-container media-vertical" style="${thumbnailStyle}">
+                        <div class="video-wrapper" style="position: relative;">
+                            <video class="post-media" data-post-id="${post.id}" muted playsinline>
+                                <source src="${post.videoURL}" type="video/mp4">
+                            </video>
+                            <button class="custom-play-button" data-post-id="${post.id}">▶</button>
+                        </div>
+                    </div>
                 `;
             }
     
@@ -1136,6 +1181,25 @@
             }
         }
     });
+
+    function extractVideoThumbnail(file, callback) {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        video.src = URL.createObjectURL(file);
+    
+        video.addEventListener('loadeddata', () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => {
+                callback(blob);
+            }, 'image/jpeg');
+        });
+    }
 
     // Load posts when page loads
     window.onload = loadPosts;
