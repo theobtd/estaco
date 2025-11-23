@@ -379,13 +379,14 @@
                                 const thumbnailFile = new File([thumbnailBlob], 'thumbnail.jpg', { type: 'image/jpeg' });
                                 const mediaRef = storageRef.child(`videos/${docRef.id}`);
                                 const thumbnailRef = storageRef.child(`thumbnails/${docRef.id}`);
-    
+                        
                                 // Upload video
                                 const uploadTask = mediaRef.put(mediaFile);
                                 // Upload thumbnail
                                 const thumbnailUploadTask = thumbnailRef.put(thumbnailFile);
-    
-                                uploadPromises.push(
+                        
+                                // Wait for both uploads to complete
+                                Promise.all([
                                     new Promise((resolve, reject) => {
                                         uploadTask.on('state_changed',
                                             null,
@@ -395,7 +396,7 @@
                                             },
                                             () => {
                                                 uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                                    docRef.update({ videoURL: downloadURL, mediaOrientation: 'vertical' }).then(resolve);
+                                                    resolve(downloadURL);
                                                 });
                                             }
                                         );
@@ -409,12 +410,22 @@
                                             },
                                             () => {
                                                 thumbnailUploadTask.snapshot.ref.getDownloadURL().then((thumbnailURL) => {
-                                                    docRef.update({ videoThumbnailURL: thumbnailURL }).then(resolve);
+                                                    resolve(thumbnailURL);
                                                 });
                                             }
                                         );
                                     })
-                                );
+                                ]).then(([videoURL, thumbnailURL]) => {
+                                    // Update the post document with both URLs
+                                    docRef.update({
+                                        videoURL: videoURL,
+                                        videoThumbnailURL: thumbnailURL,
+                                        mediaOrientation: 'vertical'
+                                    }).then(resolve);
+                                }).catch((error) => {
+                                    console.error('Error uploading video or thumbnail:', error);
+                                    reject(error);
+                                });
                             });
                         } else {
                             // Handle image upload as before
