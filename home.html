@@ -12,6 +12,7 @@
         max-width: 100%; /* Remove fixed max-width */
         margin: 0;
         padding: 0; /* Remove padding to allow full-width media */
+        padding-bottom: 60px;
     }
     #post-form {
       margin-bottom: 20px;
@@ -279,12 +280,52 @@
     .custom-play-button.hidden {
         display: none;
     }
+
+    #bottom-nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background-color: white;
+      border-top: 1px solid #e0e0e0;
+      padding: 8px 0;
+      z-index: 100;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .nav-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 12px;
+      color: #333;
+      font-size: 12px;
+    }
+    
+    .nav-button .icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    
+    .nav-button .label {
+      font-size: 12px;
+    }
+    
+    .nav-button:hover {
+      color: #1877f2;
+    }
+
   </style>
 </head>
 <body>
   <h1>Estaco - Home Feed</h1>
-
-  <button id="profile-button" style="margin-top: 20px;">Go to Profile</button>
 
   <div id="post-form">
     <h3>Create a Post</h3>
@@ -324,6 +365,16 @@
     <h3>Your Feed</h3>
   </div>
 
+  <div id="bottom-nav-bar">
+    <button class="nav-button" id="home-button">
+      <span class="icon">🏠</span>
+      <span class="label">Home</span>
+    </button>
+    <button class="nav-button" id="profile-button">
+      <span class="icon">👤</span>
+      <span class="label">Profile</span>
+    </button>
+  </div>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
@@ -357,9 +408,12 @@
     let isLoading = false; // Flag to prevent multiple simultaneous loads
     
     // Navigate to Profile Page
-    const profileButton = document.getElementById('profile-button');
-    profileButton.addEventListener('click', () => {
-        window.location.href = 'profile.html';
+    document.getElementById('profile-button').addEventListener('click', () => {
+      window.location.href = 'profile.html';
+    });
+    
+    document.getElementById('home-button').addEventListener('click', () => {
+      window.location.href = 'home.html'; // or reload the current page
     });
 
     // Check if user is signed in and verified
