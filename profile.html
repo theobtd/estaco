@@ -923,6 +923,26 @@
         const date = new Date(timestamp);
         return date.toLocaleString();
       }
+
+        // Function to get the author's profile picture for comments
+        function getCommentAuthorPicture(authorId, authorName) {
+          return db.collection('users').doc(authorId).get().then((userDoc) => {
+            if (userDoc.exists) {
+              const userData = userDoc.data();
+              const profilePictureURL = userData.profilePictureURL;
+              if (profilePictureURL) {
+                return `<img src="${profilePictureURL}" alt="Profile Picture" class="comment-author-picture">`;
+              } else {
+                return getInitialsFallback(authorName || "Unknown User");
+              }
+            } else {
+              return getInitialsFallback("Unknown User");
+            }
+          }).catch(() => {
+            return getInitialsFallback("Unknown User");
+          });
+        }
+
     </script>
 </body>
 </html>
