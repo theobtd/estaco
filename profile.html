@@ -67,6 +67,152 @@
         .friend-button.remove {
             background-color: #f44336;
         }
+        #user-posts-feed {
+          margin-top: 30px;
+          width: 100%;
+        }
+        .post {
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          margin-bottom: 10px;
+        }
+        .post-header {
+          display: flex;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+        .post-author-picture {
+          width: 40px;
+          height: 40px;
+          border-radius: 15%;
+          margin-right: 10px;
+        }
+        .reactions {
+          margin-top: 10px;
+        }
+        .reaction-button {
+          background: none;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+          margin-right: 5px;
+        }
+        .reaction-count {
+          font-size: 12px;
+          margin-left: 3px;
+          color: #666;
+        }
+        .reaction-button.selected {
+          background-color: #f0f0f0;
+          border-radius: 4px;
+          padding: 2px 4px;
+        }
+        .comments-section {
+          margin-top: 10px;
+          border-top: 1px solid #eee;
+          padding-top: 10px;
+        }
+        .comment-form {
+          display: flex;
+          margin-bottom: 10px;
+        }
+        .comment-input {
+          flex: 1;
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+        .comment-button {
+          padding: 8px 12px;
+          background: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          margin-left: 5px;
+          cursor: pointer;
+        }
+        .comment {
+          display: flex;
+          margin-bottom: 8px;
+          align-items: flex-start;
+        }
+        .comment-author-picture {
+          width: 30px;
+          height: 30px;
+          border-radius: 10%;
+          margin-right: 8px;
+        }
+        .comment-content {
+          background: #f9f9f9;
+          padding: 8px 12px;
+          border-radius: 8px;
+          flex: 1;
+        }
+        .comment-author-name {
+          font-weight: bold;
+          margin-bottom: 2px;
+        }
+        .media-container {
+          position: relative;
+          margin-top: 10px;
+          overflow: hidden;
+          background-color: #f0f0f0;
+        }
+        .media-horizontal,
+        .media-vertical {
+          width: 100%;
+          height: auto;
+          position: relative;
+          overflow: hidden;
+          background-color: transparent;
+          margin: 0;
+        }
+        .media-horizontal {
+          aspect-ratio: 16 / 9;
+        }
+        .media-vertical {
+          aspect-ratio: 9 / 16;
+        }
+        .media-container img,
+        .media-container video {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .custom-play-button {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.7);
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 60px;
+          height: 60px;
+          font-size: 20px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .custom-play-button.hidden {
+          display: none;
+        }
+        .delete-post-button {
+          background: #f44336;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 4px 8px;
+          cursor: pointer;
+          font-size: 12px;
+        }
+
     </style>
 </head>
 <body>
@@ -116,6 +262,11 @@
             <h3>Current Friends</h3>
             <div id="current-friends"></div>
         </div>
+    </div>
+
+    <div id="user-posts-feed">
+      <h3>Your Posts</h3>
+      <div id="user-posts-container"></div>
     </div>
 
     <!-- Firebase SDK -->
@@ -497,6 +648,281 @@
             });
           }
         });
+
+        // Function to load and render the current user's posts
+      function loadUserPosts(userId) {
+        db.collection('posts')
+          .where('authorId', '==', userId)
+          .orderBy('timestamp', 'desc')
+          .get()
+          .then((querySnapshot) => {
+            const userPostsContainer = document.getElementById('user-posts-container');
+            userPostsContainer.innerHTML = '';
+            if (querySnapshot.empty) {
+              userPostsContainer.innerHTML = '<p>You have not created any posts yet.</p>';
+              return;
+            }
+            querySnapshot.forEach((doc) => {
+              const post = doc.data();
+              post.id = doc.id;
+              renderUserPost(post);
+            });
+          })
+          .catch((error) => {
+            console.error("Error loading user posts: ", error);
+            document.getElementById('user-posts-container').innerHTML = '<p>Error loading posts.</p>';
+          });
+      }
+    
+      // Function to render a single user post
+      function renderUserPost(post) {
+        const userPostsContainer = document.getElementById('user-posts-container');
+        const profilePictureURL = post.authorData?.profilePictureURL;
+        const profilePictureHTML = profilePictureURL
+          ? `<img src="${profilePictureURL}" alt="Profile Picture" class="post-author-picture">`
+          : getInitialsFallback(post.authorName);
+    
+        // Get the current user's reaction for this post
+        const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
+        const likeClass = userReaction === 'like' ? 'selected' : '';
+        const loveClass = userReaction === 'love' ? 'selected' : '';
+        const laughClass = userReaction === 'laugh' ? 'selected' : '';
+    
+        const reactions = post.reactions || {};
+        let likeCount = 0, loveCount = 0, laughCount = 0;
+        Object.values(reactions).forEach(reaction => {
+          if (reaction === 'like') likeCount++;
+          if (reaction === 'love') loveCount++;
+          if (reaction === 'laugh') laughCount++;
+        });
+    
+        let mediaHTML = '';
+        if (post.photoURL) {
+          const orientation = post.mediaOrientation || 'horizontal';
+          mediaHTML = `
+            <div class="media-container media-${orientation}">
+              <img src="${post.photoURL}" class="post-media">
+            </div>
+          `;
+        } else if (post.videoURL) {
+          mediaHTML = `
+            <div class="media-container media-vertical">
+              <div class="video-wrapper" style="position: relative;">
+                <video class="post-media" data-post-id="${post.id}" muted playsinline>
+                  <source src="${post.videoURL}" type="video/mp4">
+                </video>
+                <button class="custom-play-button" data-post-id="${post.id}">▶</button>
+              </div>
+            </div>
+          `;
+        }
+    
+        const postHTML = `
+          <div class="post" data-post-id="${post.id}">
+            <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center;">
+                ${profilePictureHTML}
+                <h4 style="margin: 0;">${post.authorName}</h4>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
+                <button class="delete-post-button" data-post-id="${post.id}">Delete</button>
+              </div>
+            </div>
+            <p>${post.content}</p>
+            ${mediaHTML}
+            <div class="reactions">
+              <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍<span class="reaction-count">${likeCount}</span></button>
+              <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️<span class="reaction-count">${loveCount}</span></button>
+              <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂<span class="reaction-count">${laughCount}</span></button>
+            </div>
+            <div class="comments-section">
+              <div class="comment-form">
+                <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${post.id}">
+                <button class="comment-button" data-post-id="${post.id}">Post</button>
+              </div>
+              <div class="comments-list" id="comments-${post.id}">
+                <!-- Comments will be loaded here -->
+              </div>
+            </div>
+          </div>
+        `;
+        userPostsContainer.innerHTML += postHTML;
+    
+        // Load comments for this post
+        loadUserPostComments(post.id);
+      }
+    
+      // Function to load comments for a user post
+      function loadUserPostComments(postId) {
+        db.collection('posts').doc(postId).collection('comments')
+          .orderBy('timestamp', 'asc')
+          .get()
+          .then((querySnapshot) => {
+            const commentsList = document.getElementById(`comments-${postId}`);
+            commentsList.innerHTML = '';
+            querySnapshot.forEach((doc) => {
+              const comment = doc.data();
+              getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
+                const commentHTML = `
+                  <div class="comment">
+                    <div class="comment-author-picture">
+                      ${profilePictureHTML}
+                    </div>
+                    <div class="comment-content">
+                      <div class="comment-author-name">${comment.authorName}</div>
+                      <div>${comment.content}</div>
+                    </div>
+                  </div>
+                `;
+                commentsList.innerHTML += commentHTML;
+              });
+            });
+          })
+          .catch((error) => {
+            console.error("Error loading comments: ", error);
+          });
+      }
+    
+      // Call loadUserPosts when the page loads and the user is authenticated
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          loadUserPosts(user.uid);
+        }
+      });
+    
+      // Add event listeners for reactions, comments, and post deletion
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('reaction-button')) {
+          const button = e.target;
+          const postId = button.getAttribute('data-post-id');
+          const reaction = button.getAttribute('data-reaction');
+          const user = auth.currentUser;
+          if (!user) return;
+    
+          const postRef = db.collection('posts').doc(postId);
+          const wasSelected = button.classList.contains('selected');
+    
+          // Toggle the selected class
+          const likeButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="like"]`);
+          const loveButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="love"]`);
+          const laughButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="laugh"]`);
+          if (likeButton) likeButton.classList.remove('selected');
+          if (loveButton) loveButton.classList.remove('selected');
+          if (laughButton) laughButton.classList.remove('selected');
+          if (!wasSelected) {
+            button.classList.add('selected');
+          }
+    
+          db.runTransaction((transaction) => {
+            return transaction.get(postRef).then((doc) => {
+              if (!doc.exists) throw "Post does not exist!";
+              const postData = doc.data();
+              const reactions = postData.reactions || {};
+              const userReaction = reactions[user.uid];
+    
+              if (userReaction === reaction) {
+                delete reactions[user.uid];
+              } else {
+                reactions[user.uid] = reaction;
+              }
+    
+              transaction.update(postRef, { reactions });
+            });
+          }).catch((error) => {
+            console.error("Transaction failed: ", error);
+          });
+        } else if (e.target.classList.contains('comment-button')) {
+          const postId = e.target.getAttribute('data-post-id');
+          const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+          const content = commentInput.value.trim();
+          if (content) {
+            addComment(postId, content);
+            commentInput.value = '';
+          }
+        } else if (e.target.classList.contains('delete-post-button')) {
+          const postId = e.target.getAttribute('data-post-id');
+          const confirmDelete = confirm('Are you sure you want to delete this post?');
+          if (confirmDelete) {
+            deletePost(postId);
+          }
+        } else if (e.target.classList.contains('custom-play-button') || e.target.classList.contains('post-media')) {
+          const postId = e.target.getAttribute('data-post-id');
+          const video = e.target.classList.contains('post-media')
+            ? e.target
+            : document.querySelector(`.post-media[data-post-id="${postId}"]`);
+          const playButton = document.querySelector(`.custom-play-button[data-post-id="${postId}"]`);
+    
+          if (video.paused) {
+            video.play();
+            playButton.classList.add('hidden');
+          } else {
+            video.pause();
+            playButton.classList.remove('hidden');
+          }
+        }
+      });
+    
+      // Function to add a comment to a user post
+      function addComment(postId, content) {
+        const user = auth.currentUser;
+        if (!user) return;
+    
+        const comment = {
+          authorId: user.uid,
+          authorName: user.displayName || "Unknown User",
+          content: content,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+    
+        db.collection('posts').doc(postId).collection('comments').add(comment)
+          .then(() => {
+            loadUserPostComments(postId);
+          })
+          .catch((error) => {
+            console.error("Error adding comment: ", error);
+          });
+      }
+    
+      // Function to delete a user post
+      async function deletePost(postId) {
+        try {
+          const postRef = db.collection('posts').doc(postId);
+          const postDoc = await postRef.get();
+          if (!postDoc.exists) {
+            console.error('Post does not exist');
+            return;
+          }
+    
+          const postData = postDoc.data();
+          const storage = firebase.storage();
+    
+          if (postData.photoURL) {
+            const photoRef = storage.refFromURL(postData.photoURL);
+            await photoRef.delete();
+          }
+          if (postData.videoURL) {
+            const videoRef = storage.refFromURL(postData.videoURL);
+            await videoRef.delete();
+          }
+    
+          await postRef.delete();
+          const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+          if (postElement) {
+            postElement.remove();
+          }
+          alert('Post deleted successfully!');
+        } catch (error) {
+          console.error('Error deleting post:', error);
+          alert('Failed to delete post. Please try again.');
+        }
+      }
+    
+      // Helper function to format timestamp
+      function formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleString();
+      }
     </script>
 </body>
 </html>
