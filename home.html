@@ -565,9 +565,11 @@
             feed.innerHTML += postHTML;
 
             // Find the video in the newly added post
-            const videoElement = feed.querySelector(`.post[data-post-id="${post.id}"] .post-media`);
-            if (videoElement) {
-                previewVideo(videoElement);
+            if (post.videoURL) {
+                const videoElement = feed.querySelector(`.post[data-post-id="${post.id}"] .post-media`);
+                if (videoElement && videoElement.tagName === 'VIDEO') {
+                    previewVideo(videoElement);
+                }
             }
           
             // Load comments for each post
@@ -1144,24 +1146,25 @@
     });
 
     function previewVideo(videoElement) {
-        videoElement.muted = true; // Ensure video is muted for autoplay
+        if (!videoElement || videoElement.tagName !== 'VIDEO') {
+            return; // Skip if not a video element
+        }
+        videoElement.muted = true;
         videoElement.play()
             .then(() => {
                 setTimeout(() => {
                     videoElement.pause();
-                    // Show the play button again
                     const postId = videoElement.getAttribute('data-post-id');
                     const playButton = document.querySelector(`.custom-play-button[data-post-id="${postId}"]`);
                     if (playButton) {
                         playButton.classList.remove('hidden');
                     }
-                }, 100); // Pause after 100ms (0.1s)
+                }, 100);
             })
             .catch(error => {
                 console.log("Autoplay prevented:", error);
-                // If autoplay is blocked, just show the play button
                 const postId = videoElement.getAttribute('data-post-id');
-                const playButton = document.queryQuerySelector(`.custom-play-button[data-post-id="${postId}"]`);
+                const playButton = document.querySelector(`.custom-play-button[data-post-id="${postId}"]`);
                 if (playButton) {
                     playButton.classList.remove('hidden');
                 }
