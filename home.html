@@ -13,6 +13,7 @@
         margin: 0;
         padding: 0; /* Remove padding to allow full-width media */
         padding-bottom: 60px;
+        padding-top: 60px;
     }
     #post-form {
       margin-bottom: 20px;
@@ -332,10 +333,33 @@
       color: #1877f2;
     }
 
+    #top-nav-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: white;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 10px 0;
+      z-index: 100;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    #top-nav-bar h1 {
+      margin: 0;
+      font-size: 24px;
+      color: #1877f2; /* Facebook blue */
+    }
+
   </style>
 </head>
 <body>
-  <h1>Estaco - Home Feed</h1>
+  <div id="top-nav-bar">
+    <h1>Estaco</h1>
+  </div>
 
   <div id="post-form">
     <h3>Create a Post</h3>
