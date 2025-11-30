@@ -167,6 +167,47 @@
           color: green;
         }
 
+        #bottom-nav-bar {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          background-color: white;
+          border-top: 1px solid #e0e0e0;
+          padding: 8px 0;
+          z-index: 100;
+          box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-button {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 6px 12px;
+          color: #333;
+          font-size: 12px;
+        }
+        
+        .nav-button .icon {
+          font-size: 24px;
+          margin-bottom: 4px;
+        }
+        
+        .nav-button .label {
+          font-size: 12px;
+        }
+        
+        .nav-button:hover {
+          color: #1877f2;
+        }
+
     </style>
 </head>
 <body>
@@ -189,7 +230,6 @@
           <button id="update-profile-pic-button" class="button">Update Profile Picture</button>
           <button id="change-password-button" class="button">Change Password</button>
           <button id="logout-button" class="button">Log Out</button>
-          <button id="back-to-home-button" class="button">Back to Home</button>
         </div>
       </div>
     
@@ -229,6 +269,17 @@
       <input type="file" id="update-profile-pic" accept="image/*" style="display: none;">
       <p id="error-message" class="message"></p>
       <p id="success-message" class="message"></p>
+
+      <div id="bottom-nav-bar">
+          <button class="nav-button" id="home-button">
+            <span class="icon">🏠</span>
+            <span class="label">Home</span>
+          </button>
+          <button class="nav-button" id="profile-button">
+            <span class="icon">👤</span>
+            <span class="label">Profile</span>
+          </button>
+      </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
@@ -615,6 +666,16 @@
               document.getElementById('error-message').textContent = error.message;
             });
           }
+        });
+
+        // Navigate to Home
+        document.getElementById('home-button').addEventListener('click', () => {
+          window.location.href = 'home.html';
+        });
+        
+        // Navigate to Profile (optional, since you're already on the profile page)
+        document.getElementById('profile-button').addEventListener('click', () => {
+          window.location.href = 'profile.html';
         });
     </script>
 </body>
