@@ -57,9 +57,10 @@
         .profile-picture {
           width: 120px;
           height: 120px;
-          border-radius: 50%;
+          border-radius: 15%; /* Rounded corners, not a circle */
           object-fit: cover;
           border: 3px solid #1877f2;
+          display: none; /* Hide by default */
         }
         
         .profile-details {
@@ -433,26 +434,34 @@
           if (user) {
             document.getElementById('user-name').textContent = user.displayName || "No name set";
             document.getElementById('user-email').textContent = user.email;
-            document.getElementById('user-password').textContent = "******";
         
             // Load user data from Firestore
             db.collection('users').doc(user.uid).get()
               .then((doc) => {
+                const placeholder = document.getElementById('profile-picture-placeholder');
+                const img = document.getElementById('profile-picture');
+        
                 if (doc.exists) {
                   const userData = doc.data();
-                  const placeholder = document.getElementById('profile-picture-placeholder');
-                  const img = document.getElementById('profile-picture');
                   if (userData.profilePictureURL) {
                     img.src = userData.profilePictureURL;
-                    img.onload = function() {
-                      placeholder.style.display = 'none';
-                      img.style.display = 'block';
-                    };
+                    img.style.display = 'block';
+                    placeholder.style.display = 'none';
                   } else {
                     // No profile picture, show initials fallback
                     placeholder.innerHTML = getInitialsFallback(user.displayName || "No name set");
+                    placeholder.style.display = 'block';
+                    img.style.display = 'none';
                   }
+                } else {
+                  // No user data, show initials fallback
+                  placeholder.innerHTML = getInitialsFallback(user.displayName || "No name set");
+                  placeholder.style.display = 'block';
+                  img.style.display = 'none';
                 }
+              })
+              .catch((error) => {
+                console.error("Error loading user data:", error);
               });
           }
         });
@@ -497,8 +506,8 @@
           const backgroundColor = pastelColors[colorIndex];
           return `
             <div style="
-              width: 100px;
-              height: 100px;
+              width: 120px;
+              height: 120px;
               border-radius: 15%;
               background-color: ${backgroundColor};
               display: flex;
@@ -507,7 +516,6 @@
               color: #333;
               font-weight: bold;
               font-size: 40px;
-              margin-right: 10px;
             ">
               ${firstLetter}
             </div>
