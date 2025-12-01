@@ -600,7 +600,7 @@
     
     // Function to render posts
     async function renderPosts(postsData) {
-        postsData.forEach((post) => {
+        for (const post of postsData) {
             const profilePictureHTML = await getPostAuthorPicture(post.authorId, post.authorName);
     
             // Get the current user's reaction for this post
