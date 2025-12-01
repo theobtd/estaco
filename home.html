@@ -634,16 +634,16 @@
                     </div>
                 `;
             } else if (post.videoURL) {
-                mediaHTML = `
-                  <div class="media-container media-vertical">
-                      <div class="video-wrapper" style="position: relative;">
-                          <video class="post-media" data-post-id="${post.id}" muted playsinline>
-                              <source src="${post.videoURL}" type="video/mp4">
-                          </video>
-                          <button class="custom-play-button" data-post-id="${post.id}">▶</button>
-                      </div>
+              mediaHTML = `
+                <div class="media-container media-vertical">
+                  <div class="video-wrapper" style="position: relative;">
+                    <video class="post-media" data-post-id="${post.id}" controls>
+                      <source src="${post.videoURL}" type="video/mp4">
+                    </video>
+                    <button class="custom-play-button" data-post-id="${post.id}">▶</button>
                   </div>
-                `;
+                </div>
+              `;
             }
     
             let postHTML = `
@@ -683,9 +683,6 @@
             // Find the video in the newly added post
             if (post.videoURL) {
                 const videoElement = feed.querySelector(`.post[data-post-id="${post.id}"] .post-media`);
-                if (videoElement && videoElement.tagName === 'VIDEO') {
-                    previewVideo(videoElement);
-                }
             }
           
             // Load comments for each post
@@ -1244,48 +1241,20 @@
     }
 
     document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('custom-play-button') || e.target.classList.contains('post-media')) {
-            const postId = e.target.getAttribute('data-post-id');
-            const video = e.target.classList.contains('post-media')
-                ? e.target
-                : document.querySelector(`.post-media[data-post-id="${postId}"]`);
-            const playButton = document.querySelector(`.custom-play-button[data-post-id="${postId}"]`);
+      if (e.target.classList.contains('custom-play-button') || e.target.classList.contains('post-media')) {
+        const postId = e.target.getAttribute('data-post-id') || e.target.closest('.post-media').getAttribute('data-post-id');
+        const video = document.querySelector(`.post-media[data-post-id="${postId}"]`);
+        const playButton = document.querySelector(`.custom-play-button[data-post-id="${postId}"]`);
     
-            if (video.paused) {
-                video.play();
-                playButton.classList.add('hidden');
-            } else {
-                video.pause();
-                playButton.classList.remove('hidden');
-            }
+        if (video.paused) {
+          video.play();
+          playButton.classList.add('hidden');
+        } else {
+          video.pause();
+          playButton.classList.remove('hidden');
         }
+      }
     });
-
-    function previewVideo(videoElement) {
-        if (!videoElement || videoElement.tagName !== 'VIDEO') {
-            return; // Skip if not a video element
-        }
-        videoElement.muted = true;
-        videoElement.play()
-            .then(() => {
-                setTimeout(() => {
-                    videoElement.pause();
-                    const postId = videoElement.getAttribute('data-post-id');
-                    const playButton = document.querySelector(`.custom-play-button[data-post-id="${postId}"]`);
-                    if (playButton) {
-                        playButton.classList.remove('hidden');
-                    }
-                }, 1000);
-            })
-            .catch(error => {
-                console.log("Autoplay prevented:", error);
-                const postId = videoElement.getAttribute('data-post-id');
-                const playButton = document.querySelector(`.custom-play-button[data-post-id="${postId}"]`);
-                if (playButton) {
-                    playButton.classList.remove('hidden');
-                }
-            });
-    }
 
     // Load posts when page loads
     window.onload = loadPosts;
