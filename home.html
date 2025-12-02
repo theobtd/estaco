@@ -637,7 +637,7 @@
               mediaHTML = `
                 <div class="media-container media-vertical">
                   <div class="video-wrapper" style="position: relative;">
-                    <video class="post-media" controls>
+                    <video class="post-media" data-post-id="${post.id}" controls>
                       <source src="${post.videoURL}" type="video/mp4">
                     </video>
                     <button class="custom-play-button" data-post-id="${post.id}">▶</button>
