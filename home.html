@@ -600,15 +600,9 @@
     
     // Function to render posts
     async function renderPosts(postsData) {
-        // Pre-fetch all profile pictures for post authors
-        const profilePicturePromises = postsData.map(post =>
-            getCommentAuthorPicture(post.authorId, post.authorName)
-        );
-        const profilePictures = await Promise.all(profilePicturePromises);
-    
-        // Render each post with its profile picture
-        postsData.forEach((post, index) => {
-            const profilePictureHTML = profilePictures[index];
+        for (const post of postsData) {
+            // Await the profile picture for the post author
+            const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
     
             // Get the current user's reaction for this post
             const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
@@ -683,7 +677,7 @@
     
             // Load comments for each post
             loadComments(post.id);
-        });
+        }
         setupIntersectionObserver();
     }
     
