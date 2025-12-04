@@ -463,74 +463,75 @@
 
     // Create a new post
     postButton.addEventListener('click', () => {
-        const content = postContent.value;
-        const mediaFile = postMedia.files[0];
-    
-        if (!content) {
-            errorMessage.textContent = 'Post content cannot be empty.';
-            return;
-        }
-    
-        const user = auth.currentUser;
-        user.reload().then(() => {
-            const authorName = user.displayName || "Unknown User";
-            const post = {
-                authorId: user.uid,
-                authorName: authorName,
-                content: content,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                reactions: {}
-            };
-    
-            db.collection('posts').add(post)
-                .then((docRef) => {
-                    const uploadPromises = [];
-                    if (mediaFile) {
-                        const storageRef = storage.ref();
-                        const mediaType = postMedia.getAttribute('data-type');
-                        const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
-                        const uploadTask = mediaRef.put(mediaFile);
-                    
-                        uploadPromises.push(
-                            new Promise((resolve, reject) => {
-                                uploadTask.on('state_changed',
-                                    null,
-                                    (error) => {
-                                        console.error('Upload error:', error);
-                                        reject(error);
-                                    },
-                                    () => {
-                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                                            const updateData = mediaType === 'image'
-                                                ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                                                : { videoURL: downloadURL, mediaOrientation: 'vertical' }; // Always vertical
-                                            docRef.update(updateData).then(resolve);
-                                        });
-                                    }
-                                );
-                            })
-                        );
-                    }
+      errorMessage.textContent = ''; // Clear any previous error message
+      const content = postContent.value;
+      const mediaFile = postMedia.files[0];
+  
+      if (!content) {
+          errorMessage.textContent = 'Post content cannot be empty.';
+          return;
+      }
+  
+      const user = auth.currentUser;
+      user.reload().then(() => {
+          const authorName = user.displayName || "Unknown User";
+          const post = {
+              authorId: user.uid,
+              authorName: authorName,
+              content: content,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              reactions: {}
+          };
+  
+          db.collection('posts').add(post)
+              .then((docRef) => {
+                  const uploadPromises = [];
+                  if (mediaFile) {
+                      const storageRef = storage.ref();
+                      const mediaType = postMedia.getAttribute('data-type');
+                      const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
+                      const uploadTask = mediaRef.put(mediaFile);
+  
+                      uploadPromises.push(
+                          new Promise((resolve, reject) => {
+                              uploadTask.on('state_changed',
+                                  null,
+                                  (error) => {
+                                      console.error('Upload error:', error);
+                                      reject(error);
+                                  },
+                                  () => {
+                                      uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                          const updateData = mediaType === 'image'
+                                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                                              : { videoURL: downloadURL, mediaOrientation: 'vertical' };
+                                          docRef.update(updateData).then(resolve);
+                                      });
+                                  }
+                              );
+                          })
+                      );
+                  }
+  
+                  Promise.all(uploadPromises)
+                      .then(() => {
+                          alert('Post created!');
+                          postContent.value = '';
+                          postMedia.value = '';
+                          document.getElementById('image-preview-container').style.display = 'none';
+                          document.getElementById('video-preview-container').style.display = 'none';
+                          loadPosts();
+                      })
+                      .catch((error) => {
+                          errorMessage.textContent = error.message;
+                      });
+              })
+              .catch((error) => {
+                  errorMessage.textContent = error.message;
+              });
+      });
+  });
 
-    
-                    Promise.all(uploadPromises)
-                        .then(() => {
-                            alert('Post created!');
-                            postContent.value = '';
-                            postMedia.value = '';
-                            document.getElementById('image-preview-container').style.display = 'none';
-                            document.getElementById('video-orientation-buttons').style.display = 'none';
-                            loadPosts();
-                        })
-                        .catch((error) => {
-                            errorMessage.textContent = error.message;
-                        });
-                })
-                .catch((error) => {
-                    errorMessage.textContent = error.message;
-                });
-        });
-    });
 
     let lastVisiblePost = null; // To keep track of the last fetched post
     const postLimit = 3; // Number of posts to load at a time
