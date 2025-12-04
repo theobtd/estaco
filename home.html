@@ -634,7 +634,7 @@
               const orientation = post.mediaOrientation || 'horizontal';
               mediaHTML = `
                 <div class="media-container media-${orientation}">
-                  <video controls class="post-media">
+                  <video controls class="post-media" preload="metadata">
                     <source src="${post.videoURL}" type="video/mp4">
                   </video>
                 </div>
@@ -672,8 +672,11 @@
                 </div>
             `;
     
-            // Append each post directly to the feed
-            feed.innerHTML += postHTML;
+            // In your renderPosts function, check if the post is already rendered
+            if (document.querySelector(`.post[data-post-id="${post.id}"]`)) {
+              continue; // Skip if already rendered
+            }
+            feed.innerHTML += postHTML; // Only append if not already present
     
             // Load comments for each post
             loadComments(post.id);
@@ -1029,30 +1032,27 @@
         return (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200;
     }
 
+    // Replace your setupIntersectionObserver with this:
     function setupIntersectionObserver() {
-        const options = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.5 // Trigger when 50% of the post is out of view
-        };
+      const options = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1,
+      };
     
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) {
-                    const postElement = entry.target;
-                    const postIndex = Array.from(feed.children).indexOf(postElement);
-                    // Trigger load if the user scrolls away from post #1, #4, #7, etc.
-                    if ((postIndex + 1) % 3 === 1 && !isLoading) {
-                        loadPosts();
-                    }
-                }
-            });
-        }, options);
-    
-        // Observe all posts
-        document.querySelectorAll('.post').forEach(post => {
-            observer.observe(post);
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.target === feed.lastElementChild) {
+            loadPosts();
+          }
         });
+      }, options);
+    
+      // Observe only the last post
+      const posts = document.querySelectorAll('.post');
+      if (posts.length > 0) {
+        observer.observe(posts[posts.length - 1]);
+      }
     }
 
     document.querySelectorAll('.orientation-button').forEach(button => {
