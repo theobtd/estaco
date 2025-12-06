@@ -317,116 +317,52 @@
             }
         });
 
-        // Cache keys
-        const FRIENDS_CACHE_KEY = 'estaco_friends_cache';
-        const PENDING_REQUESTS_CACHE_KEY = 'estaco_pending_requests_cache';
-        const PROFILE_PICTURE_CACHE_KEY = 'estaco_profile_picture_cache';
-        const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-        
-        // Function to save data to cache
-        function saveToCache(key, data) {
-          const cacheData = {
-            timestamp: Date.now(),
-            data: data
-          };
-          sessionStorage.setItem(key, JSON.stringify(cacheData));
-        }
-        
-        // Function to load data from cache
-        function loadFromCache(key) {
-          const cachedData = sessionStorage.getItem(key);
-          if (!cachedData) return null;
-          const { timestamp, data } = JSON.parse(cachedData);
-          if (Date.now() - timestamp > CACHE_TTL) {
-            return null;
-          }
-          return data;
-        }
-
         // Load pending friend requests
         function loadPendingRequests(userId) {
-          const cachedRequests = loadFromCache(PENDING_REQUESTS_CACHE_KEY);
-          if (cachedRequests) {
-            pendingFriendRequestsDiv.innerHTML = '';
-            cachedRequests.forEach(request => {
-              const requestDiv = document.createElement('div');
-              requestDiv.className = 'pending-friend';
-              requestDiv.innerText = request.fromName;
-              const acceptButton = document.createElement('button');
-              acceptButton.className = 'friend-button';
-              acceptButton.innerText = 'Accept';
-              acceptButton.onclick = () => acceptFriendRequest(request.from, userId);
-              requestDiv.appendChild(acceptButton);
-              pendingFriendRequestsDiv.appendChild(requestDiv);
-            });
-            return;
-          }
-        
-          // If no cache, fetch from Firebase
-          db.collection('friendRequests').where('to', '==', userId).get()
-            .then(snapshot => {
-              const requests = [];
-              const promises = [];
-              snapshot.forEach(doc => {
-                const request = doc.data();
-                requests.push(request);
-                const promise = db.collection('users').doc(request.from).get()
-                  .then(userDoc => {
-                    const fromName = userDoc.data().name;
-                    const requestDiv = document.createElement('div');
-                    requestDiv.className = 'pending-friend';
-                    requestDiv.innerText = fromName;
-                    const acceptButton = document.createElement('button');
-                    acceptButton.className = 'friend-button';
-                    acceptButton.innerText = 'Accept';
-                    acceptButton.onclick = () => acceptFriendRequest(request.from, userId);
-                    requestDiv.appendChild(acceptButton);
-                    pendingFriendRequestsDiv.appendChild(requestDiv);
-                  });
-                promises.push(promise);
-              });
-              saveToCache(PENDING_REQUESTS_CACHE_KEY, requests);
-              return Promise.all(promises);
-            });
+            db.collection('friendRequests').where('to', '==', userId).get()
+                .then(snapshot => {
+                    pendingFriendRequestsDiv.innerHTML = '';
+                    const promises = [];
+                    snapshot.forEach(doc => {
+                        const request = doc.data();
+                        const promise = db.collection('users').doc(request.from).get()
+                            .then(userDoc => {
+                                const fromName = userDoc.data().name;
+                                const requestDiv = document.createElement('div');
+                                requestDiv.className = 'pending-friend';
+                                requestDiv.innerText = fromName;
+                                const acceptButton = document.createElement('button');
+                                acceptButton.className = 'friend-button';
+                                acceptButton.innerText = 'Accept';
+                                acceptButton.onclick = () => acceptFriendRequest(request.from, userId);
+                                requestDiv.appendChild(acceptButton);
+                                pendingFriendRequestsDiv.appendChild(requestDiv);
+                            });
+                        promises.push(promise);
+                    });
+                    return Promise.all(promises);
+                });
         }
 
         // Load current friends
         function loadCurrentFriends(userId) {
-          const cachedFriends = loadFromCache(FRIENDS_CACHE_KEY);
-          if (cachedFriends) {
-            currentFriendsDiv.innerHTML = '';
-            cachedFriends.forEach(friend => {
-              const friendDiv = document.createElement('div');
-              friendDiv.className = 'friend';
-              friendDiv.innerText = friend.name;
-              const removeButton = document.createElement('button');
-              removeButton.className = 'friend-button remove';
-              removeButton.innerText = 'Remove';
-              removeButton.onclick = () => removeFriend(userId, friend.uid);
-              friendDiv.appendChild(removeButton);
-              currentFriendsDiv.appendChild(friendDiv);
-            });
-            return;
-          }
-        
-          // If no cache, fetch from Firebase
-          db.collection('friends').doc(userId).get()
-            .then(doc => {
-              const friends = doc.data()?.friends || [];
-              saveToCache(FRIENDS_CACHE_KEY, friends);
-              currentFriendsDiv.innerHTML = '';
-              friends.forEach(friend => {
-                const friendDiv = document.createElement('div');
-                friendDiv.className = 'friend';
-                friendDiv.innerText = friend.name;
-                const removeButton = document.createElement('button');
-                removeButton.className = 'friend-button remove';
-                removeButton.innerText = 'Remove';
-                removeButton.onclick = () => removeFriend(userId, friend.uid);
-                friendDiv.appendChild(removeButton);
-                currentFriendsDiv.appendChild(friendDiv);
-              });
-            });
+            db.collection('friends').doc(userId).get()
+                .then(doc => {
+                    const friends = doc.data()?.friends || [];
+                    currentFriendsDiv.innerHTML = '';
+                    friends.forEach(friend => {
+                        const friendDiv = document.createElement('div');
+                        friendDiv.className = 'friend';
+                        friendDiv.innerText = friend.name;
+                        // Add a "Remove" button
+                        const removeButton = document.createElement('button');
+                        removeButton.className = 'friend-button remove';
+                        removeButton.innerText = 'Remove';
+                        removeButton.onclick = () => removeFriend(userId, friend.uid);
+                        friendDiv.appendChild(removeButton);
+                        currentFriendsDiv.appendChild(friendDiv);
+                    });
+                });
         }
 
         // Send friend request
@@ -550,39 +486,34 @@
             document.getElementById('user-name').textContent = user.displayName || "No name set";
             document.getElementById('user-email').textContent = user.email;
         
-            const cachedProfilePicture = loadFromCache(PROFILE_PICTURE_CACHE_KEY);
-            const placeholder = document.getElementById('profile-picture-placeholder');
-            const img = document.getElementById('profile-picture');
+            // Load user data from Firestore
+            db.collection('users').doc(user.uid).get()
+              .then((doc) => {
+                const placeholder = document.getElementById('profile-picture-placeholder');
+                const img = document.getElementById('profile-picture');
         
-            if (cachedProfilePicture) {
-              img.src = cachedProfilePicture;
-              img.style.display = 'block';
-              placeholder.style.display = 'none';
-            } else {
-              db.collection('users').doc(user.uid).get()
-                .then((doc) => {
-                  if (doc.exists) {
-                    const userData = doc.data();
-                    if (userData.profilePictureURL) {
-                      img.src = userData.profilePictureURL;
-                      img.style.display = 'block';
-                      placeholder.style.display = 'none';
-                      saveToCache(PROFILE_PICTURE_CACHE_KEY, userData.profilePictureURL);
-                    } else {
-                      placeholder.innerHTML = getInitialsFallback(user.displayName || "No name set");
-                      placeholder.style.display = 'block';
-                      img.style.display = 'none';
-                    }
+                if (doc.exists) {
+                  const userData = doc.data();
+                  if (userData.profilePictureURL) {
+                    img.src = userData.profilePictureURL;
+                    img.style.display = 'block';
+                    placeholder.style.display = 'none';
                   } else {
+                    // No profile picture, show initials fallback
                     placeholder.innerHTML = getInitialsFallback(user.displayName || "No name set");
                     placeholder.style.display = 'block';
                     img.style.display = 'none';
                   }
-                })
-                .catch((error) => {
-                  console.error("Error loading user data:", error);
-                });
-            }
+                } else {
+                  // No user data, show initials fallback
+                  placeholder.innerHTML = getInitialsFallback(user.displayName || "No name set");
+                  placeholder.style.display = 'block';
+                  img.style.display = 'none';
+                }
+              })
+              .catch((error) => {
+                console.error("Error loading user data:", error);
+              });
           }
         });
         
@@ -674,7 +605,6 @@
                         document.getElementById('success-message').textContent = 'Profile picture updated!';
                         document.getElementById('cropper-modal').style.display = 'none';
                         cropper.destroy();
-                        saveToCache(PROFILE_PICTURE_CACHE_KEY, downloadURL);
                       });
                     });
                   }
