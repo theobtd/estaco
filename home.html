@@ -637,9 +637,8 @@
       const cachedPosts = loadPostsFromCache();
       if (cachedPosts && cachedPosts.length > 0) {
         await renderPosts(cachedPosts);
-        // Update lastVisiblePost to the last post in cache
         lastVisiblePost = cachedPosts[cachedPosts.length - 1];
-        isFirstLoad = false; // Reset flag after cache load
+        isFirstLoad = false;
         isLoading = false;
         return;
       }
@@ -662,9 +661,8 @@
         query = query.startAfter(lastVisiblePost);
       }
     
-      // Always use postLimit, except for the very first load (when there is no cache)
-      const limit = isFirstLoad && !cachedPosts ? 1 : postLimit;
-      query = query.limit(limit);
+      // Always use postLimit
+      query = query.limit(postLimit);
     
       query.get().then(async (querySnapshot) => {
         if (querySnapshot.empty) {
@@ -689,11 +687,6 @@
         savePostsToCache(postsData);
     
         await renderPosts(postsData);
-    
-        if (isFirstLoad) {
-          isFirstLoad = false;
-          setTimeout(() => loadPosts(), 100);
-        }
     
         isLoading = false;
       }).catch((error) => {
@@ -786,6 +779,11 @@
             loadComments(post.id);
         }
         setupIntersectionObserver();
+
+        if (isFirstLoad) {
+          setupIntersectionObserver();
+          isFirstLoad = false;
+        }
     }
     
     // Call loadPosts initially to load the first batch
@@ -1156,13 +1154,12 @@
     
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.target === feed.lastElementChild) {
+          if (entry.isIntersecting) {
             loadPosts();
           }
         });
       }, options);
     
-      // Observe only the last post
       const posts = document.querySelectorAll('.post');
       if (posts.length > 0) {
         observer.observe(posts[posts.length - 1]);
