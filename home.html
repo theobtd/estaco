@@ -637,6 +637,9 @@
       const cachedPosts = loadPostsFromCache();
       if (cachedPosts && cachedPosts.length > 0) {
         await renderPosts(cachedPosts);
+        // Update lastVisiblePost to the last post in cache
+        lastVisiblePost = cachedPosts[cachedPosts.length - 1];
+        isFirstLoad = false; // Reset flag after cache load
         isLoading = false;
         return;
       }
