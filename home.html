@@ -662,11 +662,9 @@
         query = query.startAfter(lastVisiblePost);
       }
     
-      if (isFirstLoad) {
-        query = query.limit(1);
-      } else {
-        query = query.limit(postLimit);
-      }
+      // Always use postLimit, except for the very first load (when there is no cache)
+      const limit = isFirstLoad && !cachedPosts ? 1 : postLimit;
+      query = query.limit(limit);
     
       query.get().then(async (querySnapshot) => {
         if (querySnapshot.empty) {
