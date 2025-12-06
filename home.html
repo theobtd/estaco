@@ -514,31 +514,6 @@
         }
     });
 
-    // Cache key
-    const POSTS_CACHE_KEY = 'estaco_posts_cache';
-    const POSTS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
-    
-    // Function to save posts to cache
-    function savePostsToCache(posts) {
-      const cacheData = {
-        timestamp: Date.now(),
-        posts: posts
-      };
-      sessionStorage.setItem(POSTS_CACHE_KEY, JSON.stringify(cacheData));
-    }
-    
-    // Function to load posts from cache
-    function loadPostsFromCache() {
-      const cachedData = sessionStorage.getItem(POSTS_CACHE_KEY);
-      if (!cachedData) return null;
-      const { timestamp, posts } = JSON.parse(cachedData);
-      // Check if cache is stale
-      if (Date.now() - timestamp > POSTS_CACHE_TTL) {
-        return null;
-      }
-      return posts;
-    }
-
     // Create a new post
     postButton.addEventListener('click', () => {
       errorMessage.textContent = ''; // Clear any previous error message
@@ -602,7 +577,6 @@
                 postMedia.value = '';
                 document.getElementById('image-preview-container').style.display = 'none';
                 document.getElementById('video-preview-container').style.display = 'none';
-                sessionStorage.removeItem(POSTS_CACHE_KEY);
                 loadPosts();
               })
               .catch((error) => {
@@ -628,71 +602,66 @@
     const postLimit = 3; // Number of posts to load at a time
     let isFirstLoad = true; // Add this flag at the top with your other variables
     
-    // Modify your loadPosts function to use cache
     async function loadPosts() {
-      if (isLoading) return;
-      isLoading = true;
+        if (isLoading) return; // Prevent multiple simultaneous loads
+        isLoading = true;
     
-      // Try to load from cache first
-      const cachedPosts = loadPostsFromCache();
-      if (cachedPosts && cachedPosts.length > 0) {
-        await renderPosts(cachedPosts);
-        lastVisiblePost = cachedPosts[cachedPosts.length - 1];
-        isFirstLoad = false;
-        isLoading = false;
-        return;
-      }
-    
-      // If no cache or cache is stale, fetch from Firebase
-      const user = auth.currentUser;
-      if (!user) {
-        isLoading = false;
-        return;
-      }
-    
-      const friendIds = await logUserFriendsWithPosts(user.uid);
-      friendIds.push(user.uid);
-    
-      let query = db.collection('posts')
-        .where('authorId', 'in', friendIds)
-        .orderBy('timestamp', 'desc');
-    
-      if (lastVisiblePost) {
-        query = query.startAfter(lastVisiblePost);
-      }
-    
-      // Always use postLimit
-      query = query.limit(postLimit);
-    
-      query.get().then(async (querySnapshot) => {
-        if (querySnapshot.empty) {
-          if (!feed.querySelector('.post')) {
-            feed.innerHTML = '<p>No posts yet. Create one!</p>';
-          } else {
-            feed.innerHTML += '<p>No more posts to load.</p>';
-          }
-          isLoading = false;
-          return;
+        const user = auth.currentUser;
+        if (!user) {
+            isLoading = false;
+            return;
         }
     
-        const postsData = [];
-        querySnapshot.forEach((doc) => {
-          const post = doc.data();
-          post.id = doc.id;
-          postsData.push(post);
-          lastVisiblePost = doc;
+        const friendIds = await logUserFriendsWithPosts(user.uid);
+        friendIds.push(user.uid);
+    
+        let query = db.collection('posts')
+            .where('authorId', 'in', friendIds)
+            .orderBy('timestamp', 'desc');
+    
+        if (lastVisiblePost) {
+            query = query.startAfter(lastVisiblePost);
+        }
+    
+        // Load only 1 post on the first load
+        if (isFirstLoad) {
+            query = query.limit(1);
+        } else {
+            query = query.limit(postLimit);
+        }
+    
+        query.get().then(async (querySnapshot) => {
+            if (querySnapshot.empty) {
+                if (!feed.querySelector('.post')) {
+                    feed.innerHTML = '<p>No posts yet. Create one!</p>';
+                } else {
+                    feed.innerHTML += '<p>No more posts to load.</p>';
+                }
+                isLoading = false;
+                return;
+            }
+        
+            const postsData = [];
+            querySnapshot.forEach((doc) => {
+                const post = doc.data();
+                post.id = doc.id;
+                postsData.push(post);
+                lastVisiblePost = doc; // Update lastVisiblePost for pagination
+            });
+        
+            await renderPosts(postsData);
+        
+            // After the first load, set the flag to false and load more posts
+            if (isFirstLoad) {
+                isFirstLoad = false;
+                setTimeout(() => loadPosts(), 100); // Small delay to ensure DOM is ready
+            }
+        
+            isLoading = false;
+        }).catch((error) => {
+            errorMessage.textContent = error.message;
+            isLoading = false;
         });
-    
-        // Save to cache
-        savePostsToCache(postsData);
-    
-        await renderPosts(postsData);
-    
-        isLoading = false;
-      }).catch((error) => {
-        errorMessage.textContent = error.message;
-        isLoading = false;
-      });
     }
     
     // Function to render posts
@@ -746,7 +715,7 @@
                             <h4 style="margin: 0;">${post.authorName}</h4>
                         </div>
                         <div style="display: flex; align-items: center;">
-                            <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
+                            <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
                             ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
                         </div>
                     </div>
@@ -779,11 +748,6 @@
             loadComments(post.id);
         }
         setupIntersectionObserver();
-
-        if (isFirstLoad) {
-          setupIntersectionObserver();
-          isFirstLoad = false;
-        }
     }
     
     // Call loadPosts initially to load the first batch
@@ -1044,18 +1008,8 @@
     }
 
     function formatTimestamp(timestamp) {
-      // If it's a Firebase Timestamp, use .toDate()
-      if (timestamp && typeof timestamp.toDate === 'function') {
-        return timestamp.toDate().toLocaleString();
-      }
-      // If it's a number (from cache), create a new Date
-      else if (typeof timestamp === 'number') {
-        return new Date(timestamp).toLocaleString();
-      }
-      // Fallback for invalid/undefined timestamps
-      else {
-        return new Date().toLocaleString();
-      }
+      const date = new Date(timestamp);
+      return date.toLocaleString(); // You can customize the format as needed
     }
 
     // Function to log the current user's friends and their posts to the console
@@ -1154,12 +1108,13 @@
     
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
+          if (entry.isIntersecting && entry.target === feed.lastElementChild) {
             loadPosts();
           }
         });
       }, options);
     
+      // Observe only the last post
       const posts = document.querySelectorAll('.post');
       if (posts.length > 0) {
         observer.observe(posts[posts.length - 1]);
