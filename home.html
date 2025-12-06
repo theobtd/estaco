@@ -602,6 +602,7 @@
                 postMedia.value = '';
                 document.getElementById('image-preview-container').style.display = 'none';
                 document.getElementById('video-preview-container').style.display = 'none';
+                sessionStorage.removeItem(POSTS_CACHE_KEY);
                 loadPosts();
               })
               .catch((error) => {
