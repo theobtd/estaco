@@ -1045,8 +1045,18 @@
     }
 
     function formatTimestamp(timestamp) {
-      const date = new Date(timestamp);
-      return date.toLocaleString(); // You can customize the format as needed
+      // If it's a Firebase Timestamp, use .toDate()
+      if (timestamp && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate().toLocaleString();
+      }
+      // If it's a number (from cache), create a new Date
+      else if (typeof timestamp === 'number') {
+        return new Date(timestamp).toLocaleString();
+      }
+      // Fallback for invalid/undefined timestamps
+      else {
+        return new Date().toLocaleString();
+      }
     }
 
     // Function to log the current user's friends and their posts to the console
