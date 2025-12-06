@@ -5,8 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Estaco - Home Feed</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
   <style>
+    :root {
+      --estaco-primary: #8B8E6F; /* Light olive */
+      --estaco-primary-light: #A7A98C; /* Lighter olive for hover states */
+      --estaco-secondary: #E2725B; /* Soft terracotta */
+      --estaco-accent: #FFD700; /* Warm yellow (for buttons, accents) */
+      --estaco-background: #FFFFFF;
+      --estaco-surface: #F9F9F9;
+      --estaco-text: #333333;
+      --estaco-text-light: #666666;
+      --estaco-border: #E0E0E0;
+      --estaco-error: #F44336;
+      --estaco-success: #4CAF50;
+    }
+
     body {
         font-family: Arial, sans-serif;
         max-width: 100%; /* Remove fixed max-width */
@@ -21,7 +36,7 @@
       border: 1px solid #e0e0e0;
       border-radius: 8px;
       background-color: #ffffff;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     #post-photo {
       width: 95%;
@@ -52,8 +67,8 @@
       display: inline-flex;
       align-items: center;
       padding: 10px 15px;
-      background: #f0f2f5;
-      color: #333;
+      background: var(--estaco-surface);
+      color: var(--estaco-text);
       border: none;
       border-radius: 6px;
       cursor: pointer;
@@ -63,7 +78,7 @@
     }
     #post-button {
       padding: 10px 20px;
-      background-color: #1877f2; /* Facebook blue */
+      background-color: var(--estaco-primary); /* Light olive */
       color: white;
       border: none;
       border-radius: 6px;
@@ -84,11 +99,13 @@
     }
     .post {
       padding: 10px;
-      border: 1px solid #ddd;
+      border: 1px solid var(--estaco-border);
       border-radius: 5px;
       margin-bottom: 10px;
       margin-left: 0;
       margin-right: 0;
+      background: var(--estaco-background);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
     #error-message {
       color: red;
@@ -120,13 +137,13 @@
       color: #666;
     }
     .reaction-button.selected {
-      background-color: #f0f0f0;
+      background-color: rgba(139, 142, 111, 0.1);
       border-radius: 4px;
       padding: 2px 4px;
     }
     .comments-section {
       margin-top: 10px;
-      border-top: 1px solid #eee;
+      border-top: 1px solid var(--estaco-border);
       padding-top: 10px;
     }
     .comment-form {
@@ -141,8 +158,7 @@
     }
     .comment-button {
       padding: 8px 12px;
-      background: #4CAF50;
-      color: white;
+      background: var(--estaco-accent);
       border: none;
       border-radius: 4px;
       margin-left: 5px;
@@ -160,7 +176,7 @@
       margin-right: 8px;
     }
     .comment-content {
-      background: #f9f9f9;
+      background: var(--estaco-surface);
       padding: 8px 12px;
       border-radius: 8px;
       flex: 1;
@@ -172,14 +188,14 @@
     .post-timestamp {
       text-align: right;
       font-size: 12px;
-      color: #666;
+      color: var(--estaco-text-light);
       margin-top: -15px; /* Adjust as needed to move it closer to the header */
     }
     .media-container {
       position: relative;
       margin-top: 10px;
       overflow: hidden;
-      background-color: #f0f0f0; /* Placeholder color */
+      background-color: var(--estaco-surface);
     }
     .media-horizontal,
     .media-vertical {
@@ -225,7 +241,7 @@
       border-color: #4CAF50;
     }
     .delete-post-button {
-      background: #f44336;
+      background: var(--estaco-error);
       color: white;
       border: none;
       border-radius: 4px;
@@ -242,9 +258,9 @@
       cursor: pointer;
     }
     .crop-orientation-button.selected {
-      background: #4CAF50;
+      background: var(--estaco-primary);
       color: white;
-      border-color: #4CAF50;
+      border-color: var(--estaco-primary);
     }
     #image-preview-container {
         display: none;
@@ -304,7 +320,7 @@
       border-top: 1px solid #e0e0e0;
       padding: 8px 0;
       z-index: 100;
-      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
     }
     
     .nav-button {
@@ -328,10 +344,6 @@
     .nav-button .label {
       font-size: 12px;
     }
-    
-    .nav-button:hover {
-      color: #1877f2;
-    }
 
     #top-nav-bar {
       position: fixed;
@@ -345,13 +357,15 @@
       border-bottom: 1px solid #e0e0e0;
       padding: 10px 0;
       z-index: 100;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
     
     #top-nav-bar h1 {
       margin: 0;
       font-size: 24px;
-      color: #1877f2; /* Facebook blue */
+      color: var(--estaco-primary);
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
     }
 
     .spinner {
@@ -367,6 +381,27 @@
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+
+    #crop-done-button {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: var(--estaco-primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #crop-cancel-button {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: var(--estaco-error);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 10px;
     }
 
   </style>
@@ -398,7 +433,7 @@
     <p id="error-message"></p>
   </div>
 
-  <div id="image-cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
+  <div id="image-cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000;">
     <div style="max-width: 500px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px;">
       <h3>Adjust Image</h3>
       <div style="margin-bottom: 10px;">
@@ -408,8 +443,8 @@
       <div style="width: 100%; height: 400px;">
         <img id="cropper-image" style="max-width: 100%;">
       </div>
-      <button id="crop-done-button" style="margin-top: 10px; padding: 8px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Done</button>
-      <button id="crop-cancel-button" style="margin-top: 10px; padding: 8px 12px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancel</button>
+      <button id="crop-done-button" >Done</button>
+      <button id="crop-cancel-button" >Cancel</button>
     </div>
   </div>
   
