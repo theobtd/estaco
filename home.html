@@ -752,7 +752,7 @@
                             <h4 style="margin: 0;">${post.authorName}</h4>
                         </div>
                         <div style="display: flex; align-items: center;">
-                            <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
+                            <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
                             ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
                         </div>
                     </div>
