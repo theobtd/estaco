@@ -115,6 +115,10 @@
       <input type="email" id="signup-email" placeholder="Email" required>
     </div>
     <div class="form-group">
+      <label for="signup-email-confirm">Confirm Email</label>
+      <input type="email" id="signup-email-confirm" placeholder="Confirm Email" required>
+    </div>
+    <div class="form-group">
       <label for="signup-password">Password</label>
       <input type="password" id="signup-password" placeholder="Password" required>
     </div>
@@ -177,8 +181,16 @@
     signupButton.addEventListener('click', () => {
       const name = document.getElementById('signup-name').value;
       const email = document.getElementById('signup-email').value;
+      const emailConfirm = document.getElementById('signup-email-confirm').value;
       const password = document.getElementById('signup-password').value;
-
+    
+      // Check if emails match
+      if (email !== emailConfirm) {
+        errorMessage.textContent = 'Emails do not match. Please check and try again.';
+        return;
+      }
+    
+      // Proceed with Firebase logic
       db.collection('users').where('name', '==', name).get()
         .then((querySnapshot) => {
           if (!querySnapshot.empty) {
@@ -203,6 +215,7 @@
                 alert('Account created! Please check your email for a verification link.');
                 document.getElementById('signup-name').value = '';
                 document.getElementById('signup-email').value = '';
+                document.getElementById('signup-email-confirm').value = '';
                 document.getElementById('signup-password').value = '';
                 signupForm.style.display = 'none';
               })
