@@ -115,12 +115,12 @@
       <input type="email" id="signup-email" placeholder="Email" required>
     </div>
     <div class="form-group">
-      <label for="signup-email-confirm">Confirm Email</label>
-      <input type="email" id="signup-email-confirm" placeholder="Confirm Email" required>
-    </div>
-    <div class="form-group">
       <label for="signup-password">Password</label>
       <input type="password" id="signup-password" placeholder="Password" required>
+    </div>
+    <div class="form-group">
+      <label for="signup-password-confirm">Confirm Password</label>
+      <input type="password" id="signup-password-confirm" placeholder="Confirm Password" required>
     </div>
     <button id="signup-button">Sign Up</button>
     <p id="error-message"></p>
@@ -187,6 +187,12 @@
       // Check if emails match
       if (email !== emailConfirm) {
         errorMessage.textContent = 'Emails do not match. Please check and try again.';
+        return;
+      }
+
+      // Check if passwords match
+      if (password !== passwordConfirm) {
+        errorMessage.textContent = 'Passwords do not match. Please check and try again.';
         return;
       }
     
