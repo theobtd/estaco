@@ -4,28 +4,102 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Estaco - Sign In / Sign Up</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --estaco-primary: #8B8E6F;
+      --estaco-primary-light: #A7A98C;
+      --estaco-secondary: #E2725B;
+      --estaco-accent: #FFD700;
+      --estaco-background: #FFFFFF;
+      --estaco-surface: #F9F9F9;
+      --estaco-text: #333333;
+      --estaco-text-light: #666666;
+      --estaco-border: #E0E0E0;
+      --estaco-error: #F44336;
+      --estaco-success: #4CAF50;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Inter', sans-serif;
       max-width: 400px;
       margin: 0 auto;
       padding: 20px;
       text-align: center;
+      background-color: var(--estaco-background);
+      color: var(--estaco-text);
     }
-    input, button {
+
+    h1 {
+      color: var(--estaco-primary);
+      font-weight: 600;
+      margin-bottom: 30px;
+    }
+
+    button {
+      background-color: var(--estaco-accent);
+      color: var(--estaco-text);
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: var(--estaco-primary-light);
+    }
+
+    button:active {
+      background-color: var(--estaco-primary);
+    }
+
+    #show-signup, #show-signin {
       width: 100%;
-      padding: 10px;
       margin: 10px 0;
-      box-sizing: border-box;
     }
+
     #signup-form, #signin-form {
       display: none;
+      background-color: var(--estaco-surface);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      margin-top: 20px;
     }
+
     .form-group {
       text-align: left;
+      margin-bottom: 15px;
     }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: var(--estaco-text-light);
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--estaco-border);
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--estaco-primary);
+    }
+
     #error-message {
-      color: red;
+      color: var(--estaco-error);
+      font-size: 14px;
+      margin-top: 10px;
+      text-align: center;
     }
   </style>
 </head>
@@ -33,6 +107,7 @@
   <h1>Estaco</h1>
   <button id="show-signup">Create Account</button>
   <button id="show-signin">Sign In</button>
+
   <!-- Sign Up Form -->
   <div id="signup-form">
     <h2>Create Account</h2>
@@ -51,6 +126,7 @@
     <button id="signup-button">Sign Up</button>
     <p id="error-message"></p>
   </div>
+
   <!-- Sign In Form -->
   <div id="signin-form">
     <h2>Sign In</h2>
@@ -65,12 +141,13 @@
     <button id="signin-button">Sign In</button>
     <p id="error-message"></p>
   </div>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
   <script>
-    // Your Firebase config
+    // Your Firebase config and JavaScript logic remain exactly the same
     const firebaseConfig = {
       apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
       authDomain: "estaco-add3c.firebaseapp.com",
@@ -79,11 +156,11 @@
       messagingSenderId: "876337002297",
       appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
     };
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    // DOM elements
+
+    // Rest of your JavaScript logic remains unchanged
     const showSignup = document.getElementById('show-signup');
     const showSignin = document.getElementById('show-signin');
     const signupForm = document.getElementById('signup-form');
@@ -91,30 +168,28 @@
     const signupButton = document.getElementById('signup-button');
     const signinButton = document.getElementById('signin-button');
     const errorMessage = document.getElementById('error-message');
-    // Toggle forms
+
     showSignup.addEventListener('click', () => {
       signupForm.style.display = 'block';
       signinForm.style.display = 'none';
     });
+
     showSignin.addEventListener('click', () => {
       signinForm.style.display = 'block';
       signupForm.style.display = 'none';
     });
-    // Sign Up
+
     signupButton.addEventListener('click', () => {
       const name = document.getElementById('signup-name').value;
       const email = document.getElementById('signup-email').value;
       const password = document.getElementById('signup-password').value;
-    
-      // Check if the name is already taken
+
       db.collection('users').where('name', '==', name).get()
         .then((querySnapshot) => {
           if (!querySnapshot.empty) {
             errorMessage.textContent = 'This name is already taken. Please choose another name.';
-            return; // Stop further execution
+            return;
           }
-    
-          // Proceed to create user if name is unique
           return auth.createUserWithEmailAndPassword(email, password);
         })
         .then((userCredential) => {
@@ -122,7 +197,6 @@
             const user = userCredential.user;
             user.updateProfile({ displayName: name })
               .then(() => {
-                // Save user data to Firestore
                 db.collection('users').doc(user.uid).set({
                   name: name,
                   email: email,
@@ -132,7 +206,6 @@
               })
               .then(() => {
                 alert('Account created! Please check your email for a verification link.');
-                // Clear form
                 document.getElementById('signup-name').value = '';
                 document.getElementById('signup-email').value = '';
                 document.getElementById('signup-password').value = '';
@@ -147,7 +220,7 @@
           errorMessage.textContent = error.message;
         });
     });
-    // Sign In
+
     signinButton.addEventListener('click', () => {
       const email = document.getElementById('signin-email').value;
       const password = document.getElementById('signin-password').value;
@@ -157,10 +230,10 @@
           const user = userCredential.user;
           if (user.emailVerified) {
             alert('Signed in successfully!');
-            window.location.href = 'home.html'; // Redirect to home feed
+            window.location.href = 'home.html';
           } else {
             alert('Please verify your email before signing in. A verification link has been sent to your email address.');
-            auth.signOut(); // Log the user out
+            auth.signOut();
           }
         })
         .catch((error) => {
