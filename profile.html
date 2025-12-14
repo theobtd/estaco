@@ -7,15 +7,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
     <title>Estaco - Profile</title>
     <style>
+        :root {
+          --estaco-primary: #8B8E6F;
+          --estaco-primary-light: #A7A98C;
+          --estaco-secondary: #E2725B;
+          --estaco-accent: #A8B8A8;
+          --estaco-background: #FFFFFF;
+          --estaco-surface: #F9F9F9;
+          --estaco-text: #333333;
+          --estaco-text-light: #666666;
+          --estaco-border: #E0E0E0;
+          --estaco-error: #F44336;
+          --estaco-success: #4CAF50;
+        }
+    
         body {
-          font-family: Arial, sans-serif;
+          font-family: 'Inter', 'Roboto', 'Helvetica Neue', sans-serif;
           margin: 0;
           padding: 0;
-          padding-top: 60px; /* Space for top nav bar */
-          padding-bottom: 60px; /* Space for bottom nav bar */
-          background-color: #f9f9f9;
+          padding-top: 60px;
+          padding-bottom: 60px;
+          background-color: var(--estaco-background);
+          color: var(--estaco-text);
+          line-height: 1.5;
         }
-        
+    
         #top-nav-bar {
           position: fixed;
           top: 0;
@@ -24,149 +40,240 @@
           display: flex;
           justify-content: center;
           align-items: center;
-          background-color: white;
-          border-bottom: 1px solid #e0e0e0;
-          padding: 10px 0;
+          background-color: var(--estaco-surface);
+          border-bottom: 1px solid var(--estaco-border);
+          padding: 12px 0;
           z-index: 100;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
-        
+    
         #top-nav-bar h1 {
           margin: 0;
-          font-size: 24px;
-          color: #1877f2;
+          font-size: 20px;
+          font-weight: 600;
+          color: var(--estaco-primary);
+          letter-spacing: 0.5px;
         }
-        
+    
         .profile-header {
-          background: white;
-          padding: 20px;
-          margin-bottom: 20px;
-          border-radius: 8px;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+          background: var(--estaco-surface);
+          padding: 24px;
+          margin-bottom: 16px;
+          border-radius: 12px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
+          border: 1px solid var(--estaco-border);
         }
-        
+    
         .profile-picture-container {
-          margin-bottom: 15px;
+          margin-bottom: 16px;
+          position: relative;
         }
-        
+    
         .profile-picture-placeholder,
         .profile-picture {
           width: 120px;
           height: 120px;
-          border-radius: 15%; /* Rounded corners, not a circle */
+          border-radius: 15%;
           object-fit: cover;
-          border: 3px solid #1877f2;
-          display: none; /* Hide by default */
+          border: 3px solid var(--estaco-primary);
+          display: none;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-        
+    
         .profile-details {
-          margin-bottom: 15px;
+          margin-bottom: 16px;
         }
-        
+    
         .profile-details h2 {
-          margin: 0;
-          font-size: 24px;
+          margin: 0 0 4px 0;
+          font-size: 22px;
+          font-weight: 600;
+          color: var(--estaco-text);
         }
-        
+    
         .profile-details p {
-          margin: 5px 0;
-          color: #666;
+          margin: 0;
+          color: var(--estaco-text-light);
+          font-size: 14px;
         }
-        
+    
         .profile-actions {
           display: flex;
           flex-wrap: wrap;
           justify-content: center;
           gap: 10px;
+          margin-top: 8px;
         }
-        
+    
         .button {
-          padding: 8px 16px;
-          background-color: #1877f2;
+          padding: 10px 20px;
+          background-color: var(--estaco-primary);
           color: white;
           border: none;
-          border-radius: 6px;
+          border-radius: 8px;
           cursor: pointer;
           font-size: 14px;
-          transition: background-color 0.2s;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-        
+    
         .button:hover {
-          background-color: #166fe5;
+          background-color: var(--estaco-primary-light);
+          transform: translateY(-1px);
         }
-        
+    
         .button.remove {
-          background-color: #f44336;
+          background-color: var(--estaco-error);
         }
-        
+    
         .button.remove:hover {
           background-color: #d32f2f;
         }
-        
+    
         .profile-content {
-          background: white;
+          background: var(--estaco-surface);
           padding: 20px;
           margin-bottom: 20px;
-          border-radius: 8px;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+          border-radius: 12px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          border: 1px solid var(--estaco-border);
         }
-        
+    
         .section {
-          margin-bottom: 20px;
+          margin-bottom: 24px;
         }
-        
+    
         .section h3 {
           margin-top: 0;
-          border-bottom: 1px solid #eee;
-          padding-bottom: 10px;
+          margin-bottom: 12px;
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--estaco-primary);
+          border-bottom: 1px solid var(--estaco-border);
+          padding-bottom: 8px;
         }
-        
+    
         .search-friend {
           display: flex;
           gap: 10px;
           margin-bottom: 20px;
         }
-        
+    
         .search-friend input {
           flex: 1;
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
+          padding: 12px;
+          border: 1px solid var(--estaco-border);
+          border-radius: 8px;
+          font-size: 14px;
+          transition: border-color 0.2s;
         }
-        
+    
+        .search-friend input:focus {
+          outline: none;
+          border-color: var(--estaco-primary);
+        }
+    
         .friend-list {
           display: flex;
           flex-direction: column;
           gap: 10px;
         }
-        
+    
         .friend, .pending-friend {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 10px;
-          background: #f9f9f9;
+          padding: 12px 16px;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          border: 1px solid var(--estaco-border);
+          transition: transform 0.1s;
+        }
+    
+        .friend:hover, .pending-friend:hover {
+          transform: translateY(-2px);
+        }
+    
+        .friend-button {
+          padding: 6px 12px;
+          background-color: var(--estaco-primary);
+          color: white;
+          border: none;
           border-radius: 6px;
+          cursor: pointer;
+          font-size: 12px;
+          transition: background-color 0.2s;
         }
-        
+    
+        .friend-button:hover {
+          background-color: var(--estaco-primary-light);
+        }
+    
+        .friend-button.remove {
+          background-color: var(--estaco-error);
+        }
+    
         .message {
-          padding: 10px;
-          margin: 10px 0;
+          padding: 12px;
+          margin: 12px 0;
           text-align: center;
+          font-size: 14px;
         }
-        
+    
         #error-message {
-          color: red;
+          color: var(--estaco-error);
         }
-        
+    
         #success-message {
-          color: green;
+          color: var(--estaco-success);
         }
-
+    
+        #cropper-modal {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.8);
+          z-index: 1000;
+          align-items: center;
+          justify-content: center;
+        }
+    
+        #cropper-modal > div {
+          max-width: 90%;
+          width: 350px;
+          margin: 0;
+          background: white;
+          padding: 20px;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+    
+        #cropper-modal h3 {
+          margin-top: 0;
+          color: var(--estaco-primary);
+          font-size: 18px;
+        }
+    
+        #crop-done-button, #crop-cancel-button {
+          margin-top: 12px;
+          width: 100%;
+          padding: 10px;
+        }
+    
+        #crop-cancel-button {
+          background-color: var(--estaco-error);
+          margin-top: 8px;
+        }
+    
         #bottom-nav-bar {
           position: fixed;
           bottom: 0;
@@ -175,13 +282,13 @@
           display: flex;
           justify-content: space-around;
           align-items: center;
-          background-color: white;
-          border-top: 1px solid #e0e0e0;
-          padding: 8px 0;
+          background-color: var(--estaco-surface);
+          border-top: 1px solid var(--estaco-border);
+          padding: 10px 0;
           z-index: 100;
-          box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
         }
-        
+    
         .nav-button {
           display: flex;
           flex-direction: column;
@@ -190,25 +297,26 @@
           background: none;
           border: none;
           cursor: pointer;
-          padding: 6px 12px;
-          color: #333;
+          padding: 8px 16px;
+          color: var(--estaco-text-light);
           font-size: 12px;
+          transition: color 0.2s;
         }
-        
+    
+        .nav-button.active, .nav-button:hover {
+          color: var(--estaco-primary);
+        }
+    
         .nav-button .icon {
-          font-size: 24px;
+          font-size: 22px;
           margin-bottom: 4px;
         }
-        
+    
         .nav-button .label {
           font-size: 12px;
         }
-        
-        .nav-button:hover {
-          color: #1877f2;
-        }
-
     </style>
+
 </head>
 <body>
       <!-- Top Navigation Bar (optional, for consistency with home page) -->
