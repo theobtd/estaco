@@ -477,21 +477,34 @@
         sendFriendRequestButton.addEventListener('click', () => {
             const friendName = searchFriendInput.value.trim();
             if (friendName) {
-                console.log(`Searching for user with name: ${friendName}`); // Log the search name
-                db.collection('users').where('name', '==', friendName).get()
-                    .then(snapshot => {
-                        if (!snapshot.empty) {
-                            const friendDoc = snapshot.docs[0];
-                            const friendUser = friendDoc.data();
-                            const friendUid = friendDoc.id; // <-- This is the UID!
-                            sendRequest(auth.currentUser.uid, friendUid, friendUser.name);
-                        } else {
-                            alert('User not found');
+                const user = auth.currentUser;
+                if (!user) return;
+        
+                // Check if the user already has 15 friends
+                db.collection('friends').doc(user.uid).get()
+                    .then((doc) => {
+                        const friends = doc.data()?.friends || [];
+                        if (friends.length >= 15) {
+                            alert('You have reached the maximum number of friends (15).');
+                            return;
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error searching for user: ', error);
-                        alert('An error occurred while searching for the user.');
+        
+                        // Proceed with sending the friend request
+                        db.collection('users').where('name', '==', friendName).get()
+                            .then(snapshot => {
+                                if (!snapshot.empty) {
+                                    const friendDoc = snapshot.docs[0];
+                                    const friendUser = friendDoc.data();
+                                    const friendUid = friendDoc.id;
+                                    sendRequest(user.uid, friendUid, friendUser.name);
+                                } else {
+                                    alert('User not found');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error searching for user: ', error);
+                                alert('An error occurred while searching for the user.');
+                            });
                     });
             } else {
                 alert('Please enter a name to search');
@@ -519,36 +532,42 @@
 
         // Accept friend request
         function acceptFriendRequest(fromId, toId) {
-            // Fetch the name of the user sending the request
-            db.collection('users').doc(fromId).get()
-                .then(fromUserDoc => {
-                    const fromName = fromUserDoc.data().name;
-                    // Fetch the name of the current user
-                    db.collection('users').doc(toId).get()
-                        .then(toUserDoc => {
-                            const toName = toUserDoc.data().name;
-                            // Add the friend to both users' friend lists
-                            db.collection('friends').doc(toId).set({
-                                friends: firebase.firestore.FieldValue.arrayUnion({ uid: fromId, name: fromName })
-                            }, { merge: true });
-                            db.collection('friends').doc(fromId).set({
-                                friends: firebase.firestore.FieldValue.arrayUnion({ uid: toId, name: toName })
-                            }, { merge: true });
-                            // Remove the friend request
-                            db.collection('friendRequests').where('from', '==', fromId).where('to', '==', toId).get()
-                                .then(snapshot => {
-                                    snapshot.forEach(doc => {
-                                        doc.ref.delete();
-                                    });
-                                    // Remove the accepted request from the DOM
-                                    const pendingRequests = document.querySelectorAll('.pending-friend');
-                                    pendingRequests.forEach(requestDiv => {
-                                        if (requestDiv.textContent.includes(fromName)) {
-                                            requestDiv.remove();
-                                        }
-                                    });
-                                    alert('Friend request accepted!');
-                                    loadCurrentFriends(toId);
+            // Check if the user already has 15 friends
+            db.collection('friends').doc(toId).get()
+                .then((doc) => {
+                    const friends = doc.data()?.friends || [];
+                    if (friends.length >= 15) {
+                        alert('You have reached the maximum number of friends (15).');
+                        return;
+                    }
+        
+                    // Proceed with accepting the friend request
+                    db.collection('users').doc(fromId).get()
+                        .then(fromUserDoc => {
+                            const fromName = fromUserDoc.data().name;
+                            db.collection('users').doc(toId).get()
+                                .then(toUserDoc => {
+                                    const toName = toUserDoc.data().name;
+                                    db.collection('friends').doc(toId).set({
+                                        friends: firebase.firestore.FieldValue.arrayUnion({ uid: fromId, name: fromName })
+                                    }, { merge: true });
+                                    db.collection('friends').doc(fromId).set({
+                                        friends: firebase.firestore.FieldValue.arrayUnion({ uid: toId, name: toName })
+                                    }, { merge: true });
+                                    db.collection('friendRequests').where('from', '==', fromId).where('to', '==', toId).get()
+                                        .then(snapshot => {
+                                            snapshot.forEach(doc => {
+                                                doc.ref.delete();
+                                            });
+                                            const pendingRequests = document.querySelectorAll('.pending-friend');
+                                            pendingRequests.forEach(requestDiv => {
+                                                if (requestDiv.textContent.includes(fromName)) {
+                                                    requestDiv.remove();
+                                                }
+                                            });
+                                            alert('Friend request accepted!');
+                                            loadCurrentFriends(toId);
+                                        });
                                 });
                         });
                 });
