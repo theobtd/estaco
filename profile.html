@@ -455,27 +455,22 @@
         // Load current friends
         function loadCurrentFriends(userId) {
             db.collection('friends').doc(userId).get()
-              .then(doc => {
-                const friendUids = doc.data()?.friends || [];
-                currentFriendsDiv.innerHTML = '';
-                const promises = friendUids.map(uid => {
-                  return db.collection('users').doc(uid).get()
-                    .then(userDoc => {
-                      const friendName = userDoc.data().name;
-                      const friendDiv = document.createElement('div');
-                      friendDiv.className = 'friend';
-                      friendDiv.innerText = friendName;
-                      // Add a "Remove" button
-                      const removeButton = document.createElement('button');
-                      removeButton.className = 'friend-button remove';
-                      removeButton.innerText = 'Remove';
-                      removeButton.onclick = () => removeFriend(userId, uid); // <-- Use uid directly
-                      friendDiv.appendChild(removeButton);
-                      currentFriendsDiv.appendChild(friendDiv);
+                .then(doc => {
+                    const friends = doc.data()?.friends || [];
+                    currentFriendsDiv.innerHTML = '';
+                    friends.forEach(friend => {
+                        const friendDiv = document.createElement('div');
+                        friendDiv.className = 'friend';
+                        friendDiv.innerText = friend.name;
+                        // Add a "Remove" button
+                        const removeButton = document.createElement('button');
+                        removeButton.className = 'friend-button remove';
+                        removeButton.innerText = 'Remove';
+                        removeButton.onclick = () => removeFriend(userId, friend.uid);
+                        friendDiv.appendChild(removeButton);
+                        currentFriendsDiv.appendChild(friendDiv);
                     });
                 });
-                return Promise.all(promises);
-              });
         }
 
         // Send friend request
@@ -554,10 +549,10 @@
                                 .then(toUserDoc => {
                                     const toName = toUserDoc.data().name;
                                     db.collection('friends').doc(toId).set({
-                                      friends: firebase.firestore.FieldValue.arrayUnion(fromId)
+                                        friends: firebase.firestore.FieldValue.arrayUnion({ uid: fromId, name: fromName })
                                     }, { merge: true });
                                     db.collection('friends').doc(fromId).set({
-                                      friends: firebase.firestore.FieldValue.arrayUnion(toId)
+                                        friends: firebase.firestore.FieldValue.arrayUnion({ uid: toId, name: toName })
                                     }, { merge: true });
                                     db.collection('friendRequests').where('from', '==', fromId).where('to', '==', toId).get()
                                         .then(snapshot => {
@@ -573,7 +568,7 @@
                                             alert('Friend request accepted!');
                                             loadCurrentFriends(toId);
                                         });
-                                }); // <-- This was missing
+                                });
                         });
                 });
         }
@@ -585,28 +580,31 @@
                 return; // Do nothing if the user cancels
             }
         
-            // Remove friend from current user's friend list
-            db.collection('friends').doc(userId).update({
-                friends: firebase.firestore.FieldValue.arrayRemove(friendUid)
-            })
-            .then(() => {
-                // Remove current user from friend's friend list
-                return db.collection('users').doc(userId).get();
-            })
-            .then((userDoc) => {
-                const userName = userDoc.data().name;
-                return db.collection('friends').doc(friendUid).update({
-                    friends: firebase.firestore.FieldValue.arrayRemove(userId)
+            // Fetch the friend's name
+            db.collection('users').doc(friendUid).get()
+                .then((friendDoc) => {
+                    if (friendDoc.exists) {
+                        const friendName = friendDoc.data().name;
+                        // Remove friend from current user's friend list
+                        db.collection('friends').doc(userId).update({
+                            friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName })
+                        });
+                        // Remove current user from friend's friend list
+                        db.collection('users').doc(userId).get()
+                            .then((userDoc) => {
+                                const userName = userDoc.data().name;
+                                db.collection('friends').doc(friendUid).update({
+                                    friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName })
+                                });
+                                // Reload the friend list
+                                loadCurrentFriends(userId);
+                            });
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error removing friend: ", error);
+                    alert("Failed to remove friend.");
                 });
-            })
-            .then(() => {
-                // Reload the friend list
-                loadCurrentFriends(userId);
-            })
-            .catch((error) => {
-                console.error("Error removing friend: ", error);
-                alert("Failed to remove friend.");
-            });
         }
 
         // Display user information
