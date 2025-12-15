@@ -587,20 +587,26 @@
         
             // Remove friend from current user's friend list
             db.collection('friends').doc(userId).update({
-              friends: firebase.firestore.FieldValue.arrayRemove(friendUid)
-            });
-            // Remove current user from friend's friend list
-            db.collection('users').doc(userId).get()
-              .then((userDoc) => {
+                friends: firebase.firestore.FieldValue.arrayRemove(friendUid)
+            })
+            .then(() => {
+                // Remove current user from friend's friend list
+                return db.collection('users').doc(userId).get();
+            })
+            .then((userDoc) => {
                 const userName = userDoc.data().name;
-                db.collection('friends').doc(friendUid).update({
-                  friends: firebase.firestore.FieldValue.arrayRemove(userId)
+                return db.collection('friends').doc(friendUid).update({
+                    friends: firebase.firestore.FieldValue.arrayRemove(userId)
                 });
-              });
-                .catch((error) => {
-                    console.error("Error removing friend: ", error);
-                    alert("Failed to remove friend.");
-                });
+            })
+            .then(() => {
+                // Reload the friend list
+                loadCurrentFriends(userId);
+            })
+            .catch((error) => {
+                console.error("Error removing friend: ", error);
+                alert("Failed to remove friend.");
+            });
         }
 
         // Display user information
