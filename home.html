@@ -1040,7 +1040,7 @@
             // Log the user's friends and their posts
             const friendsDoc = await db.collection('friends').doc(userId).get();
             if (friendsDoc.exists) {
-                friendIds = friendsDoc.data()?.friends.map(friend => friend.uid) || [];
+                friendIds = friendsDoc.data()?.friends || [];
                 for (const friend of friendIds) {
                     const postsSnapshot = await db.collection('posts')
                         .where('authorId', '==', friend)
