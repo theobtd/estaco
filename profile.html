@@ -315,6 +315,32 @@
         .nav-button .label {
           font-size: 12px;
         }
+        .rules-container {
+          background: var(--estaco-surface);
+          padding: 16px;
+          border-radius: 8px;
+          border: 1px solid var(--estaco-border);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .rules-container p {
+          margin: 8px 0;
+          color: var(--estaco-text);
+          font-size: 14px;
+        }
+        
+        .rules-container .example {
+          margin-top: 12px;
+          padding: 12px;
+          background: var(--estaco-accent);
+          border-radius: 8px;
+          border-left: 3px solid var(--estaco-primary);
+        }
+        
+        .rules-container .example p {
+          margin: 0;
+          font-style: italic;
+        }
     </style>
 
 </head>
@@ -338,6 +364,18 @@
           <button id="update-profile-pic-button" class="button">Update Profile Picture</button>
           <button id="change-password-button" class="button">Change Password</button>
           <button id="logout-button" class="button">Log Out</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Platform Rules</h3>
+        <div class="rules-container">
+          <p><strong>1.</strong> Max 15 friends.</p>
+          <p><strong>2.</strong> Your posts are not visible to users who are not your friends.</p>
+          <p><strong>3.</strong> Your comments and reactions are not visible to users who are not your friends.</p>
+          <div class="example">
+            <p><strong>Example:</strong> John is friends with Mike but not with Jenny. Mike is friends with Jenny. If Jenny comments on Mike's post, John will see Mike's post but not Jenny's comment.</p>
+          </div>
         </div>
       </div>
     
