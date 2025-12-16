@@ -107,15 +107,7 @@
       font-size: 14px;
       color: var(--estaco-text-light);
     }
-    select {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid var(--estaco-border);
-      border-radius: 8px;
-      box-sizing: border-box;
-      font-family: inherit;
-      background-color: var(--estaco-surface);
-    }
+
   </style>
 </head>
 <body>
@@ -129,14 +121,6 @@
     <div class="form-group">
       <label for="signup-name">Username</label>
       <input type="text" id="signup-name" placeholder="Choose your username" required>
-    </div>
-    <div class="form-group">
-      <label for="signup-language">Language</label>
-      <select id="signup-language" required>
-        <option value="English" selected>English</option>
-        <option value="French">Français</option>
-        <option value="Korean">한국어</option>
-      </select>
     </div>
     <div class="form-group">
       <label for="signup-email">Email</label>
@@ -183,7 +167,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-functions-compat.js"></script>
   <script>
     // Your Firebase config and JavaScript logic remain exactly the same
     const firebaseConfig = {
@@ -197,7 +180,6 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    const functions = firebase.functions();
 
     // Rest of your JavaScript logic remains unchanged
     const showSignup = document.getElementById('show-signup');
@@ -220,7 +202,6 @@
 
     signupButton.addEventListener('click', () => {
       const name = document.getElementById('signup-name').value;
-      const language = document.getElementById('signup-language').value;
       const email = document.getElementById('signup-email').value;
       const emailConfirm = document.getElementById('signup-email-confirm').value;
       const password = document.getElementById('signup-password').value;
@@ -254,7 +235,6 @@
               .then(() => {
                 db.collection('users').doc(user.uid).set({
                   name: name,
-                  language: language,
                   email: email,
                   profilePictureURL: null
                 });
