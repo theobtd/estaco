@@ -123,6 +123,14 @@
       <input type="text" id="signup-name" placeholder="Choose your username" required>
     </div>
     <div class="form-group">
+      <label for="signup-language">Language</label>
+      <select id="signup-language" required>
+        <option value="English" selected>English</option>
+        <option value="French">French</option>
+        <option value="Korean">한국어</option>
+      </select>
+    </div>
+    <div class="form-group">
       <label for="signup-email">Email</label>
       <input type="email" id="signup-email" placeholder="Email" required>
     </div>
@@ -204,6 +212,7 @@
 
     signupButton.addEventListener('click', () => {
       const name = document.getElementById('signup-name').value;
+      const language = document.getElementById('signup-language').value;
       const email = document.getElementById('signup-email').value;
       const emailConfirm = document.getElementById('signup-email-confirm').value;
       const password = document.getElementById('signup-password').value;
@@ -237,6 +246,7 @@
               .then(() => {
                 db.collection('users').doc(user.uid).set({
                   name: name,
+                  language: language,
                   email: email,
                   profilePictureURL: null
                 });
