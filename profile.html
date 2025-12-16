@@ -549,10 +549,12 @@
                                 .then(toUserDoc => {
                                     const toName = toUserDoc.data().name;
                                     db.collection('friends').doc(toId).set({
-                                        friends: firebase.firestore.FieldValue.arrayUnion({ uid: fromId, name: fromName })
+                                        friends: firebase.firestore.FieldValue.arrayUnion({ uid: fromId, name: fromName }),
+                                        friendsList: firebase.firestore.FieldValue.arrayUnion(fromId)
                                     }, { merge: true });
                                     db.collection('friends').doc(fromId).set({
-                                        friends: firebase.firestore.FieldValue.arrayUnion({ uid: toId, name: toName })
+                                        friends: firebase.firestore.FieldValue.arrayUnion({ uid: toId, name: toName }),
+                                        friendsList: firebase.firestore.FieldValue.arrayUnion(toId)
                                     }, { merge: true });
                                     db.collection('friendRequests').where('from', '==', fromId).where('to', '==', toId).get()
                                         .then(snapshot => {
@@ -580,31 +582,46 @@
                 return; // Do nothing if the user cancels
             }
         
-            // Fetch the friend's name
-            db.collection('users').doc(friendUid).get()
-                .then((friendDoc) => {
-                    if (friendDoc.exists) {
-                        const friendName = friendDoc.data().name;
-                        // Remove friend from current user's friend list
-                        db.collection('friends').doc(userId).update({
-                            friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName })
+            // Fetch the friend's name and the user's name in parallel
+            Promise.all([
+                db.collection('users').doc(friendUid).get(),
+                db.collection('users').doc(userId).get()
+            ])
+            .then(([friendDoc, userDoc]) => {
+                if (friendDoc.exists && userDoc.exists) {
+                    const friendName = friendDoc.data().name;
+                    const userName = userDoc.data().name;
+        
+                    // Update both `friends` and `friendsList` for both users
+                    const userFriendsUpdate = db.collection('friends').doc(userId).update({
+                        friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName }),
+                        friendsList: firebase.firestore.FieldValue.arrayRemove(friendUid)
+                    });
+        
+                    const friendFriendsUpdate = db.collection('friends').doc(friendUid).update({
+                        friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName }),
+                        friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
+                    });
+        
+                    // Wait for both updates to complete
+                    Promise.all([userFriendsUpdate, friendFriendsUpdate])
+                        .then(() => {
+                            // Reload the friend list
+                            loadCurrentFriends(userId);
+                        })
+                        .catch((error) => {
+                            console.error("Error updating friends lists: ", error);
+                            alert("Failed to update friends lists.");
                         });
-                        // Remove current user from friend's friend list
-                        db.collection('users').doc(userId).get()
-                            .then((userDoc) => {
-                                const userName = userDoc.data().name;
-                                db.collection('friends').doc(friendUid).update({
-                                    friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName })
-                                });
-                                // Reload the friend list
-                                loadCurrentFriends(userId);
-                            });
-                    }
-                })
-                .catch((error) => {
-                    console.error("Error removing friend: ", error);
-                    alert("Failed to remove friend.");
-                });
+                } else {
+                    console.error("User or friend document does not exist.");
+                    alert("Failed to remove friend: user or friend not found.");
+                }
+            })
+            .catch((error) => {
+                console.error("Error fetching user or friend data: ", error);
+                alert("Failed to remove friend.");
+            });
         }
 
         // Display user information
