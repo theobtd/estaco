@@ -514,21 +514,15 @@
         });
 
         // Function to send friend request
-        function sendRequest(fromId, toId, fromName) {
-            if (!toId) {
-                console.error('Cannot send friend request: toId is undefined.');
-                return;
-            }
-            db.collection('friendRequests').add({
-                from: fromId,
-                to: toId,
-                fromName: fromName,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                alert('Friend request sent!');
-            }).catch(error => {
-                console.error('Error sending friend request: ', error);
-                alert('Failed to send friend request.');
+        function sendRequest(toUid, fromName) {
+          const sendFriendRequest = firebase.functions().httpsCallable("sendFriendRequest");
+          sendFriendRequest({ toUid, fromName })
+            .then((result) => {
+              alert(result.data.message);
+            })
+            .catch((error) => {
+              console.error("Error sending friend request:", error);
+              alert(error.message);
             });
         }
 
