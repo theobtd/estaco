@@ -394,7 +394,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-functions-compat.js"></script>
     <script>
         // Your Firebase config (replace with your own)
         const firebaseConfig = {
@@ -411,7 +410,6 @@
         const auth = firebase.auth();
         const storage = firebase.storage();
         const db = firebase.firestore();
-        const functions = firebase.functions();
 
         // DOM Elements
         const searchFriendInput = document.getElementById('search-friend');
@@ -514,15 +512,21 @@
         });
 
         // Function to send friend request
-        function sendRequest(toUid, fromName) {
-          const sendFriendRequest = firebase.functions().httpsCallable("sendFriendRequest");
-          sendFriendRequest({ toUid, fromName })
-            .then((result) => {
-              alert(result.data.message);
-            })
-            .catch((error) => {
-              console.error("Error sending friend request:", error);
-              alert(error.message);
+        function sendRequest(fromId, toId, fromName) {
+            if (!toId) {
+                console.error('Cannot send friend request: toId is undefined.');
+                return;
+            }
+            db.collection('friendRequests').add({
+                from: fromId,
+                to: toId,
+                fromName: fromName,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                alert('Friend request sent!');
+            }).catch(error => {
+                console.error('Error sending friend request: ', error);
+                alert('Failed to send friend request.');
             });
         }
 
