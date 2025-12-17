@@ -235,6 +235,10 @@
         errorMessage.textContent = 'Passwords do not match.';
         return;
       }
+      if (!isValidUsername(name)) {
+        errorMessage.textContent = 'Username cannot contain spaces.';
+        return;
+      }
     
     // Check if the username already exists in the usernames collection
     db.collection('usernames')
@@ -306,6 +310,10 @@
           errorMessage.textContent = error.message;
         });
     });
+
+    function isValidUsername(username) {
+      return !/\s/.test(username);
+    }
 
     document.querySelectorAll('.toggle-password').forEach(button => {
       button.addEventListener('click', () => {
