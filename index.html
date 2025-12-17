@@ -236,50 +236,55 @@
         return;
       }
     
-      // Check if the username already exists
-      db.collection('users')
-        .where('name', '==', name)
-        .get()
-        .then((querySnapshot) => {
-          if (!querySnapshot.empty) {
-            errorMessage.textContent = 'Username is already taken.';
-            return;
-          }
+    // Check if the username already exists in the usernames collection
+    db.collection('usernames')
+      .where('name', '==', name)
+      .get()
+      .then((querySnapshot) => {
+        if (!querySnapshot.empty) {
+          errorMessage.textContent = 'Username is already taken.';
+          return;
+        }
     
-          // If username is unique, proceed with sign-up
-          auth.createUserWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-              const user = userCredential.user;
-              return user.updateProfile({ displayName: name });
-            })
-            .then(() => {
-              const user = auth.currentUser;
-              return db.collection('users').doc(user.uid).set({
-                name: name,
-                language: language,
-                email: email,
-                profilePictureURL: null
-              });
-            })
-            .then(() => {
-              const user = auth.currentUser;
-              return user.sendEmailVerification();
-            })
-            .then(() => {
-              alert('Account created! Please check your email for a verification link.');
-              document.getElementById('signup-name').value = '';
-              document.getElementById('signup-email').value = '';
-              document.getElementById('signup-email-confirm').value = '';
-              document.getElementById('signup-password').value = '';
-              signupForm.style.display = 'none';
-            })
-            .catch((error) => {
-              errorMessage.textContent = error.message;
-            });
-        })
-        .catch((error) => {
-          errorMessage.textContent = 'Error checking username: ' + error.message;
-        });
+        // If username is unique, proceed with sign-up
+        auth.createUserWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            const user = userCredential.user;
+            return user.updateProfile({ displayName: name });
+          })
+          .then(() => {
+            const user = auth.currentUser;
+            // Write to both users and usernames collections
+            const userData = {
+              name: name,
+              language: language,
+              email: email,
+              profilePictureURL: null
+            };
+            return Promise.all([
+              db.collection('users').doc(user.uid).set(userData),
+              db.collection('usernames').doc(user.uid).set({ name: name })
+            ]);
+          })
+          .then(() => {
+            const user = auth.currentUser;
+            return user.sendEmailVerification();
+          })
+          .then(() => {
+            alert('Account created! Please check your email for a verification link.');
+            document.getElementById('signup-name').value = '';
+            document.getElementById('signup-email').value = '';
+            document.getElementById('signup-email-confirm').value = '';
+            document.getElementById('signup-password').value = '';
+            signupForm.style.display = 'none';
+          })
+          .catch((error) => {
+            errorMessage.textContent = error.message;
+          });
+      })
+      .catch((error) => {
+        errorMessage.textContent = 'Error checking username: ' + error.message;
+      });
     });
 
     signinButton.addEventListener('click', () => {
