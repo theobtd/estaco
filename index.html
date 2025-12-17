@@ -226,28 +226,18 @@
       const password = document.getElementById('signup-password').value;
       const passwordConfirm = document.getElementById('signup-password-confirm').value;
     
-      // Check if emails match
+      // Validate inputs
       if (email !== emailConfirm) {
-        errorMessage.textContent = 'Emails do not match. Please check and try again.';
+        errorMessage.textContent = 'Emails do not match.';
         return;
       }
-
-      // Check if passwords match
       if (password !== passwordConfirm) {
-        errorMessage.textContent = 'Passwords do not match. Please check and try again.';
+        errorMessage.textContent = 'Passwords do not match.';
         return;
       }
     
-      // Check if the username is already taken
-      db.collection('users').where('name', '==', name).get()
-        .then((querySnapshot) => {
-          if (!querySnapshot.empty) {
-            errorMessage.textContent = 'This name is already taken. Please choose another name.';
-            return;
-          }
-          // Create the user in Firebase Auth
-          return auth.createUserWithEmailAndPassword(email, password);
-        })
+      // Create the user in Firebase Auth
+      auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
           const user = userCredential.user;
           // Update the user's profile (optional)
