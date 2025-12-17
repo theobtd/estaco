@@ -238,40 +238,44 @@
         return;
       }
     
-      // Proceed with Firebase logic
+      // Check if the username is already taken
       db.collection('users').where('name', '==', name).get()
         .then((querySnapshot) => {
           if (!querySnapshot.empty) {
             errorMessage.textContent = 'This name is already taken. Please choose another name.';
             return;
           }
+          // Create the user in Firebase Auth
           return auth.createUserWithEmailAndPassword(email, password);
         })
         .then((userCredential) => {
-          if (userCredential) {
-            const user = userCredential.user;
-            user.updateProfile({ displayName: name })
-              .then(() => {
-                db.collection('users').doc(user.uid).set({
-                  name: name,
-                  language: language,
-                  email: email,
-                  profilePictureURL: null
-                });
-                return user.sendEmailVerification();
-              })
-              .then(() => {
-                alert('Account created! Please check your email for a verification link.');
-                document.getElementById('signup-name').value = '';
-                document.getElementById('signup-email').value = '';
-                document.getElementById('signup-email-confirm').value = '';
-                document.getElementById('signup-password').value = '';
-                signupForm.style.display = 'none';
-              })
-              .catch((error) => {
-                errorMessage.textContent = error.message;
-              });
-          }
+          const user = userCredential.user;
+          // Update the user's profile (optional)
+          return user.updateProfile({ displayName: name });
+        })
+        .then(() => {
+          // Now the user is authenticated, so write to Firestore
+          const user = auth.currentUser;
+          return db.collection('users').doc(user.uid).set({
+            name: name,
+            language: language,
+            email: email,
+            profilePictureURL: null
+          });
+        })
+        .then(() => {
+          // Send email verification
+          const user = auth.currentUser;
+          return user.sendEmailVerification();
+        })
+        .then(() => {
+          alert('Account created! Please check your email for a verification link.');
+          // Clear the form
+          document.getElementById('signup-name').value = '';
+          document.getElementById('signup-email').value = '';
+          document.getElementById('signup-email-confirm').value = '';
+          document.getElementById('signup-password').value = '';
+          signupForm.style.display = 'none';
         })
         .catch((error) => {
           errorMessage.textContent = error.message;
