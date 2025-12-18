@@ -1,4 +1,4 @@
-const CACHE_NAME = 'estaco-v2';
+const CACHE_NAME = 'estaco-v3';
 const urlsToCache = [
   '/',
   '/index.html',
