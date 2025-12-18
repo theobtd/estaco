@@ -434,31 +434,31 @@
         </div>
     
       <!-- Cropper Modal -->
-      <div id="cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
-        <div style="max-width: 500px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px;">
-          <h3>Crop Profile Picture</h3>
-          <div style="width: 100%; height: 400px;">
-            <img id="cropper-image" style="max-width: 100%;">
+        <div id="cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
+          <div style="max-width: 500px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px;">
+            <h3 data-i18n="Crop Profile Picture">Crop Profile Picture</h3>
+            <div style="width: 100%; height: 400px;">
+              <img id="cropper-image" style="max-width: 100%;">
+            </div>
+            <button id="crop-done-button" class="button" style="margin-top: 10px;" data-i18n="Crop and Upload">Crop and Upload</button>
+            <button id="crop-cancel-button" class="button" style="margin-top: 10px; background-color: #f44336;" data-i18n="Cancel">Cancel</button>
           </div>
-          <button id="crop-done-button" class="button" style="margin-top: 10px;">Crop and Upload</button>
-          <button id="crop-cancel-button" class="button" style="margin-top: 10px; background-color: #f44336;">Cancel</button>
         </div>
-      </div>
     
       <input type="file" id="update-profile-pic" accept="image/*" style="display: none;">
       <p id="error-message" class="message"></p>
       <p id="success-message" class="message"></p>
 
-      <div id="bottom-nav-bar">
+        <div id="bottom-nav-bar">
           <button class="nav-button" id="home-button">
             <span class="icon">🏠</span>
-            <span class="label">Feed</span>
+            <span class="label" data-i18n="Feed">Feed</span>
           </button>
           <button class="nav-button" id="profile-button">
             <span class="icon">👤</span>
-            <span class="label">Profile</span>
+            <span class="label" data-i18n="Profile">Profile</span>
           </button>
-      </div>
+        </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
@@ -943,6 +943,13 @@
             "Update Profile Picture": "Update Profile Picture",
             "Change Password": "Change Password",
             "Log Out": "Log Out",
+            "Crop Profile Picture": "Crop Profile Picture",
+            "Crop and Upload": "Crop and Upload",
+            "Cancel": "Cancel",
+            "Failed to upload profile picture.": "Failed to upload profile picture.",
+            "Profile picture updated!": "Profile picture updated!",
+            "Feed": "Feed",
+            "Profile": "Profile",
               // ... rest of your translations
           },
           French: {
@@ -970,6 +977,13 @@
             "Update Profile Picture": "Mettre à jour la photo de profil",
             "Change Password": "Changer le mot de passe",
             "Log Out": "Se déconnecter",
+            "Crop Profile Picture": "Recadrer la photo de profil",
+            "Crop and Upload": "Recadrer et télécharger",
+            "Cancel": "Annuler",
+            "Failed to upload profile picture.": "Échec du téléchargement de la photo de profil.",
+            "Profile picture updated!": "Photo de profil mise à jour !",
+            "Feed": "Fil d'actualité",
+            "Profile": "Profil",
               // ... rest of your translations
           },
           Korean: {
@@ -997,6 +1011,13 @@
             "Update Profile Picture": "프로필 사진 업데이트",
             "Change Password": "비밀번호 변경",
             "Log Out": "로그아웃",
+            "Crop Profile Picture": "프로필 사진 자르기",
+            "Crop and Upload": "자르고 업로드",
+            "Cancel": "취소",
+            "Failed to upload profile picture.": "프로필 사진 업로드에 실패했습니다.",
+            "Profile picture updated!": "프로필 사진이 업데이트되었습니다!",
+            "Feed": "피드",
+            "Profile": "프로필",
               // ... rest of your translations
           }
         };
