@@ -161,6 +161,14 @@
         <button type="button" class="toggle-password" data-target="signup-password-confirm">👁️</button>
       </div>
     </div>
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="accept-terms" required>
+        <span data-i18n="I accept the terms of use">
+          I accept the <a href="TermsOfUse.html" target="_blank" data-i18n="terms of use">terms of use</a>
+        </span>
+      </label>
+    </div>
     <button id="signup-button" data-i18n="Sign Up">Sign Up</button>
     <p id="error-message"></p>
   </div>
@@ -273,6 +281,7 @@
       const emailConfirm = document.getElementById('signup-email-confirm').value;
       const password = document.getElementById('signup-password').value;
       const passwordConfirm = document.getElementById('signup-password-confirm').value;
+      const acceptTerms = document.getElementById('accept-terms');
     
       // Validate inputs
       if (email !== emailConfirm) {
@@ -285,6 +294,10 @@
       }
       if (!isValidUsername(name)) {
         errorMessage.textContent = translations[userLanguage]["Username cannot contain spaces."];
+        return;
+      }
+      if (!acceptTerms.checked) {
+        errorMessage.textContent = translations[userLanguage]["You must accept the terms of use to proceed."];
         return;
       }
     
@@ -435,6 +448,7 @@
         "Signed in successfully!": "Signed in successfully!",
         "Please verify your email before signing in. A verification link has been sent to your email address.": "Please verify your email before signing in. A verification link has been sent to your email address.",
         "Error checking username: ": "Error checking username: ",
+        "You must accept the terms of use to proceed.": "You must accept the terms of use to proceed.",
       },
       French: {
         "Create Account": "Créer un compte",
@@ -466,6 +480,7 @@
         "Signed in successfully!": "Connexion réussie !",
         "Please verify your email before signing in. A verification link has been sent to your email address.": "Veuillez vérifier votre email avant de vous connecter. Un lien de vérification a été envoyé à votre adresse email.",
         "Error checking username: ": "Erreur lors de la vérification du nom d'utilisateur : ",
+        "Vous devez accepter les conditions d'utilisation pour continuer.": "Vous devez accepter les conditions d'utilisation pour continuer.",
       },
       Korean: {
         "Create Account": "계정 만들기",
@@ -497,6 +512,7 @@
         "Signed in successfully!": "로그인 성공!",
         "Please verify your email before signing in. A verification link has been sent to your email address.": "로그인 전에 이메일을 확인하세요. 확인 링크가 이메일 주소로 전송되었습니다.",
         "Error checking username: ": "사용자 이름 확인 중 오류: ",
+        "이용 약관에 동의해야 진행할 수 있습니다.": "이용 약관에 동의해야 진행할 수 있습니다.",
       }
     };
     
