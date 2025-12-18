@@ -558,6 +558,7 @@
 
     // Handle language dropdown toggle
     document.getElementById('selected-language').parentElement.addEventListener('click', (event) => {
+      event.stopPropagation(); // Add this line to stop event propagation
       const dropdown = document.getElementById('language-dropdown');
       dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
     });
