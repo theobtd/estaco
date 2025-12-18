@@ -351,37 +351,38 @@
         <h1>Estaco</h1>
       </div>
 
-      <div id="download-app-section" style="margin: 20px auto; text-align: center; max-width: 400px;">
-          <button id="download-app-button" style="
-          background-color: var(--estaco-accent);
-          color: var(--estaco-text);
-          border: none;
-          border-radius: 8px;
-          padding: 12px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: background-color 0.3s;
-          width: 100%;
-        ">
-          Download the App
-        </button>
-        <div id="install-guide" style="display: none; margin-top: 20px; text-align: left; background-color: var(--estaco-surface); padding: 20px; border-radius: 12px;">
-          <h3 style="color: var(--estaco-primary);">How to Install the App</h3>
-          <p><strong>Android:</strong></p>
-          <ol>
-            <li>Tap the <strong>three dots (⋮)</strong> in the top-right corner of your browser.</li>
-            <li>Select <strong>"Add to Home screen"</strong>.</li>
-            <li>Tap <strong>"Add"</strong> to confirm.</li>
-          </ol>
-          <p><strong>iPhone (iOS):</strong></p>
-          <ol>
-            <li>Tap the <strong>Share button (↑)</strong> at the bottom of your screen.</li>
-            <li>Scroll down and select <strong>"Add to Home Screen"</strong>.</li>
-            <li>Tap <strong>"Add"</strong> to confirm.</li>
-          </ol>
-          <p style="font-size: 14px; color: var(--estaco-text-light);">The app will now appear on your home screen like a normal app!</p>
+        <div id="download-app-section" style="margin: 20px auto; text-align: center; max-width: 400px;">
+            <button id="download-app-button" style="
+              background-color: var(--estaco-accent);
+              color: var(--estaco-text);
+              border: none;
+              border-radius: 8px;
+              padding: 12px;
+              font-weight: 500;
+              cursor: pointer;
+              transition: background-color 0.3s;
+              width: 100%;
+            " data-i18n="Download the App">
+              Download the App
+            </button>
+            <div id="install-guide" style="display: none; margin-top: 20px; text-align: left; background-color: var(--estaco-surface); padding: 20px; border-radius: 12px;">
+              <h3 style="color: var(--estaco-primary;" data-i18n="How to Install the App">How to Install the App</h3>
+              <p data-i18n="Android"><strong data-i18n="Android">Android:</strong></p>
+              <ol>
+                <li data-i18n="Android step 1">Tap the <strong>three dots (⋮)</strong> in the top-right corner of your browser.</li>
+                <li data-i18n="Android step 2">Select <strong>"Add to Home screen"</strong>.</li>
+                <li data-i18n="Android step 3">Tap <strong>"Add"</strong> to confirm.</li>
+              </ol>
+              <p data-i18n="iPhone (iOS)"><strong data-i18n="iPhone (iOS)">iPhone (iOS):</strong></p>
+              <ol>
+                <li data-i18n="iPhone step 1">Tap the <strong>Share button (↑)</strong> at the bottom of your screen.</li>
+                <li data-i18n="iPhone step 2">Scroll down and select <strong>"Add to Home Screen"</strong>.</li>
+                <li data-i18n="iPhone step 3">Tap <strong>"Add"</strong> to confirm.</li>
+              </ol>
+              <p style="font-size: 14px; color: var(--estaco-text-light);" data-i18n="App installed message">The app will now appear on your home screen like a normal app!</p>
+            </div>
         </div>
-      </div>
+
     
       <!-- Profile Header -->
       <div class="profile-header">
@@ -919,124 +920,46 @@
 
         const translations = {
           English: {
-            "How to Install the App": "How to Install the App",
             "Download the App": "Download the App",
-            "Update Profile Picture": "Update Profile Picture",
-            "Change Password": "Change Password",
-            "Log Out": "Log Out",
-            "Platform Rules": "Platform Rules",
-            "Friend System": "Friend System",
-            "Pending Friend Requests": "Pending Friend Requests",
-            "Current Friends": "Current Friends",
-            "Search by name...": "Search by name...",
-            "Send Friend Request": "Send Friend Request",
-            "Max 15 friends.": "Max 15 friends.",
-            "Your posts are not visible to users who are not your friends.": "Your posts are not visible to users who are not your friends.",
-            "Your comments and reactions are not visible to users who are not your friends.": "Your comments and reactions are not visible to users who are not your friends.",
-            "Accept": "Accept",
-            "Remove": "Remove",
-            "Are you sure you want to remove this friend?": "Are you sure you want to remove this friend?",
-            "Are you sure you want to log out?": "Are you sure you want to log out?",
-            "Crop Profile Picture": "Crop Profile Picture",
-            "Crop and Upload": "Crop and Upload",
-            "Cancel": "Cancel",
-            "User not found": "User not found",
-            "Friend request sent!": "Friend request sent!",
-            "Friend request accepted!": "Friend request accepted!",
-            "Failed to send friend request.": "Failed to send friend request.",
-            "Failed to update friends lists.": "Failed to update friends lists.",
-            "Failed to remove friend.": "Failed to remove friend.",
-            "Failed to upload profile picture.": "Failed to upload profile picture.",
-            "Profile picture updated!": "Profile picture updated!",
-            "Password updated successfully!": "Password updated successfully!",
-            "Current password is incorrect.": "Current password is incorrect.",
-            "Passwords do not match or are too short. Please try again.": "Passwords do not match or are too short. Please try again.",
-            "You have reached the maximum number of friends (15).": "You have reached the maximum number of friends (15).",
-            "You have been logged out.": "You have been logged out.",
-            "Please verify your email before signing in. A verification link has been sent to your email address.": "Please verify your email before signing in. A verification link has been sent to your email address.",
-            "Account created! Please check your email for a verification link.": "Account created! Please check your email for a verification link.",
-            "Feed": "Feed",
-            "Profile": "Profile",
+            "How to Install the App": "How to Install the App",
+            "Android": "Android:",
+            "Android step 1": "Tap the three dots (⋮) in the top-right corner of your browser.",
+            "Android step 2": "Select \"Add to Home screen\".",
+            "Android step 3": "Tap \"Add\" to confirm.",
+            "iPhone (iOS)": "iPhone (iOS):",
+            "iPhone step 1": "Tap the Share button (↑) at the bottom of your screen.",
+            "iPhone step 2": "Scroll down and select \"Add to Home Screen\".",
+            "iPhone step 3": "Tap \"Add\" to confirm.",
+            "App installed message": "The app will now appear on your home screen like a normal app!",
+            // ... rest of your translations
           },
           French: {
-            "How to Install the App": "Comment installer l'application",
             "Download the App": "Télécharger l'application",
-            "Update Profile Picture": "Mettre à jour la photo de profil",
-            "Change Password": "Changer le mot de passe",
-            "Log Out": "Se déconnecter",
-            "Platform Rules": "Règles de la plateforme",
-            "Friend System": "Système d'amis",
-            "Pending Friend Requests": "Demandes d'ami en attente",
-            "Current Friends": "Amis actuels",
-            "Search by name...": "Rechercher par nom...",
-            "Send Friend Request": "Envoyer une demande d'ami",
-            "Max 15 friends.": "Maximum 15 amis.",
-            "Your posts are not visible to users who are not your friends.": "Vos publications ne sont pas visibles pour les utilisateurs qui ne sont pas vos amis.",
-            "Your comments and reactions are not visible to users who are not your friends.": "Vos commentaires et réactions ne sont pas visibles pour les utilisateurs qui ne sont pas vos amis.",
-            "Accept": "Accepter",
-            "Remove": "Retirer",
-            "Are you sure you want to remove this friend?": "Êtes-vous sûr de vouloir retirer cet ami ?",
-            "Are you sure you want to log out?": "Êtes-vous sûr de vouloir vous déconnecter ?",
-            "Crop Profile Picture": "Recadrer la photo de profil",
-            "Crop and Upload": "Recadrer et télécharger",
-            "Cancel": "Annuler",
-            "User not found": "Utilisateur introuvable",
-            "Friend request sent!": "Demande d'ami envoyée !",
-            "Friend request accepted!": "Demande d'ami acceptée !",
-            "Failed to send friend request.": "Échec de l'envoi de la demande d'ami.",
-            "Failed to update friends lists.": "Échec de la mise à jour des listes d'amis.",
-            "Failed to remove friend.": "Échec de la suppression de l'ami.",
-            "Failed to upload profile picture.": "Échec du téléchargement de la photo de profil.",
-            "Profile picture updated!": "Photo de profil mise à jour !",
-            "Password updated successfully!": "Mot de passe mis à jour avec succès !",
-            "Current password is incorrect.": "Le mot de passe actuel est incorrect.",
-            "Passwords do not match or are too short. Please try again.": "Les mots de passe ne correspondent pas ou sont trop courts. Veuillez réessayer.",
-            "You have reached the maximum number of friends (15).": "Vous avez atteint le nombre maximum d'amis (15).",
-            "You have been logged out.": "Vous avez été déconnecté.",
-            "Please verify your email before signing in. A verification link has been sent to your email address.": "Veuillez vérifier votre email avant de vous connecter. Un lien de vérification a été envoyé à votre adresse email.",
-            "Account created! Please check your email for a verification link.": "Compte créé ! Veuillez vérifier votre email pour le lien de vérification.",
-            "Feed": "Fil d'actualité",
-            "Profile": "Profil",
+            "How to Install the App": "Comment installer l'application",
+            "Android": "Android :",
+            "Android step 1": "Appuyez sur les trois points (⋮) dans le coin supérieur droit de votre navigateur.",
+            "Android step 2": "Sélectionnez \"Ajouter à l'écran d'accueil\".",
+            "Android step 3": "Appuyez sur \"Ajouter\" pour confirmer.",
+            "iPhone (iOS)": "iPhone (iOS) :",
+            "iPhone step 1": "Appuyez sur le bouton Partager (↑) en bas de votre écran.",
+            "iPhone step 2": "Faites défiler vers le bas et sélectionnez \"Ajouter à l'écran d'accueil\".",
+            "iPhone step 3": "Appuyez sur \"Ajouter\" pour confirmer.",
+            "App installed message": "L'application apparaîtra désormais sur votre écran d'accueil comme une application normale !",
+            // ... rest of your translations
           },
           Korean: {
-            "How to Install the App": "앱 설치 방법",
             "Download the App": "앱 다운로드",
-            "Update Profile Picture": "프로필 사진 업데이트",
-            "Change Password": "비밀번호 변경",
-            "Log Out": "로그아웃",
-            "Platform Rules": "플랫폼 규칙",
-            "Friend System": "친구 시스템",
-            "Pending Friend Requests": "대기 중인 친구 요청",
-            "Current Friends": "현재 친구",
-            "Search by name...": "이름으로 검색...",
-            "Send Friend Request": "친구 요청 보내기",
-            "Max 15 friends.": "최대 15명의 친구.",
-            "Your posts are not visible to users who are not your friends.": "친구가 아닌 사용자에게는 당신의 게시물이 보이지 않습니다.",
-            "Your comments and reactions are not visible to users who are not your friends.": "친구가 아닌 사용자에게는 당신의 댓글과 반응이 보이지 않습니다.",
-            "Accept": "수락",
-            "Remove": "삭제",
-            "Are you sure you want to remove this friend?": "이 친구를 삭제하시겠습니까?",
-            "Are you sure you want to log out?": "로그아웃하시겠습니까?",
-            "Crop Profile Picture": "프로필 사진 자르기",
-            "Crop and Upload": "자르고 업로드",
-            "Cancel": "취소",
-            "User not found": "사용자를 찾을 수 없음",
-            "Friend request sent!": "친구 요청이 전송되었습니다!",
-            "Friend request accepted!": "친구 요청이 수락되었습니다!",
-            "Failed to send friend request.": "친구 요청 전송에 실패했습니다.",
-            "Failed to update friends lists.": "친구 목록 업데이트에 실패했습니다.",
-            "Failed to remove friend.": "친구 삭제에 실패했습니다.",
-            "Failed to upload profile picture.": "프로필 사진 업로드에 실패했습니다.",
-            "Profile picture updated!": "프로필 사진이 업데이트되었습니다!",
-            "Password updated successfully!": "비밀번호가 성공적으로 업데이트되었습니다!",
-            "Current password is incorrect.": "현재 비밀번호가 올바르지 않습니다.",
-            "Passwords do not match or are too short. Please try again.": "비밀번호가 일치하지 않거나 너무 짧습니다. 다시 시도해 주세요.",
-            "You have reached the maximum number of friends (15).": "최대 친구 수(15명)에 도달했습니다.",
-            "You have been logged out.": "로그아웃되었습니다.",
-            "Please verify your email before signing in. A verification link has been sent to your email address.": "로그인하기 전에 이메일을 확인하세요. 확인 링크가 이메일로 전송되었습니다.",
-            "Account created! Please check your email for a verification link.": "계정이 생성되었습니다! 확인 링크를 위해 이메일을 확인하세요.",
-            "Feed": "피드",
-            "Profile": "프로필",
+            "How to Install the App": "앱 설치 방법",
+            "Android": "안드로이드:",
+            "Android step 1": "브라우저 오른쪽 상단 모서리에 있는 세 점(⋮)을 탭하세요.",
+            "Android step 2": "\"홈 화면에 추가\"를 선택하세요.",
+            "Android step 3": "\"추가\"를 탭하여 확인하세요.",
+            "iPhone (iOS)": "아이폰 (iOS):",
+            "iPhone step 1": "화면 하단에 있는 공유 버튼(↑)을 탭하세요.",
+            "iPhone step 2": "아래로 스크롤하여 \"홈 화면에 추가\"를 선택하세요.",
+            "iPhone step 3": "\"추가\"를 탭하여 확인하세요.",
+            "App installed message": "이제 앱이 일반 앱처럼 홈 화면에 표시됩니다!",
+            // ... rest of your translations
           }
         };
 
