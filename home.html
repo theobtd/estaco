@@ -1257,10 +1257,12 @@
                         width = 1200;  // Larger dimensions for better quality
                         height = 675;  // 16:9
                         quality = 0.92;
+                        mimeType = 'image/jpeg';
                     } else {
                         width = 720;   // Larger dimensions for vertical images
                         height = 1280; // 9:16 (or use original dimensions)
                         quality = 1;   // Maximum quality for vertical images
+                        mimeType = 'image/png';
                     }
                     const canvas = cropper.getCroppedCanvas({ width, height, fillColor: '#fff', imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
                     canvas.toBlob(
