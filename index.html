@@ -121,62 +121,62 @@
 </head>
 <body>
   <h1>Estaco</h1>
-  <button id="show-signup">Create Account</button>
-  <button id="show-signin">Sign In</button>
+  <button id="show-signup" data-i18n="Create Account">Create Account</button>
+  <button id="show-signin" data-i18n="Sign In">Sign In</button>
 
   <!-- Sign Up Form -->
   <div id="signup-form" style="display: none;">
-    <h2>Create Account</h2>
+    <h2 data-i18n="Create Account">Create Account</h2>
     <div class="form-group">
-      <label for="signup-name">Username</label>
+      <label for="signup-name" data-i18n="Username">Username</label>
       <input type="text" id="signup-name" placeholder="Choose your username" required>
     </div>
     <div class="form-group">
-      <label for="signup-language">Language</label>
+      <label for="signup-language" data-i18n="Language">Language</label>
       <select id="signup-language" required>
-        <option value="English" selected>English</option>
-        <option value="French">Français</option>
-        <option value="Korean">한국어</option>
+        <option value="English" selected data-i18n="English">English</option>
+        <option value="French" data-i18n="French">Français</option>
+        <option value="Korean" data-i18n="Korean">한국어</option>
       </select>
     </div>
     <div class="form-group">
-      <label for="signup-email">Email</label>
+      <label for="signup-email" data-i18n="Email">Email</label>
       <input type="email" id="signup-email" placeholder="Email" required>
     </div>
     <div class="form-group">
-      <label for="signup-email-confirm">Confirm Email</label>
+      <label for="signup-email-confirm" data-i18n="Confirm Email">Confirm Email</label>
       <input type="email" id="signup-email-confirm" placeholder="Confirm Email" required>
     </div>
     <div class="form-group">
-      <label for="signup-password">Password</label>
+      <label for="signup-password" data-i18n="Password">Password</label>
       <div style="position: relative;">
         <input type="password" id="signup-password" placeholder="Password" required>
         <button type="button" class="toggle-password" data-target="signup-password">👁️</button>
       </div>
     </div>
     <div class="form-group">
-      <label for="signup-password-confirm">Confirm Password</label>
+      <label for="signup-password-confirm" data-i18n="Confirm Password">Confirm Password</label>
       <div style="position: relative;">
         <input type="password" id="signup-password-confirm" placeholder="Confirm Password" required>
         <button type="button" class="toggle-password" data-target="signup-password-confirm">👁️</button>
       </div>
     </div>
-    <button id="signup-button">Sign Up</button>
+    <button id="signup-button" data-i18n="Sign Up">Sign Up</button>
     <p id="error-message"></p>
   </div>
 
   <!-- Sign In Form -->
   <div id="signin-form">
-    <h2>Sign In</h2>
+    <h2 data-i18n="Sign In">Sign In</h2>
     <div class="form-group">
-      <label for="signin-email">Email</label>
+      <label for="signin-email" data-i18n="Email">Email</label>
       <input type="email" id="signin-email" placeholder="Email" required>
     </div>
     <div class="form-group">
-      <label for="signin-password">Password</label>
+      <label for="signin-password" data-i18n="Password">Password</label>
       <input type="password" id="signin-password" placeholder="Password" required>
     </div>
-    <button id="signin-button">Sign In</button>
+    <button id="signin-button" data-i18n="Sign In">Sign In</button>
     <p id="error-message"></p>
   </div>
 
@@ -191,24 +191,24 @@
       cursor: pointer;
       transition: background-color 0.3s;
       width: 100%;
-    ">
+    " data-i18n="Download the App">
       Download the App
     </button>
     <div id="install-guide" style="display: none; margin-top: 20px; text-align: left; background-color: var(--estaco-surface); padding: 20px; border-radius: 12px;">
-      <h3 style="color: var(--estaco-primary);">How to Install the App</h3>
-      <p><strong>Android:</strong></p>
+      <h3 style="color: var(--estaco-primary);" data-i18n="How to Install the App">How to Install the App</h3>
+      <p><strong data-i18n="Android">Android:</strong></p>
       <ol>
-        <li>Tap the <strong>three dots (⋮)</strong> in the top-right corner of your browser.</li>
-        <li>Select <strong>"Add to Home screen"</strong>.</li>
-        <li>Tap <strong>"Add"</strong> to confirm.</li>
+        <li data-i18n="Android step 1">Tap the <strong>three dots (⋮)</strong> in the top-right corner of your browser.</li>
+        <li data-i18n="Android step 2">Select <strong>"Add to Home screen"</strong>.</li>
+        <li data-i18n="Android step 3">Tap <strong>"Add"</strong> to confirm.</li>
       </ol>
-      <p><strong>iPhone (iOS):</strong></p>
+      <p><strong data-i18n="iPhone (iOS)">iPhone (iOS):</strong></p>
       <ol>
-        <li>Tap the <strong>Share button (↑)</strong> at the bottom of your screen.</li>
-        <li>Scroll down and select <strong>"Add to Home Screen"</strong>.</li>
-        <li>Tap <strong>"Add"</strong> to confirm.</li>
+        <li data-i18n="iPhone step 1">Tap the <strong>Share button (↑)</strong> at the bottom of your screen.</li>
+        <li data-i18n="iPhone step 2">Scroll down and select <strong>"Add to Home Screen"</strong>.</li>
+        <li data-i18n="iPhone step 3">Tap <strong>"Add"</strong> to confirm.</li>
       </ol>
-      <p style="font-size: 14px; color: var(--estaco-text-light);">The app will now appear on your home screen like a normal app!</p>
+      <p style="font-size: 14px; color: var(--estaco-text-light);" data-i18n="App installed message">The app will now appear on your home screen like a normal app!</p>
     </div>
   </div>
 
@@ -261,15 +261,15 @@
     
       // Validate inputs
       if (email !== emailConfirm) {
-        errorMessage.textContent = 'Emails do not match.';
+        errorMessage.textContent = translations[userLanguage]["Emails do not match."];
         return;
       }
       if (password !== passwordConfirm) {
-        errorMessage.textContent = 'Passwords do not match.';
+        errorMessage.textContent = translations[userLanguage]["Passwords do not match."];
         return;
       }
       if (!isValidUsername(name)) {
-        errorMessage.textContent = 'Username cannot contain spaces.';
+        errorMessage.textContent = translations[userLanguage]["Username cannot contain spaces."];
         return;
       }
     
@@ -279,7 +279,7 @@
       .get()
       .then((querySnapshot) => {
         if (!querySnapshot.empty) {
-          errorMessage.textContent = 'Username is already taken.';
+          errorMessage.textContent = translations[userLanguage]["Username is already taken."];
           return;
         }
     
@@ -308,7 +308,7 @@
             return user.sendEmailVerification();
           })
           .then(() => {
-            alert('Account created! Please check your email for a verification link.');
+            alert(translations[userLanguage]["Account created! Please check your email for a verification link."]);
             document.getElementById('signup-name').value = '';
             document.getElementById('signup-email').value = '';
             document.getElementById('signup-email-confirm').value = '';
@@ -333,10 +333,10 @@
         .then((userCredential) => {
           const user = userCredential.user;
           if (user.emailVerified) {
-            alert('Signed in successfully!');
+            alert(translations[userLanguage]["Signed in successfully!"]);
             window.location.href = 'home.html';
           } else {
-            alert('Please verify your email before signing in. A verification link has been sent to your email address.');
+            alert(translations[userLanguage]["Please verify your email before signing in. A verification link has been sent to your email address."]);
             auth.signOut();
           }
         })
@@ -379,12 +379,122 @@
     downloadAppButton.addEventListener('click', () => {
       if (installGuide.style.display === 'none') {
         installGuide.style.display = 'block';
-        downloadAppButton.textContent = 'Hide Guide';
+        downloadAppButton.textContent = translations[userLanguage]["Hide Guide"];
       } else {
         installGuide.style.display = 'none';
-        downloadAppButton.textContent = 'Download the App';
+        downloadAppButton.textContent = translations[userLanguage]["Download the App"];
       }
     });
+
+    let userLanguage = "English"; // Define globally
+
+    // Translations dictionary
+    const translations = {
+      English: {
+        "Create Account": "Create Account",
+        "Sign In": "Sign In",
+        "Username": "Username",
+        "Language": "Language",
+        "Email": "Email",
+        "Confirm Email": "Confirm Email",
+        "Password": "Password",
+        "Confirm Password": "Confirm Password",
+        "Sign Up": "Sign Up",
+        "Download the App": "Download the App",
+        "How to Install the App": "How to Install the App",
+        "Android": "Android:",
+        "Android step 1": "Tap the <strong>three dots (⋮)</strong> in the top-right corner of your browser.",
+        "Android step 2": "Select <strong>\"Add to Home screen\"</strong>.",
+        "Android step 3": "Tap <strong>\"Add\"</strong> to confirm.",
+        "iPhone (iOS)": "iPhone (iOS):",
+        "iPhone step 1": "Tap the <strong>Share button (↑)</strong> at the bottom of your screen.",
+        "iPhone step 2": "Scroll down and select <strong>\"Add to Home Screen\"</strong>.",
+        "iPhone step 3": "Tap <strong>\"Add\"</strong> to confirm.",
+        "App installed message": "The app will now appear on your home screen like a normal app!",
+        "Hide Guide": "Hide Guide",
+        "Emails do not match.": "Emails do not match.",
+        "Passwords do not match.": "Passwords do not match.",
+        "Username cannot contain spaces.": "Username cannot contain spaces.",
+        "Username is already taken.": "Username is already taken.",
+        "Account created! Please check your email for a verification link.": "Account created! Please check your email for a verification link.",
+        "Signed in successfully!": "Signed in successfully!",
+        "Please verify your email before signing in. A verification link has been sent to your email address.": "Please verify your email before signing in. A verification link has been sent to your email address.",
+        "Error checking username: ": "Error checking username: ",
+      },
+      French: {
+        "Create Account": "Créer un compte",
+        "Sign In": "Se connecter",
+        "Username": "Nom d'utilisateur",
+        "Language": "Langue",
+        "Email": "Email",
+        "Confirm Email": "Confirmer l'email",
+        "Password": "Mot de passe",
+        "Confirm Password": "Confirmer le mot de passe",
+        "Sign Up": "S'inscrire",
+        "Download the App": "Télécharger l'application",
+        "How to Install the App": "Comment installer l'application",
+        "Android": "Android :",
+        "Android step 1": "Appuyez sur les <strong>trois points (⋮)</strong> dans le coin supérieur droit de votre navigateur.",
+        "Android step 2": "Sélectionnez <strong>\"Ajouter à l'écran d'accueil\"</strong>.",
+        "Android step 3": "Appuyez sur <strong>\"Ajouter\"</strong> pour confirmer.",
+        "iPhone (iOS)": "iPhone (iOS) :",
+        "iPhone step 1": "Appuyez sur le <strong>bouton Partager (↑)</strong> en bas de votre écran.",
+        "iPhone step 2": "Faites défiler vers le bas et sélectionnez <strong>\"Ajouter à l'écran d'accueil\"</strong>.",
+        "iPhone step 3": "Appuyez sur <strong>\"Ajouter\"</strong> pour confirmer.",
+        "App installed message": "L'application apparaîtra désormais sur votre écran d'accueil comme une application normale !",
+        "Hide Guide": "Masquer le guide",
+        "Emails do not match.": "Les emails ne correspondent pas.",
+        "Passwords do not match.": "Les mots de passe ne correspondent pas.",
+        "Username cannot contain spaces.": "Le nom d'utilisateur ne peut pas contenir d'espaces.",
+        "Username is already taken.": "Ce nom d'utilisateur est déjà pris.",
+        "Account created! Please check your email for a verification link.": "Compte créé ! Veuillez vérifier votre email pour le lien de vérification.",
+        "Signed in successfully!": "Connexion réussie !",
+        "Please verify your email before signing in. A verification link has been sent to your email address.": "Veuillez vérifier votre email avant de vous connecter. Un lien de vérification a été envoyé à votre adresse email.",
+        "Error checking username: ": "Erreur lors de la vérification du nom d'utilisateur : ",
+      },
+      Korean: {
+        "Create Account": "계정 만들기",
+        "Sign In": "로그인",
+        "Username": "사용자 이름",
+        "Language": "언어",
+        "Email": "이메일",
+        "Confirm Email": "이메일 확인",
+        "Password": "비밀번호",
+        "Confirm Password": "비밀번호 확인",
+        "Sign Up": "가입하기",
+        "Download the App": "앱 다운로드",
+        "How to Install the App": "앱 설치 방법",
+        "Android": "안드로이드:",
+        "Android step 1": "<strong>세 점(⋮)</strong>을 브라우저 오른쪽 상단 모서리에 탭하세요.",
+        "Android step 2": "<strong>\"홈 화면에 추가\"</strong>를 선택하세요.",
+        "Android step 3": "<strong>\"추가\"</strong>를 탭하여 확인하세요.",
+        "iPhone (iOS)": "아이폰 (iOS):",
+        "iPhone step 1": "화면 하단에 있는 <strong>공유 버튼(↑)</strong>을 탭하세요.",
+        "iPhone step 2": "아래로 스크롤하여 <strong>\"홈 화면에 추가\"</strong>를 선택하세요.",
+        "iPhone step 3": "<strong>\"추가\"</strong>를 탭하여 확인하세요.",
+        "App installed message": "이제 앱이 일반 앱처럼 홈 화면에 표시됩니다!",
+        "Hide Guide": "가이드 숨기기",
+        "Emails do not match.": "이메일이 일치하지 않습니다.",
+        "Passwords do not match.": "비밀번호가 일치하지 않습니다.",
+        "Username cannot contain spaces.": "사용자 이름에 공백을 포함할 수 없습니다.",
+        "Username is already taken.": "이 사용자 이름은 이미 사용 중입니다.",
+        "Account created! Please check your email for a verification link.": "계정이 생성되었습니다! 이메일에서 확인 링크를 확인하세요.",
+        "Signed in successfully!": "로그인 성공!",
+        "Please verify your email before signing in. A verification link has been sent to your email address.": "로그인 전에 이메일을 확인하세요. 확인 링크가 이메일 주소로 전송되었습니다.",
+        "Error checking username: ": "사용자 이름 확인 중 오류: ",
+      }
+    };
+    
+    // Function to update the page language
+    function updatePageLanguage(language) {
+      const lang = translations[language] || translations["English"];
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        const key = element.getAttribute("data-i18n");
+        if (lang[key]) {
+          element.textContent = lang[key];
+        }
+      });
+    }
   </script>
 </body>
 </html>
