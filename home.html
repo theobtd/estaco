@@ -414,7 +414,7 @@
 
   <div id="post-form">
     <h3 data-i18n="Create a Post">Create a Post</h3>
-    <textarea id="post-content" placeholder="How's life treating ya?" data-i18n="How's life treating ya?" rows="3"></textarea>
+    <textarea id="post-content" placeholder="How's life treating ya?" rows="3"></textarea>
     <div class="post-form-actions">
       <label for="post-media" id="post-media-label">
         <span data-i18n="Photo/Video">📷 Photo/Video</span>
@@ -537,7 +537,7 @@
       const mediaFile = postMedia.files[0];
     
       if (!content) {
-        errorMessage.textContent = 'Post content cannot be empty.';
+        alert(translations[userLanguage]["Post content cannot be empty."]);
         return;
       }
     
@@ -1351,6 +1351,7 @@
         "Your Feed": "Your Feed",
         "Feed": "Feed",
         "Profile": "Profile",
+        "Post content cannot be empty.": "Post content cannot be empty.",
       },
       French: {
         "Create a Post": "Créer une publication",
@@ -1370,6 +1371,7 @@
         "Your Feed": "Votre fil d'actualité",
         "Feed": "Fil d'actualité",
         "Profile": "Profil",
+        "Post content cannot be empty.": "Le contenu de la publication ne peut pas être vide.",
       },
       Korean: {
         "Create a Post": "게시물 작성",
@@ -1389,6 +1391,7 @@
         "Your Feed": "피드",
         "Feed": "피드",
         "Profile": "프로필",
+        "Post content cannot be empty.": "게시물 내용이 비어 있을 수 없습니다.",
       }
     };
     
