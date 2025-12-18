@@ -1254,11 +1254,13 @@
                     const selectedOrientation = document.querySelector('.crop-orientation-button.selected').getAttribute('data-orientation');
                     let width, height;
                     if (selectedOrientation === 'horizontal') {
-                        width = 600;
-                        height = 400;
+                        width = 1200;  // Larger dimensions for better quality
+                        height = 675;  // 16:9
+                        quality = 0.92;
                     } else {
-                        width = 400;
-                        height = 600;
+                        width = 720;   // Larger dimensions for vertical images
+                        height = 1280; // 9:16 (or use original dimensions)
+                        quality = 1;   // Maximum quality for vertical images
                     }
                     const canvas = cropper.getCroppedCanvas({ width, height, fillColor: '#fff', imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
                     canvas.toBlob(
@@ -1273,7 +1275,7 @@
                         cropper.destroy();
                       },
                       'image/jpeg',
-                      0.92 // <-- Set quality to 0.98 (or 1 for maximum quality)
+                      quality  // Use dynamic quality
                     );
                 };
     
