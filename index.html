@@ -349,7 +349,7 @@
             return user.sendEmailVerification();
           })
           .then(() => {
-            alert(translations[userLanguage]["Account created! Please check your email for a verification link."]);
+            alert(translations[userLanguage]["Account created! Please check your email for a verification link. If you don't see it, check your spam folder."]);
             document.getElementById('signup-name').value = '';
             document.getElementById('signup-email').value = '';
             document.getElementById('signup-email-confirm').value = '';
@@ -457,7 +457,7 @@
         "Passwords do not match.": "Passwords do not match.",
         "Username cannot contain spaces.": "Username cannot contain spaces.",
         "Username is already taken.": "Username is already taken.",
-        "Account created! Please check your email for a verification link.": "Account created! Please check your email for a verification link.",
+        "Account created! Please check your email for a verification link.  If you don't see it, check your spam folder.": "Account created! Please check your email for a verification link. If you don't see it, check your spam folder.",
         "Signed in successfully!": "Signed in successfully!",
         "Please verify your email before signing in. A verification link has been sent to your email address.": "Please verify your email before signing in. A verification link has been sent to your email address.",
         "Error checking username: ": "Error checking username: ",
@@ -489,7 +489,7 @@
         "Passwords do not match.": "Les mots de passe ne correspondent pas.",
         "Username cannot contain spaces.": "Le nom d'utilisateur ne peut pas contenir d'espaces.",
         "Username is already taken.": "Ce nom d'utilisateur est déjà pris.",
-        "Account created! Please check your email for a verification link.": "Compte créé ! Veuillez vérifier votre email pour le lien de vérification.",
+        "Account created! Please check your email for a verification link. If you don't see it, check your spam folder.": "Compte créé ! Veuillez vérifier votre email pour le lien de vérification. Veuillez aussi verifier vos spams",
         "Signed in successfully!": "Connexion réussie !",
         "Please verify your email before signing in. A verification link has been sent to your email address.": "Veuillez vérifier votre email avant de vous connecter. Un lien de vérification a été envoyé à votre adresse email.",
         "Error checking username: ": "Erreur lors de la vérification du nom d'utilisateur : ",
@@ -521,7 +521,7 @@
         "Passwords do not match.": "비밀번호가 일치하지 않습니다.",
         "Username cannot contain spaces.": "사용자 이름에 공백을 포함할 수 없습니다.",
         "Username is already taken.": "이 사용자 이름은 이미 사용 중입니다.",
-        "Account created! Please check your email for a verification link.": "계정이 생성되었습니다! 이메일에서 확인 링크를 확인하세요.",
+        "Account created! Please check your email for a verification link. If you don't see it, check your spam folder.": "계정이 생성되었습니다! 이메일에서 확인 링크를 확인하세요. 만약 메일을 찾을 수 없다면 스팸 폴더를 확인해 보세요.",
         "Signed in successfully!": "로그인 성공!",
         "Please verify your email before signing in. A verification link has been sent to your email address.": "로그인 전에 이메일을 확인하세요. 확인 링크가 이메일 주소로 전송되었습니다.",
         "Error checking username: ": "사용자 이름 확인 중 오류: ",
