@@ -1261,8 +1261,7 @@
                         height = 600;
                     }
                     const canvas = cropper.getCroppedCanvas({ width, height, fillColor: '#fff', imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
-                    canvas.toBlob(
-                      (blob) => {
+                    canvas.toBlob((blob) => {
                         const croppedFile = new File([blob], file.name, { type: 'image/jpeg' });
                         const dataTransfer = new DataTransfer();
                         dataTransfer.items.add(croppedFile);
@@ -1271,10 +1270,7 @@
                         postMedia.setAttribute('data-type', 'image');
                         modal.style.display = 'none';
                         cropper.destroy();
-                      },
-                      'image/jpeg',
-                      0.92 // <-- Set quality to 0.98 (or 1 for maximum quality)
-                    );
+                    }, 'image/jpeg');
                 };
     
                 // Handle "Cancel" button
