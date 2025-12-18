@@ -537,6 +537,7 @@
           element.textContent = lang[key];
         }
       });
+      document.getElementById('selected-language').textContent = translations[language][language] || language;
     }
 
     // Set default language based on browser
