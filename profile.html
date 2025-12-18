@@ -482,6 +482,8 @@
         const storage = firebase.storage();
         const db = firebase.firestore();
 
+        let userLanguage = "English"; // Define globally
+
         // DOM Elements
         const searchFriendInput = document.getElementById('search-friend');
         const sendFriendRequestButton = document.getElementById('send-friend-request');
@@ -578,7 +580,7 @@
                             });
                     });
             } else {
-                alert('Please enter a name to search');
+                alert(translations[userLanguage]["Please enter a name to search"]);
             }
         });
 
@@ -594,10 +596,10 @@
                 fromName: fromName,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
-                alert('Friend request sent!');
+                alert(translations[userLanguage]["Friend request sent!"]);
             }).catch(error => {
                 console.error('Error sending friend request: ', error);
-                alert('Failed to send friend request.');
+                alert(translations[userLanguage]["Failed to send friend request."]);
             });
         }
 
@@ -638,7 +640,7 @@
                                                     requestDiv.remove();
                                                 }
                                             });
-                                            alert('Friend request accepted!');
+                                            alert(translations[userLanguage]["Friend request accepted!"]);
                                             loadCurrentFriends(toId);
                                         });
                                 });
@@ -648,7 +650,7 @@
 
         function removeFriend(userId, friendUid) {
             // Ask for confirmation
-            const confirmRemove = confirm("Are you sure you want to remove this friend?");
+            const confirmRemove = confirm(translations[userLanguage]["Are you sure you want to remove this friend?"]);
             if (!confirmRemove) {
                 return; // Do nothing if the user cancels
             }
@@ -682,11 +684,11 @@
                         })
                         .catch((error) => {
                             console.error("Error updating friends lists: ", error);
-                            alert("Failed to update friends lists.");
+                            alert(translations[userLanguage]["Failed to update friends lists."]);
                         });
                 } else {
                     console.error("User or friend document does not exist.");
-                    alert("Failed to remove friend: user or friend not found.");
+                    alert(translations[userLanguage]["Failed to remove friend."]);
                 }
             })
             .catch((error) => {
@@ -709,7 +711,7 @@
         
                 if (doc.exists) {
                   const userData = doc.data();
-                  const userLanguage = userData.language || "English"; // Default to English
+                  userLanguage = userData.language || "English"; // Update globally
                   updatePageLanguage(userLanguage);
                   if (userData.profilePictureURL) {
                     img.src = userData.profilePictureURL;
@@ -851,7 +853,7 @@
 
                     if (newPassword && confirmPassword && newPassword === confirmPassword && newPassword.length >= 6) {
                         user.updatePassword(newPassword).then(() => {
-                            document.getElementById('success-message').textContent = 'Password updated successfully!';
+                            document.getElementById('success-message').textContent = translations[userLanguage]["Password updated successfully!"];
                             document.getElementById('error-message').textContent = '';
                         }).catch((error) => {
                             document.getElementById('error-message').textContent = error.message;
@@ -869,7 +871,7 @@
 
         // Log Out
         document.getElementById('logout-button').addEventListener('click', () => {
-          const confirmLogout = confirm('Are you sure you want to log out?');
+          const confirmLogout = confirm(translations[userLanguage]["Are you sure you want to log out?"]);
           if (confirmLogout) {
             auth.signOut().then(() => {
               alert('You have been logged out.');
@@ -910,10 +912,10 @@
         downloadAppButton.addEventListener('click', () => {
           if (installGuide.style.display === 'none') {
             installGuide.style.display = 'block';
-            downloadAppButton.textContent = 'Hide Guide';
+            downloadAppButton.textContent = translations[userLanguage]["Hide Guide"];
           } else {
             installGuide.style.display = 'none';
-            downloadAppButton.textContent = 'Download the App';
+            downloadAppButton.textContent = translations[userLanguage]["Download the App"];
           }
         });
 
@@ -965,6 +967,7 @@
             "Are you sure you want to remove this friend?": "Are you sure you want to remove this friend?",
             "Are you sure you want to log out?": "Are you sure you want to log out?",
             "Please enter a name to search": "Please enter a name to search",
+            "Hide Guide": "Hide Guide",
               // ... rest of your translations
           },
           French: {
@@ -1014,6 +1017,7 @@
             "Are you sure you want to remove this friend?": "Êtes-vous sûr de vouloir retirer cet ami ?",
             "Are you sure you want to log out?": "Êtes-vous sûr de vouloir vous déconnecter ?",
             "Please enter a name to search": "Veuillez entrer un nom à rechercher",
+            "Hide Guide": "Masquer le guide",
               // ... rest of your translations
           },
           Korean: {
@@ -1063,6 +1067,7 @@
             "Are you sure you want to remove this friend?": "이 친구를 삭제하시겠습니까?",
             "Are you sure you want to log out?": "로그아웃하시겠습니까?",
             "Please enter a name to search": "검색할 이름을 입력하세요",
+            "Hide Guide": "가이드 숨기기",
               // ... rest of your translations
           }
         };
