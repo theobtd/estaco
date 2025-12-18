@@ -121,40 +121,6 @@
 </head>
 <body>
   <h1>Estaco</h1>
-  
-  <div style="position: absolute; top: 20px; right: 20px; z-index: 10;">
-    <div style="
-      display: inline-flex;
-      align-items: center;
-      padding: 6px 10px;
-      border: 1px solid var(--estaco-border);
-      border-radius: 6px;
-      background-color: var(--estaco-surface);
-      color: var(--estaco-text);
-      font-family: inherit;
-      cursor: pointer;
-    ">
-      <span id="selected-language" style="margin-right: 5px;">English</span>
-      <span style="font-size: 12px;">🌐</span>
-      <div id="language-dropdown" style="
-        display: none;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: var(--estaco-surface);
-        border: 1px solid var(--estaco-border);
-        border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        min-width: 120px;
-        z-index: 20;
-      ">
-        <div style="padding: 8px 12px; cursor: pointer;" data-lang="English">English</div>
-        <div style="padding: 8px 12px; cursor: pointer;" data-lang="French">Français</div>
-        <div style="padding: 8px 12px; cursor: pointer;" data-lang="Korean">한국어</div>
-      </div>
-    </div>
-  </div>
-
   <button id="show-signup" data-i18n="Create Account">Create Account</button>
   <button id="show-signin" data-i18n="Sign In">Sign In</button>
 
@@ -278,7 +244,6 @@
     showSignup.addEventListener('click', () => {
       signupForm.style.display = 'block';
       signinForm.style.display = 'none';
-      document.getElementById('signup-language').value = userLanguage;
     });
 
     showSignin.addEventListener('click', () => {
@@ -519,14 +484,6 @@
         "Error checking username: ": "사용자 이름 확인 중 오류: ",
       }
     };
-
-    // Handle language selector change
-    document.getElementById('language-selector').addEventListener('change', (event) => {
-      userLanguage = event.target.value;
-      updatePageLanguage(userLanguage);
-      // Update the selected language in the dropdown
-      document.getElementById('language-selector').value = userLanguage;
-    });
     
     // Function to update the page language
     function updatePageLanguage(language) {
@@ -537,51 +494,7 @@
           element.textContent = lang[key];
         }
       });
-      document.getElementById('selected-language').textContent = translations[language][language] || language;
     }
-
-    // Set default language based on browser
-    const browserLanguage = navigator.language.split('-')[0];
-    if (browserLanguage === 'fr') {
-      userLanguage = "French";
-      document.getElementById('language-selector').value = "French";
-    } else if (browserLanguage === 'ko') {
-      userLanguage = "Korean";
-      document.getElementById('language-selector').value = "Korean";
-    } else {
-      userLanguage = "English";
-      document.getElementById('language-selector').value = "English";
-    }
-    
-    // Update the page language on load
-    updatePageLanguage(userLanguage);
-
-    // Handle language dropdown toggle
-    document.getElementById('selected-language').parentElement.addEventListener('click', (event) => {
-      event.stopPropagation(); // Add this line to stop event propagation
-      const dropdown = document.getElementById('language-dropdown');
-      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-    });
-    
-    // Handle language selection from dropdown
-    document.querySelectorAll('#language-dropdown div').forEach(item => {
-      item.addEventListener('click', (event) => {
-        userLanguage = item.getAttribute('data-lang');
-        document.getElementById('selected-language').textContent =
-          translations[userLanguage][userLanguage] || userLanguage;
-        document.getElementById('language-dropdown').style.display = 'none';
-        updatePageLanguage(userLanguage);
-      });
-    });
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (event) => {
-      const dropdown = document.getElementById('language-dropdown');
-      const selector = document.getElementById('selected-language').parentElement;
-      if (!selector.contains(event.target) && dropdown.style.display === 'block') {
-        dropdown.style.display = 'none';
-      }
-    });
   </script>
 </body>
 </html>
