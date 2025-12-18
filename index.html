@@ -327,7 +327,8 @@
     signinButton.addEventListener('click', () => {
       const email = document.getElementById('signin-email').value;
       const password = document.getElementById('signin-password').value;
-
+      const signinErrorMessage = document.querySelector('#signin-form #error-message');
+    
       auth.signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
           const user = userCredential.user;
@@ -340,7 +341,7 @@
           }
         })
         .catch((error) => {
-          errorMessage.textContent = error.message;
+          signinErrorMessage.textContent = error.message;
         });
     });
 
