@@ -220,18 +220,31 @@
     </div>
   </div>
 
-  <div style="margin-bottom: 20px;">
-    <label for="language-select" style="margin-right: 10px; font-weight: 500; color: var(--estaco-text-light);">Language:</label>
+  <div style="
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+  ">
     <select id="language-select" style="
-      padding: 8px;
+      padding: 6px 10px;
       border: 1px solid var(--estaco-border);
-      border-radius: 8px;
+      border-radius: 6px;
       background-color: var(--estaco-surface);
       font-family: inherit;
+      font-size: 14px;
+      color: var(--estaco-text);
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg fill=\"%23666666\" height=\"12\" viewBox=\"0 0 24 24\" width=\"12\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 12px;
     ">
-      <option value="English" selected>English</option>
-      <option value="French">Français</option>
-      <option value="Korean">한국어</option>
+      <option value="English" selected>EN</option>
+      <option value="French">FR</option>
+      <option value="Korean">KR</option>
     </select>
   </div>
 
