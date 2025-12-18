@@ -351,7 +351,7 @@
         <h1>Estaco</h1>
       </div>
 
-      <div id="download-app-section" style="margin: 20px auto; text-align: center; max-width: 400px;">
+      <div data-i18n="Platform Rules" id="download-app-section" style="margin: 20px auto; text-align: center; max-width: 400px;">
           <button id="download-app-button" style="
           background-color: var(--estaco-accent);
           color: var(--estaco-text);
@@ -366,20 +366,20 @@
           Download the App
         </button>
         <div id="install-guide" style="display: none; margin-top: 20px; text-align: left; background-color: var(--estaco-surface); padding: 20px; border-radius: 12px;">
-          <h3 style="color: var(--estaco-primary);">How to Install the App</h3>
-          <p><strong>Android:</strong></p>
+          <h3 data-i18n="Platform Rules" style="color: var(--estaco-primary);">How to Install the App</h3>
+          <p data-i18n="Platform Rules"><strong>Android:</strong></p>
           <ol>
-            <li>Tap the <strong>three dots (⋮)</strong> in the top-right corner of your browser.</li>
-            <li>Select <strong>"Add to Home screen"</strong>.</li>
-            <li>Tap <strong>"Add"</strong> to confirm.</li>
+            <li data-i18n="Platform Rules">Tap the <strong>three dots (⋮)</strong> in the top-right corner of your browser.</li>
+            <li data-i18n="Platform Rules">Select <strong>"Add to Home screen"</strong>.</li>
+            <li data-i18n="Platform Rules">Tap <strong>"Add"</strong> to confirm.</li>
           </ol>
-          <p><strong>iPhone (iOS):</strong></p>
+          <p data-i18n="Platform Rules"><strong>iPhone (iOS):</strong></p>
           <ol>
-            <li>Tap the <strong>Share button (↑)</strong> at the bottom of your screen.</li>
-            <li>Scroll down and select <strong>"Add to Home Screen"</strong>.</li>
-            <li>Tap <strong>"Add"</strong> to confirm.</li>
+            <li data-i18n="Platform Rules">Tap the <strong>Share button (↑)</strong> at the bottom of your screen.</li>
+            <li data-i18n="Platform Rules">Scroll down and select <strong>"Add to Home Screen"</strong>.</li>
+            <li data-i18n="Platform Rules">Tap <strong>"Add"</strong> to confirm.</li>
           </ol>
-          <p style="font-size: 14px; color: var(--estaco-text-light);">The app will now appear on your home screen like a normal app!</p>
+          <p data-i18n="Platform Rules" style="font-size: 14px; color: var(--estaco-text-light);">The app will now appear on your home screen like a normal app!</p>
         </div>
       </div>
     
@@ -390,24 +390,24 @@
           <img id="profile-picture" src="" alt="Profile Picture" class="profile-picture">
         </div>
         <div class="profile-details">
-          <h2 id="user-name">User Name</h2>
+          <h2 data-i18n="Platform Rules" id="user-name">User Name</h2>
           <p id="user-email">user@example.com</p>
         </div>
         <div class="profile-actions">
-          <button id="update-profile-pic-button" class="button">Update Profile Picture</button>
-          <button id="change-password-button" class="button">Change Password</button>
-          <button id="logout-button" class="button">Log Out</button>
+          <button data-i18n="Platform Rules" id="update-profile-pic-button" class="button">Update Profile Picture</button>
+          <button data-i18n="Platform Rules" id="change-password-button" class="button">Change Password</button>
+          <button data-i18n="Platform Rules" id="logout-button" class="button">Log Out</button>
         </div>
       </div>
     
       <div class="section">
-        <h3>Platform Rules</h3>
+        <h3 data-i18n="Platform Rules">Platform Rules</h3>
         <div class="rules-container">
-          <p><strong>1.</strong> Max 15 friends.</p>
-          <p><strong>2.</strong> Your posts are not visible to users who are not your friends.</p>
-          <p><strong>3.</strong> Your comments and reactions are not visible to users who are not your friends.</p>
+          <p data-i18n="Platform Rules"><strong>1.</strong> Max 15 friends.</p>
+          <p data-i18n="Platform Rules"><strong>2.</strong> Your posts are not visible to users who are not your friends.</p>
+          <p data-i18n="Platform Rules"><strong>3.</strong> Your comments and reactions are not visible to users who are not your friends.</p>
           <div class="example">
-            <p><strong>Example:</strong> John is friends with Mike but not with Jenny. Mike is friends with Jenny. If Jenny comments on Mike's post, John will see Mike's post but not Jenny's comment.</p>
+            <p data-i18n="Platform Rules"><strong>Example:</strong> John is friends with Mike but not with Jenny. Mike is friends with Jenny. If Jenny comments on Mike's post, John will see Mike's post but not Jenny's comment.</p>
           </div>
         </div>
       </div>
@@ -415,20 +415,20 @@
       <!-- Profile Content -->
       <div class="profile-content">
         <div class="section">
-          <h3>Friend System</h3>
+          <h3 data-i18n="Platform Rules">Friend System</h3>
           <div class="search-friend">
-            <input type="text" id="search-friend" placeholder="Search by name...">
-            <button id="send-friend-request" class="button">Send Friend Request</button>
+            <input data-i18n="Platform Rules" type="text" id="search-friend" placeholder="Search by name...">
+            <button data-i18n="Platform Rules" id="send-friend-request" class="button">Send Friend Request</button>
           </div>
         </div>
     
         <div class="section">
-          <h3>Pending Friend Requests</h3>
+          <h3 data-i18n="Platform Rules">Pending Friend Requests</h3>
           <div id="pending-friend-requests" class="friend-list"></div>
         </div>
     
         <div class="section">
-          <h3>Current Friends</h3>
+          <h3 data-i18n="Platform Rules">Current Friends</h3>
           <div id="current-friends" class="friend-list"></div>
         </div>
       </div>
@@ -436,7 +436,7 @@
       <!-- Cropper Modal -->
       <div id="cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
         <div style="max-width: 500px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px;">
-          <h3>Crop Profile Picture</h3>
+          <h3 data-i18n="Platform Rules">Crop Profile Picture</h3>
           <div style="width: 100%; height: 400px;">
             <img id="cropper-image" style="max-width: 100%;">
           </div>
@@ -709,6 +709,8 @@
         
                 if (doc.exists) {
                   const userData = doc.data();
+                  const userLanguage = userData.language || "English"; // Default to English
+                  updatePageLanguage(userLanguage);
                   if (userData.profilePictureURL) {
                     img.src = userData.profilePictureURL;
                     img.style.display = 'block';
@@ -914,6 +916,139 @@
             downloadAppButton.textContent = 'Download the App';
           }
         });
+
+        const translations = {
+          English: {
+            "How to Install the App": "How to Install the App",
+            "Download the App": "Download the App",
+            "Update Profile Picture": "Update Profile Picture",
+            "Change Password": "Change Password",
+            "Log Out": "Log Out",
+            "Platform Rules": "Platform Rules",
+            "Friend System": "Friend System",
+            "Pending Friend Requests": "Pending Friend Requests",
+            "Current Friends": "Current Friends",
+            "Search by name...": "Search by name...",
+            "Send Friend Request": "Send Friend Request",
+            "Max 15 friends.": "Max 15 friends.",
+            "Your posts are not visible to users who are not your friends.": "Your posts are not visible to users who are not your friends.",
+            "Your comments and reactions are not visible to users who are not your friends.": "Your comments and reactions are not visible to users who are not your friends.",
+            "Accept": "Accept",
+            "Remove": "Remove",
+            "Are you sure you want to remove this friend?": "Are you sure you want to remove this friend?",
+            "Are you sure you want to log out?": "Are you sure you want to log out?",
+            "Crop Profile Picture": "Crop Profile Picture",
+            "Crop and Upload": "Crop and Upload",
+            "Cancel": "Cancel",
+            "User not found": "User not found",
+            "Friend request sent!": "Friend request sent!",
+            "Friend request accepted!": "Friend request accepted!",
+            "Failed to send friend request.": "Failed to send friend request.",
+            "Failed to update friends lists.": "Failed to update friends lists.",
+            "Failed to remove friend.": "Failed to remove friend.",
+            "Failed to upload profile picture.": "Failed to upload profile picture.",
+            "Profile picture updated!": "Profile picture updated!",
+            "Password updated successfully!": "Password updated successfully!",
+            "Current password is incorrect.": "Current password is incorrect.",
+            "Passwords do not match or are too short. Please try again.": "Passwords do not match or are too short. Please try again.",
+            "You have reached the maximum number of friends (15).": "You have reached the maximum number of friends (15).",
+            "You have been logged out.": "You have been logged out.",
+            "Please verify your email before signing in. A verification link has been sent to your email address.": "Please verify your email before signing in. A verification link has been sent to your email address.",
+            "Account created! Please check your email for a verification link.": "Account created! Please check your email for a verification link.",
+            "Feed": "Feed",
+            "Profile": "Profile",
+          },
+          French: {
+            "How to Install the App": "Comment installer l'application",
+            "Download the App": "Télécharger l'application",
+            "Update Profile Picture": "Mettre à jour la photo de profil",
+            "Change Password": "Changer le mot de passe",
+            "Log Out": "Se déconnecter",
+            "Platform Rules": "Règles de la plateforme",
+            "Friend System": "Système d'amis",
+            "Pending Friend Requests": "Demandes d'ami en attente",
+            "Current Friends": "Amis actuels",
+            "Search by name...": "Rechercher par nom...",
+            "Send Friend Request": "Envoyer une demande d'ami",
+            "Max 15 friends.": "Maximum 15 amis.",
+            "Your posts are not visible to users who are not your friends.": "Vos publications ne sont pas visibles pour les utilisateurs qui ne sont pas vos amis.",
+            "Your comments and reactions are not visible to users who are not your friends.": "Vos commentaires et réactions ne sont pas visibles pour les utilisateurs qui ne sont pas vos amis.",
+            "Accept": "Accepter",
+            "Remove": "Retirer",
+            "Are you sure you want to remove this friend?": "Êtes-vous sûr de vouloir retirer cet ami ?",
+            "Are you sure you want to log out?": "Êtes-vous sûr de vouloir vous déconnecter ?",
+            "Crop Profile Picture": "Recadrer la photo de profil",
+            "Crop and Upload": "Recadrer et télécharger",
+            "Cancel": "Annuler",
+            "User not found": "Utilisateur introuvable",
+            "Friend request sent!": "Demande d'ami envoyée !",
+            "Friend request accepted!": "Demande d'ami acceptée !",
+            "Failed to send friend request.": "Échec de l'envoi de la demande d'ami.",
+            "Failed to update friends lists.": "Échec de la mise à jour des listes d'amis.",
+            "Failed to remove friend.": "Échec de la suppression de l'ami.",
+            "Failed to upload profile picture.": "Échec du téléchargement de la photo de profil.",
+            "Profile picture updated!": "Photo de profil mise à jour !",
+            "Password updated successfully!": "Mot de passe mis à jour avec succès !",
+            "Current password is incorrect.": "Le mot de passe actuel est incorrect.",
+            "Passwords do not match or are too short. Please try again.": "Les mots de passe ne correspondent pas ou sont trop courts. Veuillez réessayer.",
+            "You have reached the maximum number of friends (15).": "Vous avez atteint le nombre maximum d'amis (15).",
+            "You have been logged out.": "Vous avez été déconnecté.",
+            "Please verify your email before signing in. A verification link has been sent to your email address.": "Veuillez vérifier votre email avant de vous connecter. Un lien de vérification a été envoyé à votre adresse email.",
+            "Account created! Please check your email for a verification link.": "Compte créé ! Veuillez vérifier votre email pour le lien de vérification.",
+            "Feed": "Fil d'actualité",
+            "Profile": "Profil",
+          },
+          Korean: {
+            "How to Install the App": "앱 설치 방법",
+            "Download the App": "앱 다운로드",
+            "Update Profile Picture": "프로필 사진 업데이트",
+            "Change Password": "비밀번호 변경",
+            "Log Out": "로그아웃",
+            "Platform Rules": "플랫폼 규칙",
+            "Friend System": "친구 시스템",
+            "Pending Friend Requests": "대기 중인 친구 요청",
+            "Current Friends": "현재 친구",
+            "Search by name...": "이름으로 검색...",
+            "Send Friend Request": "친구 요청 보내기",
+            "Max 15 friends.": "최대 15명의 친구.",
+            "Your posts are not visible to users who are not your friends.": "친구가 아닌 사용자에게는 당신의 게시물이 보이지 않습니다.",
+            "Your comments and reactions are not visible to users who are not your friends.": "친구가 아닌 사용자에게는 당신의 댓글과 반응이 보이지 않습니다.",
+            "Accept": "수락",
+            "Remove": "삭제",
+            "Are you sure you want to remove this friend?": "이 친구를 삭제하시겠습니까?",
+            "Are you sure you want to log out?": "로그아웃하시겠습니까?",
+            "Crop Profile Picture": "프로필 사진 자르기",
+            "Crop and Upload": "자르고 업로드",
+            "Cancel": "취소",
+            "User not found": "사용자를 찾을 수 없음",
+            "Friend request sent!": "친구 요청이 전송되었습니다!",
+            "Friend request accepted!": "친구 요청이 수락되었습니다!",
+            "Failed to send friend request.": "친구 요청 전송에 실패했습니다.",
+            "Failed to update friends lists.": "친구 목록 업데이트에 실패했습니다.",
+            "Failed to remove friend.": "친구 삭제에 실패했습니다.",
+            "Failed to upload profile picture.": "프로필 사진 업로드에 실패했습니다.",
+            "Profile picture updated!": "프로필 사진이 업데이트되었습니다!",
+            "Password updated successfully!": "비밀번호가 성공적으로 업데이트되었습니다!",
+            "Current password is incorrect.": "현재 비밀번호가 올바르지 않습니다.",
+            "Passwords do not match or are too short. Please try again.": "비밀번호가 일치하지 않거나 너무 짧습니다. 다시 시도해 주세요.",
+            "You have reached the maximum number of friends (15).": "최대 친구 수(15명)에 도달했습니다.",
+            "You have been logged out.": "로그아웃되었습니다.",
+            "Please verify your email before signing in. A verification link has been sent to your email address.": "로그인하기 전에 이메일을 확인하세요. 확인 링크가 이메일로 전송되었습니다.",
+            "Account created! Please check your email for a verification link.": "계정이 생성되었습니다! 확인 링크를 위해 이메일을 확인하세요.",
+            "Feed": "피드",
+            "Profile": "프로필",
+          }
+        };
+
+        function updatePageLanguage(language) {
+          const lang = translations[language] || translations["English"];
+          document.querySelectorAll("[data-i18n]").forEach((element) => {
+            const key = element.getAttribute("data-i18n");
+            if (lang[key]) {
+              element.textContent = lang[key];
+            }
+          });
+        }
     </script>
 </body>
 </html>
