@@ -880,7 +880,7 @@
             transaction.update(postRef, { reactions });
           });
         }).catch((error) => {
-          console.error("Transaction failed: ", error);
+          console.error(translations[userLanguage]["Transaction failed: "], error);
           // Revert UI on failure
           if (likeButton) likeButton.classList.remove('selected');
           if (loveButton) loveButton.classList.remove('selected');
@@ -1195,7 +1195,7 @@
         alert('Post deleted successfully!');
       } catch (error) {
         console.error('Error deleting post:', error);
-        alert('Failed to delete post. Please try again.');
+        alert(translations[userLanguage]["Failed to delete post. Please try again."]);
       }
     }
 
@@ -1287,7 +1287,7 @@
             // Handle video preview
             checkVideoDuration(file, (isValid) => {
                 if (!isValid) {
-                    errorMessage.textContent = "Video must be 10 seconds or shorter.";
+                    errorMessage.textContent = translations[userLanguage]["Video must be 10 seconds or shorter."];
                     postMedia.value = '';
                     document.getElementById('video-preview-container').style.display = 'none';
                 } else {
@@ -1330,6 +1330,11 @@
     }
 
     let userLanguage = "English"; // Define globally
+    // Update placeholders
+    document.getElementById('post-content').placeholder = translations[userLanguage]["How's life treating ya?"];
+    document.querySelectorAll('.comment-input').forEach(input => {
+      input.placeholder = translations[userLanguage]["Write a comment..."];
+    });
 
     // Translations dictionary
     const translations = {
@@ -1352,6 +1357,8 @@
         "Feed": "Feed",
         "Profile": "Profile",
         "Post content cannot be empty.": "Post content cannot be empty.",
+        "Write a comment...": "Write a comment...",
+        "Transaction failed: ": "Transaction failed: ",
       },
       French: {
         "Create a Post": "Créer une publication",
@@ -1372,6 +1379,8 @@
         "Feed": "Fil d'actualité",
         "Profile": "Profil",
         "Post content cannot be empty.": "Le contenu de la publication ne peut pas être vide.",
+        "Write a comment...": "Écrivez un commentaire...",
+        "Transaction failed: ": "Échec de la transaction : ",
       },
       Korean: {
         "Create a Post": "게시물 작성",
@@ -1392,6 +1401,8 @@
         "Feed": "피드",
         "Profile": "프로필",
         "Post content cannot be empty.": "게시물 내용이 비어 있을 수 없습니다.",
+        "Write a comment...": "댓글을 작성하세요...",
+        "Transaction failed: ": "트랜잭션 실패: ",
       }
     };
     
