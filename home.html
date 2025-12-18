@@ -413,13 +413,13 @@
   </div>
 
   <div id="post-form">
-    <h3>Create a Post</h3>
-    <textarea id="post-content" placeholder="How's life treating ya?" rows="3"></textarea>
+    <h3 data-i18n="Create a Post">Create a Post</h3>
+    <textarea id="post-content" placeholder="How's life treating ya?" data-i18n="How's life treating ya?" rows="3"></textarea>
     <div class="post-form-actions">
       <label for="post-media" id="post-media-label">
-        <span>📷 Photo/Video</span>
+        <span data-i18n="Photo/Video">📷 Photo/Video</span>
       </label>
-      <button id="post-button">Post</button>
+      <button id="post-button" data-i18n="Post">Post</button>
     </div>
     <input type="file" id="post-media" accept="image/*,video/*" style="display: none;">
     <div id="image-preview-container" style="display: none; margin: 10px 0;">
@@ -433,34 +433,34 @@
     </div>
     <p id="error-message"></p>
   </div>
-
+  
   <div id="image-cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000;">
     <div style="max-width: 500px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px;">
-      <h3>Adjust Image</h3>
+      <h3 data-i18n="Adjust Image">Adjust Image</h3>
       <div style="margin-bottom: 10px;">
-        <button class="crop-orientation-button selected" data-orientation="horizontal">Horizontal</button>
-        <button class="crop-orientation-button" data-orientation="vertical">Vertical</button>
+        <button class="crop-orientation-button selected" data-orientation="horizontal" data-i18n="Horizontal">Horizontal</button>
+        <button class="crop-orientation-button" data-orientation="vertical" data-i18n="Vertical">Vertical</button>
       </div>
       <div style="width: 100%; height: 400px;">
         <img id="cropper-image" style="max-width: 100%;">
       </div>
-      <button id="crop-done-button" >Done</button>
-      <button id="crop-cancel-button" >Cancel</button>
+      <button id="crop-done-button" data-i18n="Done">Done</button>
+      <button id="crop-cancel-button" data-i18n="Cancel">Cancel</button>
     </div>
   </div>
   
   <div id="feed">
-    <h3>Your Feed</h3>
+    <h3 data-i18n="Your Feed">Your Feed</h3>
   </div>
-
+  
   <div id="bottom-nav-bar">
     <button class="nav-button" id="home-button">
       <span class="icon">🏠</span>
-      <span class="label">Feed</span>
+      <span class="label" data-i18n="Feed">Feed</span>
     </button>
     <button class="nav-button" id="profile-button">
       <span class="icon">👤</span>
-      <span class="label">Profile</span>
+      <span class="label" data-i18n="Profile">Profile</span>
     </button>
   </div>
 
@@ -508,13 +508,26 @@
 
     // Check if user is signed in and verified
     auth.onAuthStateChanged((user) => {
-        if (!user || !user.emailVerified) {
-            alert('Please sign in and verify your email to access the home feed.');
-            window.location.href = 'index.html';
-        } else {
-            logUserFriendsWithPosts(user.uid); // Call the new function
-            loadPosts();
-        }
+      if (!user || !user.emailVerified) {
+        alert('Please sign in and verify your email to access the home feed.');
+        window.location.href = 'index.html';
+      } else {
+        logUserFriendsWithPosts(user.uid); // Call the new function
+        loadPosts();
+    
+        // Load user data from Firestore to get the user's language
+        db.collection('users').doc(user.uid).get()
+          .then((doc) => {
+            if (doc.exists) {
+              const userData = doc.data();
+              userLanguage = userData.language || "English"; // Update globally
+              updatePageLanguage(userLanguage);
+            }
+          })
+          .catch((error) => {
+            console.error("Error loading user data:", error);
+          });
+      }
     });
 
     // Create a new post
@@ -1315,6 +1328,81 @@
           });
       });
     }
+
+    let userLanguage = "English"; // Define globally
+
+    // Translations dictionary
+    const translations = {
+      English: {
+        "Create a Post": "Create a Post",
+        "How's life treating ya?": "How's life treating ya?",
+        "Photo/Video": "Photo/Video",
+        "Post": "Post",
+        "Adjust Image": "Adjust Image",
+        "Horizontal": "Horizontal",
+        "Vertical": "Vertical",
+        "Done": "Done",
+        "Cancel": "Cancel",
+        "Video must be 10 seconds or shorter.": "Video must be 10 seconds or shorter.",
+        "Post created!": "Post created!",
+        "Are you sure you want to delete this post?": "Are you sure you want to delete this post?",
+        "Post deleted successfully!": "Post deleted successfully!",
+        "Failed to delete post. Please try again.": "Failed to delete post. Please try again.",
+        "Your Feed": "Your Feed",
+        "Feed": "Feed",
+        "Profile": "Profile",
+      },
+      French: {
+        "Create a Post": "Créer une publication",
+        "How's life treating ya?": "Comment ça va ?",
+        "Photo/Video": "Photo/Vidéo",
+        "Post": "Publier",
+        "Adjust Image": "Ajuster l'image",
+        "Horizontal": "Horizontal",
+        "Vertical": "Vertical",
+        "Done": "Terminé",
+        "Cancel": "Annuler",
+        "Video must be 10 seconds or shorter.": "La vidéo doit durer 10 secondes ou moins.",
+        "Post created!": "Publication créée !",
+        "Are you sure you want to delete this post?": "Êtes-vous sûr de vouloir supprimer cette publication ?",
+        "Post deleted successfully!": "Publication supprimée avec succès !",
+        "Failed to delete post. Please try again.": "Échec de la suppression de la publication. Veuillez réessayer.",
+        "Your Feed": "Votre fil d'actualité",
+        "Feed": "Fil d'actualité",
+        "Profile": "Profil",
+      },
+      Korean: {
+        "Create a Post": "게시물 작성",
+        "How's life treating ya?": "요즘 어떻게 지내세요?",
+        "Photo/Video": "사진/비디오",
+        "Post": "게시",
+        "Adjust Image": "이미지 조정",
+        "Horizontal": "가로",
+        "Vertical": "세로",
+        "Done": "완료",
+        "Cancel": "취소",
+        "Video must be 10 seconds or shorter.": "비디오는 10초 이하여야 합니다.",
+        "Post created!": "게시물이 작성되었습니다!",
+        "Are you sure you want to delete this post?": "이 게시물을 삭제하시겠습니까?",
+        "Post deleted successfully!": "게시물이 성공적으로 삭제되었습니다!",
+        "Failed to delete post. Please try again.": "게시물 삭제에 실패했습니다. 다시 시도해 주세요.",
+        "Your Feed": "피드",
+        "Feed": "피드",
+        "Profile": "프로필",
+      }
+    };
+    
+    // Function to update the page language
+    function updatePageLanguage(language) {
+      const lang = translations[language] || translations["English"];
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        const key = element.getAttribute("data-i18n");
+        if (lang[key]) {
+          element.textContent = lang[key];
+        }
+      });
+    }
+
   </script>
 </body>
 </html>
