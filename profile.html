@@ -576,7 +576,7 @@
                             })
                             .catch(error => {
                                 console.error('Error searching for user: ', error);
-                                alert('An error occurred while searching for the user.');
+                                alert(translations[userLanguage]["An error occurred while searching for the user."]);
                             });
                     });
             } else {
@@ -849,7 +849,7 @@
                 const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
                 user.reauthenticateWithCredential(credential).then(() => {
                     const newPassword = prompt(translations[userLanguage]["Enter your new password (at least 6 characters):"]);
-                    const confirmPassword = prompt('Confirm your new password:');
+                    const confirmPassword = prompt(translations[userLanguage]["Confirm your new password:"]);
 
                     if (newPassword && confirmPassword && newPassword === confirmPassword && newPassword.length >= 6) {
                         user.updatePassword(newPassword).then(() => {
@@ -874,7 +874,7 @@
           const confirmLogout = confirm(translations[userLanguage]["Are you sure you want to log out?"]);
           if (confirmLogout) {
             auth.signOut().then(() => {
-              alert('You have been logged out.');
+              alert(translations[userLanguage]["You have been logged out."]);
               window.location.href = 'index.html';
             }).catch((error) => {
               document.getElementById('error-message').textContent = error.message;
@@ -968,6 +968,7 @@
             "Are you sure you want to log out?": "Are you sure you want to log out?",
             "Please enter a name to search": "Please enter a name to search",
             "Hide Guide": "Hide Guide",
+            "An error occurred while searching for the user.": "An error occurred while searching for the user.",
               // ... rest of your translations
           },
           French: {
@@ -1018,6 +1019,7 @@
             "Are you sure you want to log out?": "Êtes-vous sûr de vouloir vous déconnecter ?",
             "Please enter a name to search": "Veuillez entrer un nom à rechercher",
             "Hide Guide": "Masquer le guide",
+            "An error occurred while searching for the user.": "Une erreur s'est produite lors de la recherche de l'utilisateur.",
               // ... rest of your translations
           },
           Korean: {
@@ -1068,6 +1070,7 @@
             "Are you sure you want to log out?": "로그아웃하시겠습니까?",
             "Please enter a name to search": "검색할 이름을 입력하세요",
             "Hide Guide": "가이드 숨기기",
+            "An error occurred while searching for the user.": "사용자를 검색하는 동안 오류가 발생했습니다.",
               // ... rest of your translations
           }
         };
