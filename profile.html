@@ -556,7 +556,7 @@
                     .then((doc) => {
                         const friends = doc.data()?.friends || [];
                         if (friends.length >= 15) {
-                            alert('You have reached the maximum number of friends (15).');
+                            alert(translations[userLanguage]["You have reached the maximum number of friends (15)."]);
                             return;
                         }
         
@@ -569,7 +569,7 @@
                                     const friendUid = friendDoc.id;
                                     sendRequest(user.uid, friendUid, friendUser.name);
                                 } else {
-                                    alert('User not found');
+                                    alert(translations[userLanguage]["User not found"]);
                                 }
                             })
                             .catch(error => {
@@ -811,7 +811,7 @@
                   null,
                   (error) => {
                     console.error('Upload error:', error);
-                    document.getElementById('error-message').textContent = 'Failed to upload profile picture.';
+                    document.getElementById('error-message').textContent = translations[userLanguage]["Failed to upload profile picture."];
                   },
                   () => {
                     uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
@@ -819,7 +819,7 @@
                         profilePictureURL: downloadURL
                       }).then(() => {
                         document.getElementById('profile-picture').src = downloadURL;
-                        document.getElementById('success-message').textContent = 'Profile picture updated!';
+                        document.getElementById('success-message').textContent = translations[userLanguage]["Profile picture updated!"];
                         document.getElementById('cropper-modal').style.display = 'none';
                         cropper.destroy();
                       });
@@ -841,12 +841,12 @@
 
         // Change Password
         document.getElementById('change-password-button').addEventListener('click', () => {
-            const currentPassword = prompt('Enter your current password:');
+            const currentPassword = prompt(translations[userLanguage]["Enter your current password:"]);
             if (currentPassword) {
                 const user = auth.currentUser;
                 const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
                 user.reauthenticateWithCredential(credential).then(() => {
-                    const newPassword = prompt('Enter your new password (at least 6 characters):');
+                    const newPassword = prompt(translations[userLanguage]["Enter your new password (at least 6 characters):"]);
                     const confirmPassword = prompt('Confirm your new password:');
 
                     if (newPassword && confirmPassword && newPassword === confirmPassword && newPassword.length >= 6) {
@@ -950,6 +950,21 @@
             "Profile picture updated!": "Profile picture updated!",
             "Feed": "Feed",
             "Profile": "Profile",
+            "Enter your current password:": "Enter your current password:",
+            "Enter your new password (at least 6 characters):": "Enter your new password (at least 6 characters):",
+            "Confirm your new password:": "Confirm your new password:",
+            "Passwords do not match or are too short. Please try again.": "Passwords do not match or are too short. Please try again.",
+            "Current password is incorrect.": "Current password is incorrect.",
+            "You have been logged out.": "You have been logged out.",
+            "User not found": "User not found",
+            "Friend request sent!": "Friend request sent!",
+            "Friend request accepted!": "Friend request accepted!",
+            "Failed to send friend request.": "Failed to send friend request.",
+            "Failed to update friends lists.": "Failed to update friends lists.",
+            "Failed to remove friend.": "Failed to remove friend: user or friend not found.",
+            "Are you sure you want to remove this friend?": "Are you sure you want to remove this friend?",
+            "Are you sure you want to log out?": "Are you sure you want to log out?",
+            "Please enter a name to search": "Please enter a name to search",
               // ... rest of your translations
           },
           French: {
@@ -984,6 +999,21 @@
             "Profile picture updated!": "Photo de profil mise à jour !",
             "Feed": "Fil d'actualité",
             "Profile": "Profil",
+            "Enter your current password:": "Entrez votre mot de passe actuel :",
+            "Enter your new password (at least 6 characters):": "Entrez votre nouveau mot de passe (au moins 6 caractères) :",
+            "Confirm your new password:": "Confirmez votre nouveau mot de passe :",
+            "Passwords do not match or are too short. Please try again.": "Les mots de passe ne correspondent pas ou sont trop courts. Veuillez réessayer.",
+            "Current password is incorrect.": "Le mot de passe actuel est incorrect.",
+            "You have been logged out.": "Vous avez été déconnecté.",
+            "User not found": "Utilisateur introuvable",
+            "Friend request sent!": "Demande d'ami envoyée !",
+            "Friend request accepted!": "Demande d'ami acceptée !",
+            "Failed to send friend request.": "Échec de l'envoi de la demande d'ami.",
+            "Failed to update friends lists.": "Échec de la mise à jour des listes d'amis.",
+            "Failed to remove friend.": "Échec de la suppression de l'ami : utilisateur ou ami introuvable.",
+            "Are you sure you want to remove this friend?": "Êtes-vous sûr de vouloir retirer cet ami ?",
+            "Are you sure you want to log out?": "Êtes-vous sûr de vouloir vous déconnecter ?",
+            "Please enter a name to search": "Veuillez entrer un nom à rechercher",
               // ... rest of your translations
           },
           Korean: {
@@ -1018,6 +1048,21 @@
             "Profile picture updated!": "프로필 사진이 업데이트되었습니다!",
             "Feed": "피드",
             "Profile": "프로필",
+            "Enter your current password:": "현재 비밀번호를 입력하세요:",
+            "Enter your new password (at least 6 characters):": "새 비밀번호(최소 6자 이상)를 입력하세요:",
+            "Confirm your new password:": "새 비밀번호를 확인하세요:",
+            "Passwords do not match or are too short. Please try again.": "비밀번호가 일치하지 않거나 너무 짧습니다. 다시 시도해 주세요.",
+            "Current password is incorrect.": "현재 비밀번호가 올바르지 않습니다.",
+            "You have been logged out.": "로그아웃되었습니다.",
+            "User not found": "사용자를 찾을 수 없음",
+            "Friend request sent!": "친구 요청이 전송되었습니다!",
+            "Friend request accepted!": "친구 요청이 수락되었습니다!",
+            "Failed to send friend request.": "친구 요청 전송에 실패했습니다.",
+            "Failed to update friends lists.": "친구 목록 업데이트에 실패했습니다.",
+            "Failed to remove friend.": "친구 삭제에 실패했습니다: 사용자 또는 친구를 찾을 수 없습니다.",
+            "Are you sure you want to remove this friend?": "이 친구를 삭제하시겠습니까?",
+            "Are you sure you want to log out?": "로그아웃하시겠습니까?",
+            "Please enter a name to search": "검색할 이름을 입력하세요",
               // ... rest of your translations
           }
         };
