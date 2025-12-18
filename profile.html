@@ -351,7 +351,7 @@
         <h1>Estaco</h1>
       </div>
 
-      <div data-i18n="Platform Rules" id="download-app-section" style="margin: 20px auto; text-align: center; max-width: 400px;">
+      <div id="download-app-section" style="margin: 20px auto; text-align: center; max-width: 400px;">
           <button id="download-app-button" style="
           background-color: var(--estaco-accent);
           color: var(--estaco-text);
@@ -366,20 +366,20 @@
           Download the App
         </button>
         <div id="install-guide" style="display: none; margin-top: 20px; text-align: left; background-color: var(--estaco-surface); padding: 20px; border-radius: 12px;">
-          <h3 data-i18n="Platform Rules" style="color: var(--estaco-primary);">How to Install the App</h3>
-          <p data-i18n="Platform Rules"><strong>Android:</strong></p>
+          <h3 style="color: var(--estaco-primary);">How to Install the App</h3>
+          <p><strong>Android:</strong></p>
           <ol>
-            <li data-i18n="Platform Rules">Tap the <strong>three dots (⋮)</strong> in the top-right corner of your browser.</li>
-            <li data-i18n="Platform Rules">Select <strong>"Add to Home screen"</strong>.</li>
-            <li data-i18n="Platform Rules">Tap <strong>"Add"</strong> to confirm.</li>
+            <li>Tap the <strong>three dots (⋮)</strong> in the top-right corner of your browser.</li>
+            <li>Select <strong>"Add to Home screen"</strong>.</li>
+            <li>Tap <strong>"Add"</strong> to confirm.</li>
           </ol>
-          <p data-i18n="Platform Rules"><strong>iPhone (iOS):</strong></p>
+          <p><strong>iPhone (iOS):</strong></p>
           <ol>
-            <li data-i18n="Platform Rules">Tap the <strong>Share button (↑)</strong> at the bottom of your screen.</li>
-            <li data-i18n="Platform Rules">Scroll down and select <strong>"Add to Home Screen"</strong>.</li>
-            <li data-i18n="Platform Rules">Tap <strong>"Add"</strong> to confirm.</li>
+            <li>Tap the <strong>Share button (↑)</strong> at the bottom of your screen.</li>
+            <li>Scroll down and select <strong>"Add to Home Screen"</strong>.</li>
+            <li>Tap <strong>"Add"</strong> to confirm.</li>
           </ol>
-          <p data-i18n="Platform Rules" style="font-size: 14px; color: var(--estaco-text-light);">The app will now appear on your home screen like a normal app!</p>
+          <p style="font-size: 14px; color: var(--estaco-text-light);">The app will now appear on your home screen like a normal app!</p>
         </div>
       </div>
     
@@ -390,24 +390,24 @@
           <img id="profile-picture" src="" alt="Profile Picture" class="profile-picture">
         </div>
         <div class="profile-details">
-          <h2 data-i18n="Platform Rules" id="user-name">User Name</h2>
+          <h2 id="user-name">User Name</h2>
           <p id="user-email">user@example.com</p>
         </div>
         <div class="profile-actions">
-          <button data-i18n="Platform Rules" id="update-profile-pic-button" class="button">Update Profile Picture</button>
-          <button data-i18n="Platform Rules" id="change-password-button" class="button">Change Password</button>
-          <button data-i18n="Platform Rules" id="logout-button" class="button">Log Out</button>
+          <button id="update-profile-pic-button" class="button">Update Profile Picture</button>
+          <button id="change-password-button" class="button">Change Password</button>
+          <button id="logout-button" class="button">Log Out</button>
         </div>
       </div>
     
       <div class="section">
-        <h3 data-i18n="Platform Rules">Platform Rules</h3>
+        <h3>Platform Rules</h3>
         <div class="rules-container">
-          <p data-i18n="Platform Rules"><strong>1.</strong> Max 15 friends.</p>
-          <p data-i18n="Platform Rules"><strong>2.</strong> Your posts are not visible to users who are not your friends.</p>
-          <p data-i18n="Platform Rules"><strong>3.</strong> Your comments and reactions are not visible to users who are not your friends.</p>
+          <p><strong>1.</strong> Max 15 friends.</p>
+          <p><strong>2.</strong> Your posts are not visible to users who are not your friends.</p>
+          <p><strong>3.</strong> Your comments and reactions are not visible to users who are not your friends.</p>
           <div class="example">
-            <p data-i18n="Platform Rules"><strong>Example:</strong> John is friends with Mike but not with Jenny. Mike is friends with Jenny. If Jenny comments on Mike's post, John will see Mike's post but not Jenny's comment.</p>
+            <p><strong>Example:</strong> John is friends with Mike but not with Jenny. Mike is friends with Jenny. If Jenny comments on Mike's post, John will see Mike's post but not Jenny's comment.</p>
           </div>
         </div>
       </div>
@@ -415,20 +415,20 @@
       <!-- Profile Content -->
       <div class="profile-content">
         <div class="section">
-          <h3 data-i18n="Platform Rules">Friend System</h3>
+          <h3>Friend System</h3>
           <div class="search-friend">
-            <input data-i18n="Platform Rules" type="text" id="search-friend" placeholder="Search by name...">
-            <button data-i18n="Platform Rules" id="send-friend-request" class="button">Send Friend Request</button>
+            <input type="text" id="search-friend" placeholder="Search by name...">
+            <button id="send-friend-request" class="button">Send Friend Request</button>
           </div>
         </div>
     
         <div class="section">
-          <h3 data-i18n="Platform Rules">Pending Friend Requests</h3>
+          <h3>Pending Friend Requests</h3>
           <div id="pending-friend-requests" class="friend-list"></div>
         </div>
     
         <div class="section">
-          <h3 data-i18n="Platform Rules">Current Friends</h3>
+          <h3>Current Friends</h3>
           <div id="current-friends" class="friend-list"></div>
         </div>
       </div>
@@ -436,7 +436,7 @@
       <!-- Cropper Modal -->
       <div id="cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
         <div style="max-width: 500px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px;">
-          <h3 data-i18n="Platform Rules">Crop Profile Picture</h3>
+          <h3>Crop Profile Picture</h3>
           <div style="width: 100%; height: 400px;">
             <img id="cropper-image" style="max-width: 100%;">
           </div>
