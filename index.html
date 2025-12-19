@@ -264,29 +264,9 @@
       appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
     };
     firebase.initializeApp(firebaseConfig);
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      .then(() => {
-        // Now the auth state will persist even after the browser is closed
-      })
-      .catch((error) => {
-        console.error("Error enabling persistence:", error);
-      });
     const auth = firebase.auth();
     const db = firebase.firestore();
     const functions = firebase.functions();
-
-    auth.onAuthStateChanged((user) => {
-      if (user && user.emailVerified) {
-        // User is signed in and verified, redirect to home
-        window.location.href = 'home.html';
-      } else if (user && !user.emailVerified) {
-        // User is signed in but not verified, prompt for verification
-        alert("Please verify your email before signing in.");
-        auth.signOut();
-      } else {
-        // User is not signed in, show login/signup
-      }
-    });
 
     // Rest of your JavaScript logic remains unchanged
     const showSignup = document.getElementById('show-signup');
