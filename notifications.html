@@ -193,20 +193,23 @@
         const notifications = [];
         for (const postDoc of postsSnapshot.docs) {
           const post = postDoc.data();
+          const postTimestamp = post.timestamp;
           const reactions = post.reactions || {};
           for (const [reactorId, reactionData] of Object.entries(reactions)) {
             if (reactorId !== userId) { // Skip self-reactions
               const reactorDoc = await db.collection('users').doc(reactorId).get();
               const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
               const reactorProfilePicture = reactorDoc.exists ? reactorDoc.data().profilePictureURL : null;
+              // Use reaction timestamp if available, otherwise use post timestamp
+              const reactionTimestamp = reactionData.timestamp || postTimestamp;
               notifications.push({
                 reactorId,
                 reactorName,
                 reactorProfilePicture,
-                reaction: reactionData.type,
+                reaction: reactionData.type || reactionData, // Handle both old and new formats
                 postId: postDoc.id,
                 postContent: post.content,
-                reactionTimestamp: reactionData.timestamp, // Use reaction timestamp
+                reactionTimestamp: reactionTimestamp,
               });
             }
           }
