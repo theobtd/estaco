@@ -114,22 +114,22 @@
 </head>
 <body>
   <div id="top-nav-bar">
-    <h1>Notifications</h1>
+    <h1 data-i18n="Notifications">Notifications</h1>
   </div>
 
   <div id="notifications">
-    <h3>Your Notifications</h3>
+    <h3 data-i18n="Your Notifications">Your Notifications</h3>
     <div id="notifications-list"></div>
   </div>
 
   <div id="bottom-nav-bar">
     <button class="nav-button" id="home-button">
       <span class="icon">🏠</span>
-      <span class="label">Feed</span>
+      <span class="label" data-i18n="Feed">Feed</span>
     </button>
     <button class="nav-button" id="profile-button">
       <span class="icon">👤</span>
-      <span class="label">Profile</span>
+      <span class="label" data-i18n="Profile">Profile</span>
     </button>
   </div>
 
@@ -165,13 +165,82 @@
       window.location.href = 'profile.html';
     });
 
+    // Translations dictionary
+    const translations = {
+      English: {
+        "Notifications": "Notifications",
+        "Your Notifications": "Your Notifications",
+        "Liked": "Liked",
+        "Loved": "Loved",
+        "Laughed at": "Laughed at",
+        "Reacted to": "Reacted to",
+        "Feed": "Feed",
+        "Profile": "Profile",
+        "No posts found.": "No posts found.",
+        "No notifications yet.": "No notifications yet.",
+        "Error loading notifications. Please try again.": "Error loading notifications. Please try again."
+      },
+      French: {
+        "Notifications": "Notifications",
+        "Your Notifications": "Vos notifications",
+        "Liked": "A aimé",
+        "Loved": "A adoré",
+        "Laughed at": "A ri à",
+        "Reacted to": "A réagi à",
+        "Feed": "Fil d'actualité",
+        "Profile": "Profil",
+        "No posts found.": "Aucune publication trouvée.",
+        "No notifications yet.": "Aucune notification pour l'instant.",
+        "Error loading notifications. Please try again.": "Erreur de chargement des notifications. Veuillez réessayer."
+      },
+      Korean: {
+        "Notifications": "알림",
+        "Your Notifications": "알림",
+        "Liked": "좋아요",
+        "Loved": "사랑해요",
+        "Laughed at": "웃음",
+        "Reacted to": "반응함",
+        "Feed": "피드",
+        "Profile": "프로필",
+        "No posts found.": "게시물이 없습니다.",
+        "No notifications yet.": "알림이 없습니다.",
+        "Error loading notifications. Please try again.": "알림을 불러오는 중 오류가 발생했습니다. 다시 시도해 주세요."
+      }
+    };
+
+    let userLanguage = "English"; // Default language
+
+    // Function to update the page language
+    function updatePageLanguage(language) {
+      const lang = translations[language] || translations["English"];
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        const key = element.getAttribute("data-i18n");
+        if (lang[key]) {
+          element.textContent = lang[key];
+        }
+      });
+    }
+
     // Check if user is signed in and verified
     auth.onAuthStateChanged((user) => {
       if (!user || !user.emailVerified) {
         alert('Please sign in and verify your email to access notifications.');
         window.location.href = 'index.html';
       } else {
-        loadNotifications(user.uid);
+        // Load user data from Firestore to get the user's language
+        db.collection('users').doc(user.uid).get()
+          .then((doc) => {
+            if (doc.exists) {
+              const userData = doc.data();
+              userLanguage = userData.language || "English"; // Update globally
+              updatePageLanguage(userLanguage);
+            }
+            loadNotifications(user.uid);
+          })
+          .catch((error) => {
+            console.error("Error loading user data:", error);
+            loadNotifications(user.uid); // Load notifications even if language fails
+          });
       }
     });
 
@@ -183,12 +252,12 @@
           .where('authorId', '==', userId)
           .orderBy('timestamp', 'desc')
           .get();
-    
+
         if (postsSnapshot.empty) {
-          notificationsList.innerHTML = '<p>No posts found.</p>';
+          notificationsList.innerHTML = `<p>${translations[userLanguage]["No posts found."]}</p>`;
           return;
         }
-    
+
         // For each post, fetch reactions
         const notifications = [];
         for (const postDoc of postsSnapshot.docs) {
@@ -200,27 +269,28 @@
               const reactorDoc = await db.collection('users').doc(reactorId).get();
               const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
               const reactorProfilePicture = reactorDoc.exists ? reactorDoc.data().profilePictureURL : null;
-              // Use reaction timestamp if available, otherwise use post timestamp
-              const reactionTimestamp = reactionData.timestamp || postTimestamp;
-              notifications.push({
-                reactorId,
-                reactorName,
-                reactorProfilePicture,
-                reaction: reactionData.type || reactionData, // Handle both old and new formats
-                postId: postDoc.id,
-                postContent: post.content,
-                reactionTimestamp: reactionTimestamp,
-              });
+              // Only include reactions with a timestamp
+              if (reactionData.timestamp) {
+                notifications.push({
+                  reactorId,
+                  reactorName,
+                  reactorProfilePicture,
+                  reaction: reactionData.type || reactionData,
+                  postId: postDoc.id,
+                  postContent: post.content,
+                  reactionTimestamp: reactionData.timestamp,
+                });
+              }
             }
           }
         }
-    
+
         // Sort notifications by reaction timestamp (newest first)
         notifications.sort((a, b) => b.reactionTimestamp.toDate() - a.reactionTimestamp.toDate());
-    
+
         // Render notifications
         if (notifications.length === 0) {
-          notificationsList.innerHTML = '<p>No notifications yet.</p>';
+          notificationsList.innerHTML = `<p>${translations[userLanguage]["No notifications yet."]}</p>`;
         } else {
           notificationsList.innerHTML = notifications.map(notification => `
             <div class="notification">
@@ -230,9 +300,9 @@
                   : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
                 <strong>${notification.reactorName}</strong>
                 <span style="margin-left: 5px;">
-                  ${notification.reaction === 'like' ? '👍 Liked' :
-                    notification.reaction === 'love' ? '❤️ Loved' :
-                    notification.reaction === 'laugh' ? '😂 Laughed at' : 'Reacted to'}
+                  ${notification.reaction === 'like' ? '👍 ' + translations[userLanguage]["Liked"] :
+                    notification.reaction === 'love' ? '❤️ ' + translations[userLanguage]["Loved"] :
+                    notification.reaction === 'laugh' ? '😂 ' + translations[userLanguage]["Laughed at"] : translations[userLanguage]["Reacted to"]}
                   your post
                 </span>
               </div>
@@ -247,7 +317,7 @@
         }
       } catch (error) {
         console.error("Error loading notifications:", error);
-        notificationsList.innerHTML = '<p>Error loading notifications. Please try again.</p>';
+        notificationsList.innerHTML = `<p>${translations[userLanguage]["Error loading notifications. Please try again."]}</p>`;
       }
     }
   </script>
