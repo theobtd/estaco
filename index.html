@@ -275,6 +275,19 @@
     const db = firebase.firestore();
     const functions = firebase.functions();
 
+    auth.onAuthStateChanged((user) => {
+      if (user && user.emailVerified) {
+        // User is signed in and verified, redirect to home
+        window.location.href = 'home.html';
+      } else if (user && !user.emailVerified) {
+        // User is signed in but not verified, prompt for verification
+        alert("Please verify your email before signing in.");
+        auth.signOut();
+      } else {
+        // User is not signed in, show login/signup
+      }
+    });
+
     // Rest of your JavaScript logic remains unchanged
     const showSignup = document.getElementById('show-signup');
     const showSignin = document.getElementById('show-signin');
