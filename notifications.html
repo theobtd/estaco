@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estaco - Notifications</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --estaco-primary: #8B8E6F;
+      --estaco-primary-light: #A7A98C;
+      --estaco-secondary: #E2725B;
+      --estaco-accent: #FFD700;
+      --estaco-background: #FFFFFF;
+      --estaco-surface: #F9F9F9;
+      --estaco-text: #333333;
+      --estaco-text-light: #666666;
+      --estaco-border: #E0E0E0;
+      --estaco-error: #F44336;
+      --estaco-success: #4CAF50;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      padding-top: 60px;
+      padding-bottom: 60px;
+      background-color: var(--estaco-background);
+    }
+    #top-nav-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: white;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 10px 0;
+      z-index: 100;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    #top-nav-bar h1 {
+      margin: 0;
+      font-size: 24px;
+      color: var(--estaco-primary);
+      font-weight: 500;
+    }
+    #notifications {
+      padding: 20px;
+    }
+    .notification {
+      padding: 15px;
+      border: 1px solid var(--estaco-border);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      background: var(--estaco-surface);
+    }
+    .notification-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .notification-author-picture {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .notification-content {
+      margin-left: 40px;
+      color: var(--estaco-text);
+    }
+    .notification-post {
+      margin-top: 5px;
+      font-size: 14px;
+      color: var(--estaco-text-light);
+    }
+    #bottom-nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background-color: white;
+      border-top: 1px solid #e0e0e0;
+      padding: 8px 0;
+      z-index: 100;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+    }
+    .nav-button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 12px;
+      color: #333;
+      font-size: 12px;
+    }
+    .nav-button .icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    .nav-button .label {
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="top-nav-bar">
+    <h1>Notifications</h1>
+  </div>
+
+  <div id="notifications">
+    <h3>Your Notifications</h3>
+    <div id="notifications-list"></div>
+  </div>
+
+  <div id="bottom-nav-bar">
+    <button class="nav-button" id="home-button">
+      <span class="icon">🏠</span>
+      <span class="label">Feed</span>
+    </button>
+    <button class="nav-button" id="profile-button">
+      <span class="icon">👤</span>
+      <span class="label">Profile</span>
+    </button>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Your Firebase config (same as home.html)
+    const firebaseConfig = {
+      apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
+      authDomain: "estaco-add3c.firebaseapp.com",
+      projectId: "estaco-add3c",
+      storageBucket: "estaco-add3c.firebasestorage.app",
+      messagingSenderId: "876337002297",
+      appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // DOM elements
+    const notificationsList = document.getElementById('notifications-list');
+
+    // Navigate to other pages
+    document.getElementById('home-button').addEventListener('click', () => {
+      window.location.href = 'home.html';
+    });
+    document.getElementById('profile-button').addEventListener('click', () => {
+      window.location.href = 'profile.html';
+    });
+
+    // Check if user is signed in and verified
+    auth.onAuthStateChanged((user) => {
+      if (!user || !user.emailVerified) {
+        alert('Please sign in and verify your email to access notifications.');
+        window.location.href = 'index.html';
+      } else {
+        loadNotifications(user.uid);
+      }
+    });
+
+    // Function to load notifications (reactions to user's posts)
+    async function loadNotifications(userId) {
+      try {
+        // Fetch all posts by the user
+        const postsSnapshot = await db.collection('posts')
+          .where('authorId', '==', userId)
+          .orderBy('timestamp', 'desc')
+          .get();
+
+        if (postsSnapshot.empty) {
+          notificationsList.innerHTML = '<p>No posts found.</p>';
+          return;
+        }
+
+        // For each post, fetch reactions
+        const notifications = [];
+        for (const postDoc of postsSnapshot.docs) {
+          const post = postDoc.data();
+          const reactions = post.reactions || {};
+          for (const [reactorId, reaction] of Object.entries(reactions)) {
+            if (reactorId !== userId) { // Skip self-reactions
+              const reactorDoc = await db.collection('users').doc(reactorId).get();
+              const reactorName = reactorDoc.exists ? reactorDoc.data().displayName || "Unknown User" : "Unknown User";
+              const reactorProfilePicture = reactorDoc.exists ? reactorDoc.data().profilePictureURL : null;
+              notifications.push({
+                reactorId,
+                reactorName,
+                reactorProfilePicture,
+                reaction,
+                postId: postDoc.id,
+                postContent: post.content,
+                timestamp: post.timestamp,
+              });
+            }
+          }
+        }
+
+        // Sort notifications by timestamp (newest first)
+        notifications.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+
+        // Render notifications
+        if (notifications.length === 0) {
+          notificationsList.innerHTML = '<p>No notifications yet.</p>';
+        } else {
+          notificationsList.innerHTML = notifications.map(notification => `
+            <div class="notification">
+              <div class="notification-header">
+                ${notification.reactorProfilePicture
+                  ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
+                  : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
+                <strong>${notification.reactorName}</strong>
+                <span style="margin-left: 5px;">
+                  ${notification.reaction === 'like' ? '👍 Liked' :
+                    notification.reaction === 'love' ? '❤️ Loved' :
+                    notification.reaction === 'laugh' ? '😂 Laughed at' : 'Reacted to'}
+                  your post
+                </span>
+              </div>
+              <div class="notification-content">
+                <p>${notification.postContent}</p>
+              </div>
+              <div class="notification-post">
+                ${new Date(notification.timestamp.toDate()).toLocaleString()}
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        console.error("Error loading notifications:", error);
+        notificationsList.innerHTML = '<p>Error loading notifications. Please try again.</p>';
+      }
+    }
+  </script>
+</body>
+</html>
