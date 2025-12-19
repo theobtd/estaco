@@ -127,6 +127,10 @@
       <span class="icon">🏠</span>
       <span class="label">Feed</span>
     </button>
+    <button class="nav-button" id="notifications-button">
+      <span class="icon">🔔</span>
+      <span class="label">Notifications</span>
+    </button>
     <button class="nav-button" id="profile-button">
       <span class="icon">👤</span>
       <span class="label">Profile</span>
@@ -160,6 +164,9 @@
     // Navigate to other pages
     document.getElementById('home-button').addEventListener('click', () => {
       window.location.href = 'home.html';
+    });
+    document.getElementById('notifications-button').addEventListener('click', () => {
+      window.location.href = 'notifications.html';
     });
     document.getElementById('profile-button').addEventListener('click', () => {
       window.location.href = 'profile.html';
