@@ -183,18 +183,18 @@
           .where('authorId', '==', userId)
           .orderBy('timestamp', 'desc')
           .get();
-
+    
         if (postsSnapshot.empty) {
           notificationsList.innerHTML = '<p>No posts found.</p>';
           return;
         }
-
+    
         // For each post, fetch reactions
         const notifications = [];
         for (const postDoc of postsSnapshot.docs) {
           const post = postDoc.data();
           const reactions = post.reactions || {};
-          for (const [reactorId, reaction] of Object.entries(reactions)) {
+          for (const [reactorId, reactionData] of Object.entries(reactions)) {
             if (reactorId !== userId) { // Skip self-reactions
               const reactorDoc = await db.collection('users').doc(reactorId).get();
               const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
@@ -203,18 +203,18 @@
                 reactorId,
                 reactorName,
                 reactorProfilePicture,
-                reaction,
+                reaction: reactionData.type,
                 postId: postDoc.id,
                 postContent: post.content,
-                timestamp: post.timestamp,
+                reactionTimestamp: reactionData.timestamp, // Use reaction timestamp
               });
             }
           }
         }
-
-        // Sort notifications by timestamp (newest first)
-        notifications.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-
+    
+        // Sort notifications by reaction timestamp (newest first)
+        notifications.sort((a, b) => b.reactionTimestamp.toDate() - a.reactionTimestamp.toDate());
+    
         // Render notifications
         if (notifications.length === 0) {
           notificationsList.innerHTML = '<p>No notifications yet.</p>';
@@ -237,7 +237,7 @@
                 <p>${notification.postContent}</p>
               </div>
               <div class="notification-post">
-                ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                ${new Date(notification.reactionTimestamp.toDate()).toLocaleString()}
               </div>
             </div>
           `).join('');
