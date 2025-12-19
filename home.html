@@ -458,6 +458,10 @@
       <span class="icon">🏠</span>
       <span class="label" data-i18n="Feed">Feed</span>
     </button>
+    <button class="nav-button" id="notifications-button">
+      <span class="icon">🔔</span>
+      <span class="label">Notifications</span>
+    </button>
     <button class="nav-button" id="profile-button">
       <span class="icon">👤</span>
       <span class="label" data-i18n="Profile">Profile</span>
@@ -500,6 +504,10 @@
     // Navigate to Profile Page
     document.getElementById('profile-button').addEventListener('click', () => {
       window.location.href = 'profile.html';
+    });
+
+    document.getElementById('notifications-button').addEventListener('click', () => {
+      window.location.href = 'notifications.html';
     });
     
     document.getElementById('home-button').addEventListener('click', () => {
