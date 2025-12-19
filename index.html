@@ -264,6 +264,13 @@
       appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
     };
     firebase.initializeApp(firebaseConfig);
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .then(() => {
+        // Now the auth state will persist even after the browser is closed
+      })
+      .catch((error) => {
+        console.error("Error enabling persistence:", error);
+      });
     const auth = firebase.auth();
     const db = firebase.firestore();
     const functions = firebase.functions();
