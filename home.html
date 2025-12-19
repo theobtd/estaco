@@ -870,13 +870,16 @@
             const postData = doc.data();
             const reactions = postData.reactions || {};
             const userReaction = reactions[user.uid];
-    
-            if (userReaction === reaction) {
+        
+            if (userReaction && userReaction.type === reaction) {
               delete reactions[user.uid];
             } else {
-              reactions[user.uid] = reaction;
+              reactions[user.uid] = {
+                type: reaction,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              };
             }
-    
+        
             transaction.update(postRef, { reactions });
           });
         }).catch((error) => {
@@ -898,9 +901,9 @@
                 const reactions = post.reactions || {};
                 let likeCount = 0, loveCount = 0, laughCount = 0;
                 Object.values(reactions).forEach(r => {
-                  if (r === 'like') likeCount++;
-                  if (r === 'love') loveCount++;
-                  if (r === 'laugh') laughCount++;
+                  if (r.type === 'like') likeCount++;
+                  if (r.type === 'love') loveCount++;
+                  if (r.type === 'laugh') laughCount++;
                 });
                 const likeCountEl = likeButton ? likeButton.querySelector('.reaction-count') : null;
                 const loveCountEl = loveButton ? loveButton.querySelector('.reaction-count') : null;
