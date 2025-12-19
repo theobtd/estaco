@@ -197,7 +197,7 @@
           for (const [reactorId, reaction] of Object.entries(reactions)) {
             if (reactorId !== userId) { // Skip self-reactions
               const reactorDoc = await db.collection('users').doc(reactorId).get();
-              const reactorName = reactorDoc.exists ? reactorDoc.data().displayName || "Unknown User" : "Unknown User";
+              const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
               const reactorProfilePicture = reactorDoc.exists ? reactorDoc.data().profilePictureURL : null;
               notifications.push({
                 reactorId,
