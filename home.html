@@ -688,16 +688,16 @@
     
             // Get the current user's reaction for this post
             const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
-            const likeClass = userReaction === 'like' ? 'selected' : '';
-            const loveClass = userReaction === 'love' ? 'selected' : '';
-            const laughClass = userReaction === 'laugh' ? 'selected' : '';
-    
+            const likeClass = userReaction && userReaction.type === 'like' ? 'selected' : '';
+            const loveClass = userReaction && userReaction.type === 'love' ? 'selected' : '';
+            const laughClass = userReaction && userReaction.type === 'laugh' ? 'selected' : '';
+            
             const reactions = post.reactions || {};
             let likeCount = 0, loveCount = 0, laughCount = 0;
             Object.values(reactions).forEach(reaction => {
-                if (reaction === 'like') likeCount++;
-                if (reaction === 'love') loveCount++;
-                if (reaction === 'laugh') laughCount++;
+                if (reaction.type === 'like') likeCount++;
+                if (reaction.type === 'love') loveCount++;
+                if (reaction.type === 'laugh') laughCount++;
             });
     
             const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
@@ -829,19 +829,19 @@
               const reactions = post.reactions || {};
               let likeCount = 0, loveCount = 0, laughCount = 0;
               Object.values(reactions).forEach(r => {
-                if (r === 'like') likeCount++;
-                if (r === 'love') loveCount++;
-                if (r === 'laugh') laughCount++;
+                if (r.type === 'like') likeCount++;
+                if (r.type === 'love') loveCount++;
+                if (r.type === 'laugh') laughCount++;
               });
-    
+        
               // Get the previous reaction (if any)
               const prevReaction = reactions[user.uid];
-    
+        
               // If there was a previous reaction, decrement its count
               if (prevReaction) {
-                if (prevReaction === 'like') likeCount--;
-                if (prevReaction === 'love') loveCount--;
-                if (prevReaction === 'laugh') laughCount--;
+                if (prevReaction.type === 'like') likeCount--;
+                if (prevReaction.type === 'love') loveCount--;
+                if (prevReaction.type === 'laugh') laughCount--;
               }
     
               // If the clicked button was not selected, increment its count
