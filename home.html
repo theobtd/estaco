@@ -597,11 +597,12 @@
             Promise.all(uploadPromises)
               .then(() => {
                 alert('Post created!');
+                window.location.reload(); // <-- Add this line
                 postContent.value = '';
                 postMedia.value = '';
                 document.getElementById('image-preview-container').style.display = 'none';
                 document.getElementById('video-preview-container').style.display = 'none';
-                loadPosts();
+                // Remove loadPosts(); since the page will reload
               })
               .catch((error) => {
                 errorMessage.textContent = error.message;
