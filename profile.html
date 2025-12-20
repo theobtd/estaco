@@ -73,26 +73,27 @@
           margin-bottom: 16px;
           position: relative;
           width: 120px;
-          height: 120px; /* Fixed height */
+          height: 120px;
           border-radius: 15%;
-          overflow: hidden; /* Ensures child elements respect the border-radius */
+          overflow: hidden;
           border: 3px solid var(--estaco-primary);
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-    
+        
         .profile-picture-placeholder,
         .profile-picture {
-          width: 120px;
-          height: 120px;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
           border-radius: 15%;
           object-fit: cover;
           display: block;
-          border: 3px solid var(--estaco-primary);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-
+        
         .profile-picture {
-          display: none; /* Hide by default, show only when image is loaded */
+          display: none;
         }
     
         .profile-details {
@@ -717,19 +718,17 @@
             document.getElementById('user-name').textContent = user.displayName || "No name set";
             document.getElementById('user-email').textContent = user.email;
         
-            // Show placeholder immediately
             const placeholder = document.getElementById('profile-picture-placeholder');
             const img = document.getElementById('profile-picture');
             placeholder.innerHTML = getInitialsFallback(user.displayName || "No name set");
             placeholder.style.display = 'block';
             img.style.display = 'none';
         
-            // Load user data from Firestore
             db.collection('users').doc(user.uid).get()
               .then((doc) => {
                 if (doc.exists) {
                   const userData = doc.data();
-                  userLanguage = userData.language || "English"; // Update globally
+                  userLanguage = userData.language || "English";
                   updatePageLanguage(userLanguage);
                   if (userData.profilePictureURL) {
                     img.src = userData.profilePictureURL;
@@ -738,9 +737,6 @@
                       placeholder.style.display = 'none';
                     };
                   }
-                  // If no profile picture, placeholder is already shown
-                } else {
-                  // No user data, placeholder is already shown
                 }
               })
               .catch((error) => {
