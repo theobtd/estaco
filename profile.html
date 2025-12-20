@@ -88,7 +88,6 @@
           object-fit: cover;
           display: block;
           border: 3px solid var(--estaco-primary);
-          display: none;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
@@ -718,31 +717,30 @@
             document.getElementById('user-name').textContent = user.displayName || "No name set";
             document.getElementById('user-email').textContent = user.email;
         
+            // Show placeholder immediately
+            const placeholder = document.getElementById('profile-picture-placeholder');
+            const img = document.getElementById('profile-picture');
+            placeholder.innerHTML = getInitialsFallback(user.displayName || "No name set");
+            placeholder.style.display = 'block';
+            img.style.display = 'none';
+        
             // Load user data from Firestore
             db.collection('users').doc(user.uid).get()
               .then((doc) => {
-                const placeholder = document.getElementById('profile-picture-placeholder');
-                const img = document.getElementById('profile-picture');
-        
                 if (doc.exists) {
                   const userData = doc.data();
                   userLanguage = userData.language || "English"; // Update globally
                   updatePageLanguage(userLanguage);
                   if (userData.profilePictureURL) {
                     img.src = userData.profilePictureURL;
-                    img.style.display = 'block';
-                    placeholder.style.display = 'none';
-                  } else {
-                    // No profile picture, show initials fallback
-                    placeholder.innerHTML = getInitialsFallback(user.displayName || "No name set");
-                    placeholder.style.display = 'block';
-                    img.style.display = 'none';
+                    img.onload = () => {
+                      img.style.display = 'block';
+                      placeholder.style.display = 'none';
+                    };
                   }
+                  // If no profile picture, placeholder is already shown
                 } else {
-                  // No user data, show initials fallback
-                  placeholder.innerHTML = getInitialsFallback(user.displayName || "No name set");
-                  placeholder.style.display = 'block';
-                  img.style.display = 'none';
+                  // No user data, placeholder is already shown
                 }
               })
               .catch((error) => {
