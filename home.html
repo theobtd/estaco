@@ -597,26 +597,11 @@
             Promise.all(uploadPromises)
               .then(() => {
                 alert('Post created!');
-    
-                // --- NEW CODE: Prepend the new post to the feed ---
-                const newPost = {
-                  id: docRef.id,
-                  authorId: user.uid,
-                  authorName: authorName,
-                  content: content,
-                  timestamp: new Date(), // Use current date for display
-                  reactions: {},
-                  ...(mediaFile && mediaFile.type.startsWith('image/') && { photoURL: URL.createObjectURL(mediaFile) }),
-                  ...(mediaFile && mediaFile.type.startsWith('video/') && { videoURL: URL.createObjectURL(mediaFile) }),
-                  mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal',
-                };
-                renderPosts([newPost]);
-                // --- END NEW CODE ---
-    
                 postContent.value = '';
                 postMedia.value = '';
                 document.getElementById('image-preview-container').style.display = 'none';
                 document.getElementById('video-preview-container').style.display = 'none';
+                loadPosts();
               })
               .catch((error) => {
                 errorMessage.textContent = error.message;
@@ -635,6 +620,7 @@
           });
       });
     });
+
 
     let lastVisiblePost = null; // To keep track of the last fetched post
     const postLimit = 3; // Number of posts to load at a time
