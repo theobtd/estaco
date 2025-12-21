@@ -196,56 +196,33 @@
           return;
         }
     
-        // For each post, fetch reactions and comments
+        // For each post, fetch reactions
         const notifications = [];
         for (const postDoc of postsSnapshot.docs) {
           const post = postDoc.data();
           const postTimestamp = post.timestamp;
-    
-          // Fetch reactions
           const reactions = post.reactions || {};
           for (const [reactorId, reactionData] of Object.entries(reactions)) {
             if (reactorId !== userId) { // Skip self-reactions
               const reactorDoc = await db.collection('users').doc(reactorId).get();
               const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
               const reactorProfilePicture = reactorDoc.exists ? reactorDoc.data().profilePictureURL : null;
+              // Use reaction timestamp if available, otherwise use post timestamp
               const reactionTimestamp = reactionData.timestamp || postTimestamp;
               notifications.push({
-                type: 'reaction',
                 reactorId,
                 reactorName,
                 reactorProfilePicture,
-                reaction: reactionData.type || reactionData,
+                reaction: reactionData.type || reactionData, // Handle both old and new formats
                 postId: postDoc.id,
                 postContent: post.content,
                 reactionTimestamp: reactionTimestamp,
               });
             }
           }
-    
-          // Fetch comments
-          const commentsSnapshot = await db.collection('posts').doc(postDoc.id).collection('comments')
-            .orderBy('timestamp', 'desc')
-            .get();
-    
-          for (const commentDoc of commentsSnapshot.docs) {
-            const comment = commentDoc.data();
-            if (comment.authorId !== userId) { // Skip self-comments
-              notifications.push({
-                type: 'comment',
-                reactorId: comment.authorId,
-                reactorName: comment.authorName || "Unknown User",
-                reactorProfilePicture: null, // You may want to fetch this from the users collection
-                commentContent: comment.content,
-                postId: postDoc.id,
-                postContent: post.content,
-                reactionTimestamp: comment.timestamp,
-              });
-            }
-          }
         }
     
-        // Sort notifications by reaction/comment timestamp (newest first)
+        // Sort notifications by reaction timestamp (newest first)
         notifications.sort((a, b) => b.reactionTimestamp.toDate() - a.reactionTimestamp.toDate());
     
         // Render notifications
@@ -260,18 +237,14 @@
                   : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
                 <strong>${notification.reactorName}</strong>
                 <span style="margin-left: 5px;">
-                  ${notification.type === 'reaction'
-                    ? (notification.reaction === 'like' ? '👍 Liked' :
-                       notification.reaction === 'love' ? '❤️ Loved' :
-                       notification.reaction === 'laugh' ? '😂 Laughed at' : 'Reacted to')
-                    : '💬 Commented on'}
+                  ${notification.reaction === 'like' ? '👍 Liked' :
+                    notification.reaction === 'love' ? '❤️ Loved' :
+                    notification.reaction === 'laugh' ? '😂 Laughed at' : 'Reacted to'}
                   your post
                 </span>
               </div>
               <div class="notification-content">
-                ${notification.type === 'reaction'
-                  ? `<p>${post.content}</p>`
-                  : `<p><strong>Comment:</strong> ${notification.commentContent}</p>`}
+                <p>${notification.postContent}</p>
               </div>
               <div class="notification-post">
                 ${new Date(notification.reactionTimestamp.toDate()).toLocaleString()}
