@@ -189,7 +189,6 @@
         const postsSnapshot = await db.collection('posts')
           .where('authorId', '==', userId)
           .orderBy('timestamp', 'desc')
-          .limit(5) // Only fetch 5 most recent posts
           .get();
     
         if (postsSnapshot.empty) {
