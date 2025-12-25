@@ -122,6 +122,14 @@
     <div id="notifications-list"></div>
   </div>
 
+  <div id="notifications">
+    <h3>Your Notifications</h3>
+    <div id="notifications-list"></div>
+    <button id="load-more" style="margin-top: 20px; padding: 10px 20px; background: var(--estaco-primary); color: white; border: none; border-radius: 5px; cursor: pointer;">
+      Load More
+    </button>
+  </div>
+
   <div id="bottom-nav-bar">
     <button class="nav-button" id="home-button">
       <span class="icon">🏠</span>
@@ -302,6 +310,14 @@
         notificationsList.innerHTML = '<p>Error loading notifications. Please try again.</p>';
       }
     }
+
+    document.getElementById('load-more').addEventListener('click', () => {
+      auth.onAuthStateChanged((user) => {
+        if (user && user.emailVerified) {
+          loadNotifications(user.uid);
+        }
+      });
+    });
   </script>
 </body>
 </html>
