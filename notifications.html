@@ -120,9 +120,6 @@
   <div id="notifications">
     <h3>Your Notifications</h3>
     <div id="notifications-list"></div>
-    <button id="load-more" style="margin-top: 20px; padding: 10px 20px; background: var(--estaco-primary); color: white; border: none; border-radius: 5px; cursor: pointer;">
-      Load More
-    </button>
   </div>
 
   <div id="bottom-nav-bar">
@@ -181,50 +178,38 @@
         alert('Please sign in and verify your email to access notifications.');
         window.location.href = 'index.html';
       } else {
-        notificationsList.innerHTML = '';
-        loadNotifications(user.uid, 3);
+        loadNotifications(user.uid);
       }
     });
 
-    let lastFetchedTimestamp = null;
-    let isLoading = false;
-    
-    async function loadNotifications(userId, limit = 3) {
-      if (isLoading) return;
-      isLoading = true;
-    
+    // Function to load notifications (reactions to user's posts)
+    async function loadNotifications(userId) {
       try {
-        let query = db.collection('posts')
+        // Fetch all posts by the user
+        const postsSnapshot = await db.collection('posts')
           .where('authorId', '==', userId)
-          .orderBy('timestamp', 'desc');
-    
-        if (lastFetchedTimestamp) {
-          query = query.startAfter(lastFetchedTimestamp);
-        }
-    
-        const postsSnapshot = await query.limit(limit).get();
+          .orderBy('timestamp', 'desc')
+          .get();
     
         if (postsSnapshot.empty) {
-          if (!lastFetchedTimestamp) {
-            notificationsList.innerHTML = '<p>No notifications yet.</p>';
-          }
-          document.getElementById('load-more').style.display = 'none';
+          notificationsList.innerHTML = '<p>No posts found.</p>';
           return;
         }
     
+        // For each post, fetch reactions and comments
         const notifications = [];
         for (const postDoc of postsSnapshot.docs) {
           const post = postDoc.data();
-          lastFetchedTimestamp = post.timestamp;
+          const postTimestamp = post.timestamp;
     
           // Fetch reactions
           const reactions = post.reactions || {};
           for (const [reactorId, reactionData] of Object.entries(reactions)) {
-            if (reactorId !== userId) {
+            if (reactorId !== userId) { // Skip self-reactions
               const reactorDoc = await db.collection('users').doc(reactorId).get();
               const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
               const reactorProfilePicture = reactorDoc.exists ? reactorDoc.data().profilePictureURL : null;
-              const reactionTimestamp = reactionData.timestamp || post.timestamp;
+              const reactionTimestamp = reactionData.timestamp || postTimestamp;
               notifications.push({
                 type: 'reaction',
                 reactorId,
@@ -242,12 +227,12 @@
           const commentsSnapshot = await db.collection('posts').doc(postDoc.id).collection('comments').get();
           for (const commentDoc of commentsSnapshot.docs) {
             const comment = commentDoc.data();
-            if (comment.authorId !== userId) {
+            if (comment.authorId !== userId) { // Skip self-comments
               notifications.push({
                 type: 'comment',
                 reactorId: comment.authorId,
                 reactorName: comment.authorName || "Unknown User",
-                reactorProfilePicture: null,
+                reactorProfilePicture: null, // You may want to fetch this from the users collection if available
                 commentContent: comment.content,
                 postId: postDoc.id,
                 postContent: post.content,
@@ -257,75 +242,66 @@
           }
         }
     
+        // Sort notifications by timestamp (newest first)
         notifications.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-        renderNotifications(notifications);
     
+        // Render notifications
+        if (notifications.length === 0) {
+          notificationsList.innerHTML = '<p>No notifications yet.</p>';
+        } else {
+          notificationsList.innerHTML = notifications.map(notification => {
+            if (notification.type === 'reaction') {
+              return `
+                <div class="notification">
+                  <div class="notification-header">
+                    ${notification.reactorProfilePicture
+                      ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
+                      : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
+                    <strong>${notification.reactorName}</strong>
+                    <span style="margin-left: 5px;">
+                      ${notification.reaction === 'like' ? '👍 Liked' :
+                        notification.reaction === 'love' ? '❤️ Loved' :
+                        notification.reaction === 'laugh' ? '😂 Laughed at' : 'Reacted to'}
+                      your post
+                    </span>
+                  </div>
+                  <div class="notification-content">
+                    <p>${notification.postContent}</p>
+                  </div>
+                  <div class="notification-post">
+                    ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                  </div>
+                </div>
+              `;
+            } else if (notification.type === 'comment') {
+              return `
+                <div class="notification">
+                  <div class="notification-header">
+                    ${notification.reactorProfilePicture
+                      ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
+                      : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
+                    <strong>${notification.reactorName}</strong>
+                    <span style="margin-left: 5px;">commented on your post</span>
+                  </div>
+                  <div class="notification-content">
+                    <p>${notification.postContent}</p>
+                    <div style="margin-top: 5px; font-style: italic; color: var(--estaco-text-light);">
+                      "${notification.commentContent}"
+                    </div>
+                  </div>
+                  <div class="notification-post">
+                    ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                  </div>
+                </div>
+              `;
+            }
+          }).join('');
+        }
       } catch (error) {
         console.error("Error loading notifications:", error);
         notificationsList.innerHTML = '<p>Error loading notifications. Please try again.</p>';
-      } finally {
-        isLoading = false;
       }
     }
-
-    function renderNotifications(newNotifications) {
-      const newHTML = newNotifications.map(notification => {
-        if (notification.type === 'reaction') {
-          return `
-            <div class="notification">
-              <div class="notification-header">
-                ${notification.reactorProfilePicture
-                  ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
-                  : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
-                <strong>${notification.reactorName}</strong>
-                <span style="margin-left: 5px;">
-                  ${notification.reaction === 'like' ? '👍 Liked' :
-                    notification.reaction === 'love' ? '❤️ Loved' :
-                    notification.reaction === 'laugh' ? '😂 Laughed at' : 'Reacted to'}
-                  your post
-                </span>
-              </div>
-              <div class="notification-content">
-                <p>${notification.postContent}</p>
-              </div>
-              <div class="notification-post">
-                ${new Date(notification.timestamp.toDate()).toLocaleString()}
-              </div>
-            </div>
-          `;
-        } else if (notification.type === 'comment') {
-          return `
-            <div class="notification">
-              <div class="notification-header">
-                ${notification.reactorProfilePicture
-                  ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
-                  : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
-                <strong>${notification.reactorName}</strong>
-                <span style="margin-left: 5px;">commented on your post</span>
-              </div>
-              <div class="notification-content">
-                <p>${notification.postContent}</p>
-                <div style="margin-top: 5px; font-style: italic; color: var(--estaco-text-light);">
-                  "${notification.commentContent}"
-                </div>
-              </div>
-              <div class="notification-post">
-                ${new Date(notification.timestamp.toDate()).toLocaleString()}
-              </div>
-            </div>
-          `;
-        }
-      }).join('');
-      notificationsList.innerHTML += newHTML; // <-- APPEND TO DOM
-    }
-
-    document.getElementById('load-more').addEventListener('click', () => {
-      auth.onAuthStateChanged((user) => {
-        if (user && user.emailVerified) {
-          loadNotifications(user.uid, 3); // Fetch next 3 notifications
-        }
-      });
-    });
   </script>
 </body>
 </html>
