@@ -120,11 +120,6 @@
   <div id="notifications">
     <h3>Your Notifications</h3>
     <div id="notifications-list"></div>
-  </div>
-
-  <div id="notifications">
-    <h3>Your Notifications</h3>
-    <div id="notifications-list"></div>
     <button id="load-more" style="margin-top: 20px; padding: 10px 20px; background: var(--estaco-primary); color: white; border: none; border-radius: 5px; cursor: pointer;">
       Load More
     </button>
@@ -186,29 +181,42 @@
         alert('Please sign in and verify your email to access notifications.');
         window.location.href = 'index.html';
       } else {
-        loadNotifications(user.uid);
+        notificationsList.innerHTML = '';
+        loadNotifications(user.uid, 3);
       }
     });
 
-    // Function to load notifications (reactions to user's posts)
-    async function loadNotifications(userId) {
-      try {
-        // Fetch all posts by the user
-        const postsSnapshot = await db.collection('posts')
-          .where('authorId', '==', userId)
-          .orderBy('timestamp', 'desc')
-          .get();
+    let lastFetchedTimestamp = null;
+    let isLoading = false;
     
-        if (postsSnapshot.empty) {
-          notificationsList.innerHTML = '<p>No posts found.</p>';
-          return;
+    async function loadNotifications(userId, limit = 3) {
+      if (isLoading) return;
+      isLoading = true;
+    
+      try {
+        let query = db.collection('posts')
+          .where('authorId', '==', userId)
+          .orderBy('timestamp', 'desc');
+    
+        if (lastFetchedTimestamp) {
+          query = query.startAfter(lastFetchedTimestamp);
         }
     
+        const postsSnapshot = await query.limit(limit).get();
+    
+        if (postsSnapshot.empty) {
+          if (!lastFetchedTimestamp) {
+            notificationsList.innerHTML = '<p>No notifications yet.</p>';
+            document.getElementById('load-more').style.display = 'none';
+          }
+          return;
+        }
+
         // For each post, fetch reactions and comments
         const notifications = [];
         for (const postDoc of postsSnapshot.docs) {
           const post = postDoc.data();
-          const postTimestamp = post.timestamp;
+          lastFetchedTimestamp = post.timestamp;
     
           // Fetch reactions
           const reactions = post.reactions || {};
@@ -252,7 +260,17 @@
     
         // Sort notifications by timestamp (newest first)
         notifications.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-    
+
+        } catch (error) {
+          console.error("Error loading notifications:", error);
+          notificationsList.innerHTML = '<p>Error loading notifications. Please try again.</p>';
+        } finally {
+          isLoading = false;
+        }
+      }
+
+      function renderNotifications(newNotifications) {
+        const newHTML = newNotifications.map(notification => {
         // Render notifications
         if (notifications.length === 0) {
           notificationsList.innerHTML = '<p>No notifications yet.</p>';
@@ -304,17 +322,14 @@
               `;
             }
           }).join('');
+            notificationsList.innerHTML += newHTML;
         }
-      } catch (error) {
-        console.error("Error loading notifications:", error);
-        notificationsList.innerHTML = '<p>Error loading notifications. Please try again.</p>';
-      }
     }
 
     document.getElementById('load-more').addEventListener('click', () => {
       auth.onAuthStateChanged((user) => {
         if (user && user.emailVerified) {
-          loadNotifications(user.uid);
+          loadNotifications(user.uid, 3); // Fetch next 3 notifications
         }
       });
     });
