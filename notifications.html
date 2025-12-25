@@ -316,6 +316,7 @@
           `;
         }
       }).join('');
+      notificationsList.innerHTML += newHTML; // <-- APPEND TO DOM
     }
 
     document.getElementById('load-more').addEventListener('click', () => {
