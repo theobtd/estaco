@@ -686,8 +686,8 @@
                   content: content,
                   timestamp: new Date(), // Use client-side date for immediate display
                   reactions: {},
-                  photoURL: mediaFile && file.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
-                  videoURL: mediaFile && file.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
+                  photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
+                  videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
                   mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
                 };
                 renderNewPost(newPost);
