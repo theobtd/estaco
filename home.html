@@ -406,6 +406,19 @@
       margin-left: 10px;
     }
 
+    #upload-overlay {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
   </style>
 </head>
 <body>
@@ -468,6 +481,11 @@
       <span class="label" data-i18n="Profile">Profile</span>
     </button>
   </div>
+
+  <div id="upload-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); z-index: 2000; justify-content: center; align-items: center;">
+    <div class="spinner"></div>
+  </div>
+
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
@@ -550,8 +568,8 @@
         return;
       }
     
-      // Show loader
-      document.getElementById('post-loading').style.display = 'block';
+      // Show full-screen overlay
+      document.getElementById('upload-overlay').style.display = 'flex';
       postButton.disabled = true;
     
       const user = auth.currentUser;
@@ -609,8 +627,8 @@
                 errorMessage.textContent = error.message;
               })
               .finally(() => {
-                // Hide loader
-                document.getElementById('post-loading').style.display = 'none';
+                // Hide full-screen overlay
+                document.getElementById('upload-overlay').style.display = 'none';
                 postButton.disabled = false;
               });
           })
