@@ -571,7 +571,7 @@
             if (mediaFile) {
               const storageRef = storage.ref();
               const mediaType = postMedia.getAttribute('data-type');
-              const mediaRef = storage.ref().child(`posts/${docRef.id}/${mediaType}s/${file.name}`);
+              const mediaRef = storage.ref().child(`posts/${docRef.id}/${mediaType}s/${mediaFile.name}`);
               const uploadTask = mediaRef.put(mediaFile);
     
               uploadPromises.push(
