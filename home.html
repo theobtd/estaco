@@ -559,7 +559,7 @@
 
     // Create a new post
     postButton.addEventListener('click', () => {
-      errorMessage.textContent = '';
+      errorMessage.textContent = ''; // Clear any previous error message
       const content = postContent.value;
       const mediaFile = postMedia.files[0];
     
@@ -568,6 +568,7 @@
         return;
       }
     
+      // Show full-screen overlay
       document.getElementById('upload-overlay').style.display = 'flex';
       postButton.disabled = true;
     
@@ -583,10 +584,7 @@
         };
     
         db.collection('posts').add(post)
-          .then(async (docRef) => {
-            // Wait for the post document to be fully written
-            await docRef.get();
-    
+          .then((docRef) => {
             const uploadPromises = [];
             if (mediaFile) {
               const storageRef = storage.ref();
@@ -618,27 +616,31 @@
             Promise.all(uploadPromises)
               .then(() => {
                 alert('Post created!');
-                window.location.reload();
+                window.location.reload(); // <-- Add this line
                 postContent.value = '';
                 postMedia.value = '';
                 document.getElementById('image-preview-container').style.display = 'none';
                 document.getElementById('video-preview-container').style.display = 'none';
+                // Remove loadPosts(); since the page will reload
               })
               .catch((error) => {
                 errorMessage.textContent = error.message;
               })
               .finally(() => {
+                // Hide full-screen overlay
                 document.getElementById('upload-overlay').style.display = 'none';
                 postButton.disabled = false;
               });
           })
           .catch((error) => {
             errorMessage.textContent = error.message;
-            document.getElementById('upload-overlay').style.display = 'none';
+            // Hide loader
+            document.getElementById('post-loading').style.display = 'none';
             postButton.disabled = false;
           });
       });
     });
+
 
     let lastVisiblePost = null; // To keep track of the last fetched post
     const postLimit = 3; // Number of posts to load at a time
