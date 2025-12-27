@@ -198,8 +198,6 @@
       margin-top: 10px;
       overflow: hidden;
       background-color: var(--estaco-surface);
-      min-height: 0;
-      min-width: 0;
     }
     .media-horizontal,
     .media-vertical {
@@ -703,6 +701,12 @@
                 errorMessage.textContent = error.message;
               })
               .finally(() => {
+                // Reset the orientation button state to default (horizontal)
+                document.querySelectorAll('.crop-orientation-button').forEach(button => {
+                    button.classList.remove('selected');
+                });
+                document.querySelector('.crop-orientation-button[data-orientation="horizontal"]').classList.add('selected');
+                
                 // Hide full-screen overlay
                 document.getElementById('upload-overlay').style.display = 'none';
                 postButton.disabled = false;
@@ -1331,6 +1335,12 @@
                 const cropperImage = document.getElementById('cropper-image');
                 cropperImage.src = e.target.result;
                 modal.style.display = 'block';
+
+                // Reset the orientation button state to default (horizontal)
+                document.querySelectorAll('.crop-orientation-button').forEach(button => {
+                    button.classList.remove('selected');
+                });
+                document.querySelector('.crop-orientation-button[data-orientation="horizontal"]').classList.add('selected');
     
                 // Initialize Cropper.js (your existing code)
                 let cropperAspectRatio = 16 / 9;
