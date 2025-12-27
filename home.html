@@ -1349,7 +1349,7 @@
                         document.querySelectorAll('.crop-orientation-button').forEach(b => b.classList.remove('selected'));
                         button.classList.add('selected');
                         const orientation = button.getAttribute('data-orientation');
-                        cropperAspectRatio = orientation === 'horizontal' ? 16 / 9 : 3 / 4;
+                        cropperAspectRatio = orientation === 'horizontal' ? 4 / 3 : 3 / 4;
                         cropper.setAspectRatio(cropperAspectRatio);
                     });
                 });
@@ -1359,8 +1359,8 @@
                     const selectedOrientation = document.querySelector('.crop-orientation-button.selected').getAttribute('data-orientation');
                     let width, height;
                     if (selectedOrientation === 'horizontal') {
-                        width = 1200;  // Larger dimensions for better quality
-                        height = 675;  // 16:9
+                        width = 1440;  // Larger dimensions for better quality
+                        height = 1080;  // 16:9
                         quality = 0.92;
                         mimeType = 'image/jpeg';
                     } else {
