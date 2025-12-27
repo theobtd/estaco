@@ -1335,15 +1335,15 @@
                 const cropperImage = document.getElementById('cropper-image');
                 cropperImage.src = e.target.result;
                 modal.style.display = 'block';
-
+                
                 // Reset the orientation button state to default (horizontal)
                 document.querySelectorAll('.crop-orientation-button').forEach(button => {
                     button.classList.remove('selected');
                 });
                 document.querySelector('.crop-orientation-button[data-orientation="horizontal"]').classList.add('selected');
-    
-                // Initialize Cropper.js (your existing code)
-                let cropperAspectRatio = 16 / 9;
+                
+                // Initialize Cropper.js with the correct aspect ratio
+                let cropperAspectRatio = 16 / 9; // Default to horizontal
                 let cropper = new Cropper(cropperImage, {
                     aspectRatio: cropperAspectRatio,
                     viewMode: 1,
