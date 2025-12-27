@@ -1273,6 +1273,10 @@
     
     // Define the deletePost function
     async function deletePost(postId) {
+
+      // Show the overlay
+      document.getElementById('upload-overlay').style.display = 'flex';
+      
       try {
         const postRef = db.collection('posts').doc(postId);
         const postDoc = await postRef.get();
@@ -1307,6 +1311,9 @@
       } catch (error) {
         console.error('Error deleting post:', error);
         alert(translations[userLanguage]["Failed to delete post. Please try again."]);
+      } finally {
+        // Hide the overlay
+        document.getElementById('upload-overlay').style.display = 'none';
       }
     }
 
