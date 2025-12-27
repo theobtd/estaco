@@ -1378,14 +1378,14 @@
                     const selectedOrientation = document.querySelector('.crop-orientation-button.selected').getAttribute('data-orientation');
                     let width, height;
                     if (selectedOrientation === 'horizontal') {
-                        width = 1200;  // Larger dimensions for better quality
-                        height = 675;  // 16:9
+                        width = 1200;
+                        height = 675;
                         quality = 0.92;
                         mimeType = 'image/jpeg';
                     } else {
-                        width = 1080;   // Larger dimensions for vertical images
-                        height = 1440; // 9:16 (or use original dimensions)
-                        quality = 1;   // Maximum quality for vertical images
+                        width = 1080;
+                        height = 1440;
+                        quality = 1;
                         mimeType = 'image/png';
                     }
                     const canvas = cropper.getCroppedCanvas({ width, height, fillColor: '#fff', imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
@@ -1397,11 +1397,17 @@
                         postMedia.files = dataTransfer.files;
                         postMedia.setAttribute('data-orientation', selectedOrientation);
                         postMedia.setAttribute('data-type', 'image');
+                
+                        // Update the preview with the cropped image
+                        const preview = document.getElementById('image-preview');
+                        preview.src = URL.createObjectURL(croppedFile);
+                        document.getElementById('image-preview-container').style.display = 'block';
+                
                         modal.style.display = 'none';
                         cropper.destroy();
                       },
                       'image/jpeg',
-                      quality  // Use dynamic quality
+                      quality
                     );
                 };
     
