@@ -1376,7 +1376,8 @@
                 // Handle "Done" button (your existing code)
                 document.getElementById('crop-done-button').onclick = () => {
                     const selectedOrientation = document.querySelector('.crop-orientation-button.selected').getAttribute('data-orientation');
-                    let width, height;
+                    let width, height, quality, mimeType;
+                
                     if (selectedOrientation === 'horizontal') {
                         width = 1200;
                         height = 675;
@@ -1388,36 +1389,39 @@
                         quality = 1;
                         mimeType = 'image/png';
                     }
-                    const canvas = cropper.getCroppedCanvas({ width, height, fillColor: '#fff', imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
+                
+                    const canvas = window.cropper.getCroppedCanvas({ width, height, fillColor: '#fff', imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
                     canvas.toBlob(
-                      (blob) => {
-                        const croppedFile = new File([blob], file.name, { type: 'image/jpeg' });
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(croppedFile);
-                        postMedia.files = dataTransfer.files;
-                        postMedia.setAttribute('data-orientation', selectedOrientation);
-                        postMedia.setAttribute('data-type', 'image');
+                        (blob) => {
+                            const croppedFile = new File([blob], 'cropped-image.jpg', { type: mimeType });
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(croppedFile);
+                            postMedia.files = dataTransfer.files;
+                            postMedia.setAttribute('data-orientation', selectedOrientation);
+                            postMedia.setAttribute('data-type', 'image');
                 
-                        // Update the preview with the cropped image
-                        const preview = document.getElementById('image-preview');
-                        preview.src = URL.createObjectURL(croppedFile);
-                        document.getElementById('image-preview-container').style.display = 'block';
+                            // Update the preview with the newly cropped image
+                            const preview = document.getElementById('image-preview');
+                            preview.src = URL.createObjectURL(croppedFile);
+                            document.getElementById('image-preview-container').style.display = 'block';
                 
-                        modal.style.display = 'none';
-                        cropper.destroy();
-                      },
-                      'image/jpeg',
-                      quality
+                            // Close the modal
+                            const modal = document.getElementById('image-cropper-modal');
+                            modal.style.display = 'none';
+                            window.cropper.destroy();
+                        },
+                        mimeType,
+                        quality
                     );
                 };
     
                 // Handle "Cancel" button
                 document.getElementById('crop-cancel-button').onclick = () => {
+                    const modal = document.getElementById('image-cropper-modal');
                     modal.style.display = 'none';
-                    cropper.destroy();
-                    postMedia.value = '';
-                    document.getElementById('image-preview-container').style.display = 'none';
-                    document.getElementById('video-preview-container').style.display = 'none';
+                    if (window.cropper) {
+                        window.cropper.destroy();
+                    }
                 };
             };
             reader.readAsDataURL(file);
@@ -1449,6 +1453,40 @@
       };
       video.src = URL.createObjectURL(file);
     }
+
+    document.getElementById('image-preview').addEventListener('click', () => {
+        const modal = document.getElementById('image-cropper-modal');
+        const cropperImage = document.getElementById('cropper-image');
+        const preview = document.getElementById('image-preview');
+    
+        // Set the cropper image to the current preview
+        cropperImage.src = preview.src;
+        modal.style.display = 'block';
+    
+        // Reinitialize Cropper.js with the correct aspect ratio
+        let cropperAspectRatio = 16 / 9; // Default to horizontal
+        const selectedOrientation = document.querySelector('.crop-orientation-button.selected').getAttribute('data-orientation');
+        if (selectedOrientation === 'vertical') {
+            cropperAspectRatio = 3 / 4;
+        }
+    
+        // Destroy any existing cropper instance
+        if (window.cropper) {
+            window.cropper.destroy();
+        }
+    
+        // Initialize Cropper.js
+        window.cropper = new Cropper(cropperImage, {
+            aspectRatio: cropperAspectRatio,
+            viewMode: 1,
+            dragMode: 'move',
+            guides: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            modal: true,
+        });
+    });
 
     // Load posts when page loads
     window.onload = loadPosts;
