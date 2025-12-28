@@ -1458,16 +1458,20 @@
                 cropperImage.src = e.target.result;
                 modal.style.display = 'block';
     
-                // Set the button state to match the last used orientation
+                // Get the currently selected orientation button
+                const selectedButton = document.querySelector('.crop-orientation-button.selected');
+                const currentOrientation = selectedButton ? selectedButton.getAttribute('data-orientation') : 'horizontal';
+    
+                // Set the button state to match the current orientation
                 document.querySelectorAll('.crop-orientation-button').forEach(button => {
                     button.classList.remove('selected');
-                    if (button.getAttribute('data-orientation') === lastCropOrientation) {
+                    if (button.getAttribute('data-orientation') === currentOrientation) {
                         button.classList.add('selected');
                     }
                 });
     
-                // Initialize Cropper.js with the last used aspect ratio
-                let cropperAspectRatio = lastCropOrientation === 'horizontal' ? 16 / 9 : 3 / 4;
+                // Initialize Cropper.js with the current aspect ratio
+                let cropperAspectRatio = currentOrientation === 'horizontal' ? 16 / 9 : 3 / 4;
                 let cropper = new Cropper(cropperImage, {
                     aspectRatio: cropperAspectRatio,
                     viewMode: 1,
