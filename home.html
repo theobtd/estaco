@@ -1440,6 +1440,81 @@
         }
     });
 
+    document.getElementById('image-preview').addEventListener('click', () => {
+        const preview = document.getElementById('image-preview');
+        if (preview.src) {
+            const modal = document.getElementById('image-cropper-modal');
+            const cropperImage = document.getElementById('cropper-image');
+            cropperImage.src = preview.src;
+            modal.style.display = 'block';
+    
+            // Reinitialize Cropper.js with the correct aspect ratio
+            let cropperAspectRatio = 16 / 9; // Default to horizontal
+            let cropper = new Cropper(cropperImage, {
+                aspectRatio: cropperAspectRatio,
+                viewMode: 1,
+                dragMode: 'move',
+                guides: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                modal: true,
+            });
+    
+            // Toggle orientation buttons
+            document.querySelectorAll('.crop-orientation-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.crop-orientation-button').forEach(b => b.classList.remove('selected'));
+                    button.classList.add('selected');
+                    const orientation = button.getAttribute('data-orientation');
+                    cropperAspectRatio = orientation === 'horizontal' ? 16 / 9 : 3 / 4;
+                    cropper.setAspectRatio(cropperAspectRatio);
+                });
+            });
+    
+            // Handle "Done" button
+            document.getElementById('crop-done-button').onclick = () => {
+                const selectedOrientation = document.querySelector('.crop-orientation-button.selected').getAttribute('data-orientation');
+                let width, height, quality, mimeType;
+                if (selectedOrientation === 'horizontal') {
+                    width = 1200;
+                    height = 675;
+                    quality = 0.92;
+                    mimeType = 'image/jpeg';
+                } else {
+                    width = 1080;
+                    height = 1440;
+                    quality = 1;
+                    mimeType = 'image/png';
+                }
+                const canvas = cropper.getCroppedCanvas({ width, height, fillColor: '#fff', imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
+                canvas.toBlob(
+                    (blob) => {
+                        const croppedFile = new File([blob], 'cropped-image.jpg', { type: mimeType });
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(croppedFile);
+                        postMedia.files = dataTransfer.files;
+                        postMedia.setAttribute('data-orientation', selectedOrientation);
+                        postMedia.setAttribute('data-type', 'image');
+    
+                        // Update the preview with the cropped image
+                        preview.src = URL.createObjectURL(croppedFile);
+                        modal.style.display = 'none';
+                        cropper.destroy();
+                    },
+                    mimeType,
+                    quality
+                );
+            };
+    
+            // Handle "Cancel" button
+            document.getElementById('crop-cancel-button').onclick = () => {
+                modal.style.display = 'none';
+                cropper.destroy();
+            };
+        }
+    });
+
     function checkVideoDuration(file, callback) {
       const video = document.createElement('video');
       video.preload = 'metadata';
