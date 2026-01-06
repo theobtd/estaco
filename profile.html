@@ -656,11 +656,18 @@
                                                 }
                                             });
                                             alert(translations[userLanguage]["Friend request accepted!"]);
-                                            loadCurrentFriends(toId);
+        
+                                            // Update feeds for both users
+                                            updateFeedsAfterFriendship(toId, fromId)
+                                                .then(() => {
+                                                    loadCurrentFriends(toId);
+                                                })
+                                                .catch(error => {
+                                                    console.error('Error updating feeds:', error);
+                                                });
                                         });
                                 });
                         });
-                });
         }
 
         /**
