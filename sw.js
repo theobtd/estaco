@@ -1,4 +1,4 @@
-const CACHE_NAME = 'estaco-v4'; // Increment version on every update
+const CACHE_NAME = 'estaco-v5'; // Increment version on every update
 const urlsToCache = [
   '/',
   '/index.html',
