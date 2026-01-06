@@ -132,8 +132,69 @@
           alert('Please enter a User UID');
           return;
         }
-        console.log('WORKING');
-        // TODO: Add migration logic here
+        
+      migrateButton.addEventListener('click', async () => {
+          const userUid = userUidInput.value.trim();
+          if (!userUid) {
+            alert('Please enter a User UID');
+            return;
+          }
+        
+          console.log('WORKING');
+          const statusMessage = document.getElementById('status-message');
+          statusMessage.textContent = 'Migrating...';
+          statusMessage.style.display = 'block';
+          statusMessage.className = '';
+        
+          try {
+            // 1. Get the user's friends
+            const friendsDoc = await db.collection('friends').doc(userUid).get();
+            if (!friendsDoc.exists) {
+              statusMessage.textContent = 'No friends document found for this user.';
+              statusMessage.className = 'error';
+              return;
+            }
+        
+            const friends = friendsDoc.data().friends || [];
+            const friendIds = friends.map(friend => friend.uid);
+            friendIds.push(userUid); // Include the user's own posts
+        
+            // 2. Fetch all posts from friends (and user)
+            const postsQuery = db.collection('posts')
+              .where('authorId', 'in', friendIds)
+              .orderBy('timestamp', 'desc');
+            const postsSnapshot = await postsQuery.get();
+        
+            if (postsSnapshot.empty) {
+              statusMessage.textContent = 'No posts found for this user or their friends.';
+              statusMessage.className = 'error';
+              return;
+            }
+        
+            // 3. Create/update the feed sub-collection
+            const batch = db.batch();
+            const feedRef = db.collection(`users/${userUid}/feed`);
+        
+            postsSnapshot.forEach((postDoc) => {
+              const post = postDoc.data();
+              const feedDocRef = feedRef.doc(postDoc.id); // Use post ID as document ID
+              batch.set(feedDocRef, {
+                postId: postDoc.id,
+                postTimestamp: post.timestamp,
+              });
+            });
+        
+            await batch.commit();
+        
+            statusMessage.textContent = `Successfully migrated ${postsSnapshot.size} posts to the user's feed!`;
+            statusMessage.className = 'success';
+            console.log('Migration completed for user:', userUid);
+          } catch (error) {
+            console.error('Migration error:', error);
+            statusMessage.textContent = 'Migration failed. See console for details.';
+            statusMessage.className = 'error';
+          }
+        });
       });
     });
   </script>
