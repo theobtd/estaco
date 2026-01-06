@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estaco - Migration Script</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --estaco-primary: #8B8E6F;
+      --estaco-primary-light: #A7A98C;
+      --estaco-secondary: #E2725B;
+      --estaco-accent: #FFD700;
+      --estaco-background: #FFFFFF;
+      --estaco-surface: #F9F9F9;
+      --estaco-text: #333333;
+      --estaco-text-light: #666666;
+      --estaco-border: #E0E0E0;
+      --estaco-error: #F44336;
+      --estaco-success: #4CAF50;
+    }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: var(--estaco-background);
+      color: var(--estaco-text);
+    }
+
+    h1 {
+      color: var(--estaco-primary);
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .migration-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      padding: 20px;
+      border: 1px solid var(--estaco-border);
+      border-radius: 8px;
+      background-color: var(--estaco-surface);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    #user-uid-input {
+      padding: 12px;
+      border: 1px solid var(--estaco-border);
+      border-radius: 6px;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    #migrate-button {
+      padding: 12px;
+      background-color: var(--estaco-primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    #migrate-button:hover {
+      background-color: var(--estaco-primary-light);
+    }
+
+    #status-message {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      display: none;
+    }
+
+    .success {
+      background-color: var(--estaco-success);
+      color: white;
+    }
+
+    .error {
+      background-color: var(--estaco-error);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Estaco Migration Script</h1>
+  <div class="migration-container">
+    <input
+      type="text"
+      id="user-uid-input"
+      placeholder="Enter User UID"
+      autocomplete="off"
+    >
+    <button id="migrate-button">Migrate User Feed</button>
+    <div id="status-message"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Your Firebase config (use your actual config)
+    const firebaseConfig = {
+      apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
+      authDomain: "estaco-add3c.firebaseapp.com",
+      projectId: "estaco-add3c",
+      storageBucket: "estaco-add3c.firebasestorage.app",
+      messagingSenderId: "876337002297",
+      appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const migrateButton = document.getElementById('migrate-button');
+      const userUidInput = document.getElementById('user-uid-input');
+
+      migrateButton.addEventListener('click', () => {
+        const userUid = userUidInput.value.trim();
+        if (!userUid) {
+          alert('Please enter a User UID');
+          return;
+        }
+        console.log('WORKING');
+        // TODO: Add migration logic here
+      });
+    });
+  </script>
+</body>
+</html>
