@@ -1290,9 +1290,10 @@
     
     // Define the deletePost function
     async function deletePost(postId) {
+
       // Show the overlay
       document.getElementById('upload-overlay').style.display = 'flex';
-    
+      
       try {
         const postRef = db.collection('posts').doc(postId);
         const postDoc = await postRef.get();
@@ -1303,9 +1304,8 @@
     
         const postData = postDoc.data();
         const storage = firebase.storage();
-        const user = auth.currentUser;
     
-        // 1. Delete media from Storage if it exists
+        // Delete media from Storage if it exists
         if (postData.photoURL) {
           const photoRef = storage.refFromURL(postData.photoURL);
           await photoRef.delete();
@@ -1315,23 +1315,10 @@
           await videoRef.delete();
         }
     
-        // 2. Get the user's friends
-        const friendsDoc = await db.collection('friends').doc(user.uid).get();
-        const friendIds = friendsDoc.exists ? friendsDoc.data().friends.map(friend => friend.uid) : [];
-        friendIds.push(user.uid); // Include the user themselves
-    
-        // 3. Delete the post reference from the feed sub-collection of all friends (and user)
-        const batch = db.batch();
-        for (const uid of friendIds) {
-          const feedRef = db.collection(`users/${uid}/feed`).doc(postId);
-          batch.delete(feedRef);
-        }
-        await batch.commit();
-    
-        // 4. Delete the post document
+        // Delete the post document
         await postRef.delete();
     
-        // 5. Remove the post from the UI
+        // Remove the post from the UI
         const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
         if (postElement) {
           postElement.remove();
