@@ -739,26 +739,25 @@
             return;
         }
     
-        const friendIds = await logUserFriendsWithPosts(user.uid);
-        friendIds.push(user.uid);
+        try {
+            // 1. Get the user's feed sub-collection
+            const feedRef = db.collection(`users/${user.uid}/feed`);
+            let query = feedRef.orderBy('postTimestamp', 'desc');
     
-        let query = db.collection('posts')
-            .where('authorId', 'in', friendIds)
-            .orderBy('timestamp', 'desc');
+            if (lastVisiblePost) {
+                query = query.startAfter(lastVisiblePost.data().postTimestamp);
+            }
     
-        if (lastVisiblePost) {
-            query = query.startAfter(lastVisiblePost);
-        }
+            // Load only 1 post on the first load, otherwise load postLimit
+            if (isFirstLoad) {
+                query = query.limit(1);
+            } else {
+                query = query.limit(postLimit);
+            }
     
-        // Load only 1 post on the first load
-        if (isFirstLoad) {
-            query = query.limit(1);
-        } else {
-            query = query.limit(postLimit);
-        }
+            const feedSnapshot = await query.get();
     
-        query.get().then(async (querySnapshot) => {
-            if (querySnapshot.empty) {
+            if (feedSnapshot.empty) {
                 if (!feed.querySelector('.post')) {
                     feed.innerHTML = '<p>No posts yet. Create one!</p>';
                 } else {
@@ -767,28 +766,43 @@
                 isLoading = false;
                 return;
             }
-        
+    
+            // 2. Fetch the actual post data for each post ID in the feed
+            const postIds = feedSnapshot.docs.map(doc => doc.data().postId);
+            const postsSnapshot = await db.collection('posts')
+                .where(firebase.firestore.FieldPath.documentId(), 'in', postIds)
+                .get();
+    
             const postsData = [];
-            querySnapshot.forEach((doc) => {
+            postsSnapshot.forEach((doc) => {
                 const post = doc.data();
                 post.id = doc.id;
                 postsData.push(post);
-                lastVisiblePost = doc; // Update lastVisiblePost for pagination
             });
-        
+    
+            // Sort postsData to match the feed order
+            postsData.sort((a, b) => {
+                const aFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === a.id);
+                const bFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === b.id);
+                return bFeedDoc.data().postTimestamp - aFeedDoc.data().postTimestamp;
+            });
+    
+            // Update lastVisiblePost for pagination
+            lastVisiblePost = feedSnapshot.docs[feedSnapshot.docs.length - 1];
+    
             await renderPosts(postsData);
-        
+    
             // After the first load, set the flag to false and load more posts
             if (isFirstLoad) {
                 isFirstLoad = false;
                 setTimeout(() => loadPosts(), 100); // Small delay to ensure DOM is ready
             }
-        
+    
             isLoading = false;
-        }).catch((error) => {
+        } catch (error) {
             errorMessage.textContent = error.message;
             isLoading = false;
-        });
+        }
     }
     
     // Function to render posts
