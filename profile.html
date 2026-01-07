@@ -656,7 +656,15 @@
                                                 }
                                             });
                                             alert(translations[userLanguage]["Friend request accepted!"]);
-                                            loadCurrentFriends(toId);
+        
+                                            // Update feeds for both users
+                                            updateFeedsAfterFriendship(toId, fromId)
+                                                .then(() => {
+                                                    loadCurrentFriends(toId);
+                                                })
+                                                .catch(error => {
+                                                    console.error('Error updating feeds:', error);
+                                                });
                                         });
                                 });
                         });
@@ -841,6 +849,59 @@
             }
           }
         });
+
+        /**
+         * Updates the feed sub-collections for both users when they become friends.
+         * @param {string} userId1 - The first user's UID.
+         * @param {string} userId2 - The second user's UID.
+         */
+        async function updateFeedsAfterFriendship(userId1, userId2) {
+          try {
+            // 1. Fetch all posts from userId2 (new friend) for userId1's feed
+            const postsSnapshot = await db.collection('posts')
+              .where('authorId', '==', userId2)
+              .orderBy('timestamp', 'desc')
+              .get();
+        
+            if (!postsSnapshot.empty) {
+              const batch = db.batch();
+              postsSnapshot.forEach((postDoc) => {
+                const post = postDoc.data();
+                // Add to userId1's feed
+                const feedRef1 = db.collection(`users/${userId1}/feed`).doc(postDoc.id);
+                batch.set(feedRef1, {
+                  postId: postDoc.id,
+                  postTimestamp: post.timestamp,
+                });
+              });
+              await batch.commit();
+            }
+        
+            // 2. Fetch all posts from userId1 for userId2's feed
+            const userPostsSnapshot = await db.collection('posts')
+              .where('authorId', '==', userId1)
+              .orderBy('timestamp', 'desc')
+              .get();
+        
+            if (!userPostsSnapshot.empty) {
+              const batch = db.batch();
+              userPostsSnapshot.forEach((postDoc) => {
+                const post = postDoc.data();
+                // Add to userId2's feed
+                const feedRef = db.collection(`users/${userId2}/feed`).doc(postDoc.id);
+                batch.set(feedRef, {
+                  postId: postDoc.id,
+                  postTimestamp: post.timestamp,
+                });
+              });
+              await batch.commit();
+            }
+        
+            console.log('Feeds updated for new friendship');
+          } catch (error) {
+            console.error('Error updating feeds after friendship:', error);
+          }
+        }
         
         // Handle cancel
         document.getElementById('crop-cancel-button').addEventListener('click', () => {
