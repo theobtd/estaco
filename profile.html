@@ -702,8 +702,16 @@
                     // Wait for both updates to complete
                     Promise.all([userFriendsUpdate, friendFriendsUpdate])
                         .then(() => {
-                            // Reload the friend list
-                            loadCurrentFriends(userId);
+                            // Remove posts from each other's feeds
+                            removePostsFromFeedsAfterUnfriend(userId, friendUid)
+                                .then(() => {
+                                    // Reload the friend list
+                                    loadCurrentFriends(userId);
+                                })
+                                .catch(error => {
+                                    console.error("Error removing posts from feeds: ", error);
+                                    alert(translations[userLanguage]["Failed to update friends lists."]);
+                                });
                         })
                         .catch((error) => {
                             console.error("Error updating friends lists: ", error);
@@ -849,6 +857,51 @@
             }
           }
         });
+
+        /**
+         * Removes all posts from each other's feed sub-collections when a friendship is removed.
+         * @param {string} userId1 - The first user's UID.
+         * @param {string} userId2 - The second user's UID.
+         */
+        async function removePostsFromFeedsAfterUnfriend(userId1, userId2) {
+          try {
+            // 1. Get all posts from userId2 in userId1's feed
+            const feedSnapshot1 = await db.collection(`users/${userId1}/feed`)
+              .where('postId', 'in', [
+                ...(await db.collection('posts').where('authorId', '==', userId2).get())
+                  .docs.map(doc => doc.id)
+              ])
+              .get();
+        
+            if (!feedSnapshot1.empty) {
+              const batch = db.batch();
+              feedSnapshot1.forEach((doc) => {
+                batch.delete(doc.ref);
+              });
+              await batch.commit();
+            }
+        
+            // 2. Get all posts from userId1 in userId2's feed
+            const feedSnapshot2 = await db.collection(`users/${userId2}/feed`)
+              .where('postId', 'in', [
+                ...(await db.collection('posts').where('authorId', '==', userId1).get())
+                  .docs.map(doc => doc.id)
+              ])
+              .get();
+        
+            if (!feedSnapshot2.empty) {
+              const batch = db.batch();
+              feedSnapshot2.forEach((doc) => {
+                batch.delete(doc.ref);
+              });
+              await batch.commit();
+            }
+        
+            console.log('Posts removed from feeds after unfriend');
+          } catch (error) {
+            console.error('Error removing posts from feeds after unfriend:', error);
+          }
+        }
 
         /**
          * Updates the feed sub-collections for both users when they become friends.
