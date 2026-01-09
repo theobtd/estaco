@@ -656,7 +656,15 @@
                                                 }
                                             });
                                             alert(translations[userLanguage]["Friend request accepted!"]);
-                                            loadCurrentFriends(toId);
+        
+                                            // Update feeds for both users
+                                            updateFeedsAfterFriendship(toId, fromId)
+                                                .then(() => {
+                                                    loadCurrentFriends(toId);
+                                                })
+                                                .catch(error => {
+                                                    console.error('Error updating feeds:', error);
+                                                });
                                         });
                                 });
                         });
@@ -664,52 +672,52 @@
         }
 
         function removeFriend(userId, friendUid) {
-            // Ask for confirmation
-            const confirmRemove = confirm(translations[userLanguage]["Are you sure you want to remove this friend?"]);
-            if (!confirmRemove) {
-                return; // Do nothing if the user cancels
+          const confirmRemove = confirm(translations[userLanguage]["Are you sure you want to remove this friend?"]);
+          if (!confirmRemove) return;
+        
+          Promise.all([
+            db.collection('users').doc(friendUid).get(),
+            db.collection('users').doc(userId).get()
+          ])
+          .then(([friendDoc, userDoc]) => {
+            if (friendDoc.exists && userDoc.exists) {
+              const friendName = friendDoc.data().name;
+              const userName = userDoc.data().name;
+        
+              const userFriendsUpdate = db.collection('friends').doc(userId).update({
+                friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName }),
+                friendsList: firebase.firestore.FieldValue.arrayRemove(friendUid)
+              });
+        
+              const friendFriendsUpdate = db.collection('friends').doc(friendUid).update({
+                friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName }),
+                friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
+              });
+        
+              Promise.all([userFriendsUpdate, friendFriendsUpdate])
+                .then(() => {
+                  // Remove feed entries for both users
+                  removeFeedsAfterUnfriend(userId, friendUid)
+                    .then(() => {
+                      loadCurrentFriends(userId);
+                    })
+                    .catch((error) => {
+                      console.error("Error cleaning up feeds:", error);
+                    });
+                })
+                .catch((error) => {
+                  console.error("Error updating friends lists: ", error);
+                  alert(translations[userLanguage]["Failed to update friends lists."]);
+                });
+            } else {
+              console.error("User or friend document does not exist.");
+              alert(translations[userLanguage]["Failed to remove friend."]);
             }
-        
-            // Fetch the friend's name and the user's name in parallel
-            Promise.all([
-                db.collection('users').doc(friendUid).get(),
-                db.collection('users').doc(userId).get()
-            ])
-            .then(([friendDoc, userDoc]) => {
-                if (friendDoc.exists && userDoc.exists) {
-                    const friendName = friendDoc.data().name;
-                    const userName = userDoc.data().name;
-        
-                    // Update both `friends` and `friendsList` for both users
-                    const userFriendsUpdate = db.collection('friends').doc(userId).update({
-                        friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName }),
-                        friendsList: firebase.firestore.FieldValue.arrayRemove(friendUid)
-                    });
-        
-                    const friendFriendsUpdate = db.collection('friends').doc(friendUid).update({
-                        friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName }),
-                        friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
-                    });
-        
-                    // Wait for both updates to complete
-                    Promise.all([userFriendsUpdate, friendFriendsUpdate])
-                        .then(() => {
-                            // Reload the friend list
-                            loadCurrentFriends(userId);
-                        })
-                        .catch((error) => {
-                            console.error("Error updating friends lists: ", error);
-                            alert(translations[userLanguage]["Failed to update friends lists."]);
-                        });
-                } else {
-                    console.error("User or friend document does not exist.");
-                    alert(translations[userLanguage]["Failed to remove friend."]);
-                }
-            })
-            .catch((error) => {
-                console.error("Error fetching user or friend data: ", error);
-                alert("Failed to remove friend.");
-            });
+          })
+          .catch((error) => {
+            console.error("Error fetching user or friend data: ", error);
+            alert("Failed to remove friend.");
+          });
         }
 
         // Display user information
@@ -841,6 +849,115 @@
             }
           }
         });
+
+        /**
+         * Fetches all post UIDs for a given user.
+         * @param {string} userId - The user's UID.
+         * @returns {Promise<string[]>} - Array of post UIDs.
+         */
+        async function getPostUidsForUser(userId) {
+          try {
+            const postsSnapshot = await db.collection('posts')
+              .where('authorId', '==', userId)
+              .get();
+            return postsSnapshot.docs.map(doc => doc.id);
+          } catch (error) {
+            console.error('Error fetching post UIDs:', error);
+            return [];
+          }
+        }
+
+        /**
+         * Removes all feed entries for both users when a friendship is ended.
+         * @param {string} userId1 - The first user's UID.
+         * @param {string} userId2 - The second user's UID.
+         */
+        async function removeFeedsAfterUnfriend(userId1, userId2) {
+          try {
+            // 1. Fetch all post UIDs for userId2 (the friend being removed)
+            const postUids = await getPostUidsForUser(userId2);
+        
+            // 2. Delete all posts from userId2 in userId1's feed
+            if (postUids.length > 0) {
+              const batch = db.batch();
+              postUids.forEach(postUid => {
+                const feedRef = db.collection(`users/${userId1}/feed`).doc(postUid);
+                batch.delete(feedRef);
+              });
+              await batch.commit();
+            }
+        
+            // 3. Fetch all post UIDs for userId1
+            const userPostUids = await getPostUidsForUser(userId1);
+        
+            // 4. Delete all posts from userId1 in userId2's feed
+            if (userPostUids.length > 0) {
+              const batch = db.batch();
+              userPostUids.forEach(postUid => {
+                const feedRef = db.collection(`users/${userId2}/feed`).doc(postUid);
+                batch.delete(feedRef);
+              });
+              await batch.commit();
+            }
+        
+            console.log('Feeds cleaned up after unfriend');
+          } catch (error) {
+            console.error('Error cleaning up feeds after unfriend:', error);
+          }
+        }
+
+        /**
+         * Updates the feed sub-collections for both users when they become friends.
+         * @param {string} userId1 - The first user's UID.
+         * @param {string} userId2 - The second user's UID.
+         */
+        async function updateFeedsAfterFriendship(userId1, userId2) {
+          try {
+            // 1. Fetch all posts from userId2 (new friend) for userId1's feed
+            const postsSnapshot = await db.collection('posts')
+              .where('authorId', '==', userId2)
+              .orderBy('timestamp', 'desc')
+              .get();
+        
+            if (!postsSnapshot.empty) {
+              const batch = db.batch();
+              postsSnapshot.forEach((postDoc) => {
+                const post = postDoc.data();
+                // Add to userId1's feed
+                const feedRef1 = db.collection(`users/${userId1}/feed`).doc(postDoc.id);
+                batch.set(feedRef1, {
+                  postId: postDoc.id,
+                  postTimestamp: post.timestamp,
+                });
+              });
+              await batch.commit();
+            }
+        
+            // 2. Fetch all posts from userId1 for userId2's feed
+            const userPostsSnapshot = await db.collection('posts')
+              .where('authorId', '==', userId1)
+              .orderBy('timestamp', 'desc')
+              .get();
+        
+            if (!userPostsSnapshot.empty) {
+              const batch = db.batch();
+              userPostsSnapshot.forEach((postDoc) => {
+                const post = postDoc.data();
+                // Add to userId2's feed
+                const feedRef = db.collection(`users/${userId2}/feed`).doc(postDoc.id);
+                batch.set(feedRef, {
+                  postId: postDoc.id,
+                  postTimestamp: post.timestamp,
+                });
+              });
+              await batch.commit();
+            }
+        
+            console.log('Feeds updated for new friendship');
+          } catch (error) {
+            console.error('Error updating feeds after friendship:', error);
+          }
+        }
         
         // Handle cancel
         document.getElementById('crop-cancel-button').addEventListener('click', () => {
