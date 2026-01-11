@@ -678,7 +678,7 @@
             }
     
             Promise.all(uploadPromises)
-              .then(async () => {
+              .then(() => {
                 alert('Post created!');
                 const user = auth.currentUser;
                 const authorName = user.displayName || "Unknown User";
@@ -694,20 +694,11 @@
                   mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
                 };
                 renderNewPost(newPost);
-            
-                // Add the post to the author's own feed sub-collection
-                await addPostToUserFeed(user.uid, docRef.id, new Date());
-            
-                // Add the post to the feed sub-collections of the author's friends
-                const friendUids = await getFriendUidsForUser(user.uid);
-                for (const friendUid of friendUids) {
-                  await addPostToUserFeed(friendUid, docRef.id, new Date());
-                }
-            
                 postContent.value = '';
                 postMedia.value = '';
                 document.getElementById('image-preview-container').style.display = 'none';
                 document.getElementById('video-preview-container').style.display = 'none';
+                // Remove loadPosts(); since the page will reload
               })
               .catch((error) => {
                 errorMessage.textContent = error.message;
@@ -715,10 +706,10 @@
               .finally(() => {
                 // Reset the orientation button state to default (horizontal)
                 document.querySelectorAll('.crop-orientation-button').forEach(button => {
-                  button.classList.remove('selected');
+                    button.classList.remove('selected');
                 });
                 document.querySelector('.crop-orientation-button[data-orientation="horizontal"]').classList.add('selected');
-            
+                
                 // Hide full-screen overlay
                 document.getElementById('upload-overlay').style.display = 'none';
                 postButton.disabled = false;
@@ -748,25 +739,26 @@
             return;
         }
     
-        try {
-            // 1. Get the user's feed sub-collection
-            const feedRef = db.collection(`users/${user.uid}/feed`);
-            let query = feedRef.orderBy('postTimestamp', 'desc');
+        const friendIds = await logUserFriendsWithPosts(user.uid);
+        friendIds.push(user.uid);
     
-            if (lastVisiblePost) {
-                query = query.startAfter(lastVisiblePost.data().postTimestamp);
-            }
+        let query = db.collection('posts')
+            .where('authorId', 'in', friendIds)
+            .orderBy('timestamp', 'desc');
     
-            // Load only 1 post on the first load, otherwise load postLimit
-            if (isFirstLoad) {
-                query = query.limit(1);
-            } else {
-                query = query.limit(postLimit);
-            }
+        if (lastVisiblePost) {
+            query = query.startAfter(lastVisiblePost);
+        }
     
-            const feedSnapshot = await query.get();
+        // Load only 1 post on the first load
+        if (isFirstLoad) {
+            query = query.limit(1);
+        } else {
+            query = query.limit(postLimit);
+        }
     
-            if (feedSnapshot.empty) {
+        query.get().then(async (querySnapshot) => {
+            if (querySnapshot.empty) {
                 if (!feed.querySelector('.post')) {
                     feed.innerHTML = '<p>No posts yet. Create one!</p>';
                 } else {
@@ -775,43 +767,28 @@
                 isLoading = false;
                 return;
             }
-    
-            // 2. Fetch the actual post data for each post ID in the feed
-            const postIds = feedSnapshot.docs.map(doc => doc.data().postId);
-            const postsSnapshot = await db.collection('posts')
-                .where(firebase.firestore.FieldPath.documentId(), 'in', postIds)
-                .get();
-    
+        
             const postsData = [];
-            postsSnapshot.forEach((doc) => {
+            querySnapshot.forEach((doc) => {
                 const post = doc.data();
                 post.id = doc.id;
                 postsData.push(post);
+                lastVisiblePost = doc; // Update lastVisiblePost for pagination
             });
-    
-            // Sort postsData to match the feed order
-            postsData.sort((a, b) => {
-                const aFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === a.id);
-                const bFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === b.id);
-                return bFeedDoc.data().postTimestamp - aFeedDoc.data().postTimestamp;
-            });
-    
-            // Update lastVisiblePost for pagination
-            lastVisiblePost = feedSnapshot.docs[feedSnapshot.docs.length - 1];
-    
+        
             await renderPosts(postsData);
-    
+        
             // After the first load, set the flag to false and load more posts
             if (isFirstLoad) {
                 isFirstLoad = false;
                 setTimeout(() => loadPosts(), 100); // Small delay to ensure DOM is ready
             }
-    
+        
             isLoading = false;
-        } catch (error) {
+        }).catch((error) => {
             errorMessage.textContent = error.message;
             isLoading = false;
-        }
+        });
     }
     
     // Function to render posts
@@ -1299,9 +1276,10 @@
     
     // Define the deletePost function
     async function deletePost(postId) {
+
       // Show the overlay
       document.getElementById('upload-overlay').style.display = 'flex';
-    
+      
       try {
         const postRef = db.collection('posts').doc(postId);
         const postDoc = await postRef.get();
@@ -1312,7 +1290,6 @@
     
         const postData = postDoc.data();
         const storage = firebase.storage();
-        const authorId = postData.authorId;
     
         // Delete media from Storage if it exists
         if (postData.photoURL) {
@@ -1326,20 +1303,6 @@
     
         // Delete the post document
         await postRef.delete();
-    
-        // Fetch the list of friends for the author
-        const friendUids = await getFriendUidsForUser(authorId);
-    
-        // Add the author's UID to the list
-        friendUids.push(authorId);
-    
-        // Delete the post from the feed sub-collections of the author and all friends
-        const batch = db.batch();
-        for (const uid of friendUids) {
-          const feedRef = db.collection(`users/${uid}/feed`).doc(postId);
-          batch.delete(feedRef);
-        }
-        await batch.commit();
     
         // Remove the post from the UI
         const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
@@ -1485,44 +1448,6 @@
             });
         }
     });
-
-    /**
-     * Adds a post to a user's feed sub-collection.
-     * @param {string} userId - The user's UID.
-     * @param {string} postId - The post's ID.
-     * @param {Date} timestamp - The post's timestamp.
-     */
-    async function addPostToUserFeed(userId, postId, timestamp) {
-      try {
-        const feedRef = db.collection(`users/${userId}/feed`).doc(postId);
-        await feedRef.set({
-          postId: postId,
-          postTimestamp: timestamp,
-        });
-      } catch (error) {
-        console.error('Error adding post to user feed:', error);
-      }
-    }
-
-    /**
-     * Fetches the list of friend UIDs for a user.
-     * @param {string} userId - The user's UID.
-     * @returns {Promise<string[]>} - Array of friend UIDs.
-     */
-    async function getFriendUidsForUser(userId) {
-      try {
-        const friendsDoc = await db.collection('friends').doc(userId).get();
-        if (friendsDoc.exists) {
-          const friends = friendsDoc.data()?.friends || [];
-          return friends.map(friend => friend.uid);
-        } else {
-          return [];
-        }
-      } catch (error) {
-        console.error('Error fetching friends:', error);
-        return [];
-      }
-    }
 
     document.getElementById('image-preview').addEventListener('click', () => {
         if (originalImageFile) {
