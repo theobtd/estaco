@@ -1089,7 +1089,24 @@
       };
     
       db.collection('posts').doc(postId).collection('comments').add(comment)
-        .then(() => {
+        .then((docRef) => {
+          // Fetch the post to get the author's UID
+          db.collection('posts').doc(postId).get().then((postDoc) => {
+            if (postDoc.exists) {
+              const post = postDoc.data();
+              // Only add a notification if the commenter is not the author
+              if (post.authorId !== user.uid) {
+                addCommentNotification(
+                  post.authorId, // Author of the post
+                  postId,
+                  user.uid, // Current user (commenter)
+                  user.displayName || "Unknown User",
+                  content,
+                  firebase.firestore.FieldValue.serverTimestamp()
+                );
+              }
+            }
+          });
           loadComments(postId);
         })
         .catch((error) => {
@@ -1557,6 +1574,31 @@
         });
       } catch (error) {
         console.error('Error adding reaction notification:', error);
+      }
+    }
+
+    /**
+     * Adds a comment notification to a user's notifications sub-collection.
+     * @param {string} userId - The user's UID (post author).
+     * @param {string} postId - The post's ID.
+     * @param {string} commenterId - The UID of the user who commented.
+     * @param {string} commenterName - The name of the user who commented.
+     * @param {string} commentContent - The content of the comment.
+     * @param {Date} timestamp - The timestamp of the comment.
+     */
+    async function addCommentNotification(userId, postId, commenterId, commenterName, commentContent, timestamp) {
+      try {
+        const notificationsRef = db.collection(`users/${userId}/notifications`).doc();
+        await notificationsRef.set({
+          type: 'comment',
+          reactorId: commenterId,
+          reactorName: commenterName,
+          commentContent: commentContent,
+          postId: postId,
+          timestamp: timestamp,
+        });
+      } catch (error) {
+        console.error('Error adding comment notification:', error);
       }
     }
 
