@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estaco - Notifications Migration Script</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --estaco-primary: #8B8E6F;
+      --estaco-primary-light: #A7A98C;
+      --estaco-secondary: #E2725B;
+      --estaco-accent: #FFD700;
+      --estaco-background: #FFFFFF;
+      --estaco-surface: #F9F9F9;
+      --estaco-text: #333333;
+      --estaco-text-light: #666666;
+      --estaco-border: #E0E0E0;
+      --estaco-error: #F44336;
+      --estaco-success: #4CAF50;
+    }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: var(--estaco-background);
+      color: var(--estaco-text);
+    }
+
+    h1 {
+      color: var(--estaco-primary);
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .migration-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      padding: 20px;
+      border: 1px solid var(--estaco-border);
+      border-radius: 8px;
+      background-color: var(--estaco-surface);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    #user-uid-input {
+      padding: 12px;
+      border: 1px solid var(--estaco-border);
+      border-radius: 6px;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    #migrate-button {
+      padding: 12px;
+      background-color: var(--estaco-primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    #migrate-button:hover {
+      background-color: var(--estaco-primary-light);
+    }
+
+    #status-message {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      display: none;
+    }
+
+    .success {
+      background-color: var(--estaco-success);
+      color: white;
+    }
+
+    .error {
+      background-color: var(--estaco-error);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Estaco Notifications Migration Script</h1>
+  <div class="migration-container">
+    <input
+      type="text"
+      id="user-uid-input"
+      placeholder="Enter User UID"
+      autocomplete="off"
+    >
+    <button id="migrate-button">Migrate User Notifications</button>
+    <div id="status-message"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
+      authDomain: "estaco-add3c.firebaseapp.com",
+      projectId: "estaco-add3c",
+      storageBucket: "estaco-add3c.firebasestorage.app",
+      messagingSenderId: "876337002297",
+      appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const migrateButton = document.getElementById('migrate-button');
+      const userUidInput = document.getElementById('user-uid-input');
+
+      migrateButton.addEventListener('click', async () => {
+        const userUid = userUidInput.value.trim();
+        if (!userUid) {
+          alert('Please enter a User UID');
+          return;
+        }
+
+        const statusMessage = document.getElementById('status-message');
+        statusMessage.textContent = 'Migrating notifications...';
+        statusMessage.style.display = 'block';
+        statusMessage.className = '';
+
+        try {
+          // 1. Get all posts by the user
+          const postsSnapshot = await db.collection('posts')
+            .where('authorId', '==', userUid)
+            .orderBy('timestamp', 'desc')
+            .get();
+
+          if (postsSnapshot.empty) {
+            statusMessage.textContent = 'No posts found for this user.';
+            statusMessage.className = 'error';
+            return;
+          }
+
+          const batch = db.batch();
+          const notificationsRef = db.collection(`users/${userUid}/notifications`);
+          let notificationCount = 0;
+
+          // 2. For each post, fetch reactions and comments
+          for (const postDoc of postsSnapshot.docs) {
+            const post = postDoc.data();
+            const postTimestamp = post.timestamp;
+
+            // Migrate reactions
+            const reactions = post.reactions || {};
+            for (const [reactorId, reactionData] of Object.entries(reactions)) {
+              if (reactorId !== userUid) { // Skip self-reactions
+                const reactorDoc = await db.collection('users').doc(reactorId).get();
+                const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
+                const notificationDocRef = notificationsRef.doc();
+                batch.set(notificationDocRef, {
+                  type: 'reaction',
+                  reactorId,
+                  reactorName,
+                  reaction: reactionData.type || reactionData,
+                  postId: postDoc.id,
+                  timestamp: reactionData.timestamp || postTimestamp,
+                });
+                notificationCount++;
+              }
+            }
+
+            // Migrate comments
+            const commentsSnapshot = await db.collection('posts').doc(postDoc.id).collection('comments').get();
+            for (const commentDoc of commentsSnapshot.docs) {
+              const comment = commentDoc.data();
+              if (comment.authorId !== userUid) { // Skip self-comments
+                const notificationDocRef = notificationsRef.doc();
+                batch.set(notificationDocRef, {
+                  type: 'comment',
+                  reactorId: comment.authorId,
+                  reactorName: comment.authorName || "Unknown User",
+                  commentContent: comment.content,
+                  postId: postDoc.id,
+                  timestamp: comment.timestamp,
+                });
+                notificationCount++;
+              }
+            }
+          }
+
+          // 3. Commit the batch
+          await batch.commit();
+
+          statusMessage.textContent = `Successfully migrated ${notificationCount} notifications to the user's notifications collection!`;
+          statusMessage.className = 'success';
+          console.log('Migration completed for user:', userUid);
+        } catch (error) {
+          console.error('Migration error:', error);
+          statusMessage.textContent = 'Migration failed. See console for details.';
+          statusMessage.className = 'error';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
