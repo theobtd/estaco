@@ -182,68 +182,49 @@
       }
     });
 
-    // Function to load notifications (reactions to user's posts)
+    // Function to load notifications from the user's notifications sub-collection
     async function loadNotifications(userId) {
       try {
-        // Fetch all posts by the user
-        const postsSnapshot = await db.collection('posts')
-          .where('authorId', '==', userId)
+        // Fetch all notifications from the user's notifications sub-collection
+        const notificationsSnapshot = await db.collection(`users/${userId}/notifications`)
           .orderBy('timestamp', 'desc')
           .get();
     
-        if (postsSnapshot.empty) {
-          notificationsList.innerHTML = '<p>No posts found.</p>';
+        if (notificationsSnapshot.empty) {
+          notificationsList.innerHTML = '<p>No notifications yet.</p>';
           return;
         }
     
-        // For each post, fetch reactions and comments
+        // Prepare an array to hold all notifications with their post content
         const notifications = [];
-        for (const postDoc of postsSnapshot.docs) {
-          const post = postDoc.data();
-          const postTimestamp = post.timestamp;
     
-          // Fetch reactions
-          const reactions = post.reactions || {};
-          for (const [reactorId, reactionData] of Object.entries(reactions)) {
-            if (reactorId !== userId) { // Skip self-reactions
-              const reactorDoc = await db.collection('users').doc(reactorId).get();
-              const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
-              const reactorProfilePicture = reactorDoc.exists ? reactorDoc.data().profilePictureURL : null;
-              const reactionTimestamp = reactionData.timestamp || postTimestamp;
-              notifications.push({
-                type: 'reaction',
-                reactorId,
-                reactorName,
-                reactorProfilePicture,
-                reaction: reactionData.type || reactionData,
-                postId: postDoc.id,
-                postContent: post.content,
-                timestamp: reactionTimestamp,
-              });
-            }
+        // For each notification, fetch the post content
+        for (const notificationDoc of notificationsSnapshot.docs) {
+          const notification = notificationDoc.data();
+          const postId = notification.postId;
+    
+          // Fetch the post content
+          const postDoc = await db.collection('posts').doc(postId).get();
+          if (postDoc.exists) {
+            const post = postDoc.data();
+            notification.postContent = post.content;
+          } else {
+            notification.postContent = "[Post deleted]";
           }
     
-          // Fetch comments
-          const commentsSnapshot = await db.collection('posts').doc(postDoc.id).collection('comments').get();
-          for (const commentDoc of commentsSnapshot.docs) {
-            const comment = commentDoc.data();
-            if (comment.authorId !== userId) { // Skip self-comments
-              notifications.push({
-                type: 'comment',
-                reactorId: comment.authorId,
-                reactorName: comment.authorName || "Unknown User",
-                reactorProfilePicture: null, // You may want to fetch this from the users collection if available
-                commentContent: comment.content,
-                postId: postDoc.id,
-                postContent: post.content,
-                timestamp: comment.timestamp,
-              });
-            }
+          // Fetch the reactor's profile picture and name
+          const reactorDoc = await db.collection('users').doc(notification.reactorId).get();
+          if (reactorDoc.exists) {
+            const reactorData = reactorDoc.data();
+            notification.reactorName = reactorData.name || "Unknown User";
+            notification.reactorProfilePicture = reactorData.profilePictureURL;
+          } else {
+            notification.reactorName = "Unknown User";
+            notification.reactorProfilePicture = null;
           }
+    
+          notifications.push(notification);
         }
-    
-        // Sort notifications by timestamp (newest first)
-        notifications.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
     
         // Render notifications
         if (notifications.length === 0) {
