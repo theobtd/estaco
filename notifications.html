@@ -182,23 +182,51 @@
       }
     });
 
-    // Function to load notifications from the user's notifications sub-collection
-    async function loadNotifications(userId) {
+    // Global variables for pagination
+    let lastVisibleNotification = null;
+    let isLoading = false;
+    let allNotificationsLoaded = false;
+    
+    // Function to load notifications with pagination
+    async function loadNotifications(userId, limit = 5) {
+      if (isLoading) return;
+      isLoading = true;
+    
       try {
-        // Fetch all notifications from the user's notifications sub-collection
-        const notificationsSnapshot = await db.collection(`users/${userId}/notifications`)
+        // Show loading state if not the first load
+        if (lastVisibleNotification) {
+          document.getElementById('load-more-button').textContent = 'Loading...';
+          document.getElementById('load-more-button').disabled = true;
+        }
+    
+        // Build the query
+        let query = db.collection(`users/${userId}/notifications`)
           .orderBy('timestamp', 'desc')
-          .get();
+          .limit(limit);
+    
+        // If there's a last visible notification, start after it
+        if (lastVisibleNotification) {
+          query = query.startAfter(lastVisibleNotification.data().timestamp);
+        }
+    
+        // Fetch notifications
+        const notificationsSnapshot = await query.get();
     
         if (notificationsSnapshot.empty) {
-          notificationsList.innerHTML = '<p>No notifications yet.</p>';
+          if (!lastVisibleNotification) {
+            notificationsList.innerHTML = '<p>No notifications yet.</p>';
+          } else {
+            allNotificationsLoaded = true;
+            document.getElementById('load-more-button').style.display = 'none';
+          }
+          isLoading = false;
           return;
         }
     
         // Prepare an array to hold all notifications with their post content
         const notifications = [];
     
-        // For each notification, fetch the post content
+        // For each notification, fetch the post content and reactor info
         for (const notificationDoc of notificationsSnapshot.docs) {
           const notification = notificationDoc.data();
           const postId = notification.postId;
@@ -226,63 +254,95 @@
           notifications.push(notification);
         }
     
+        // Update the last visible notification for pagination
+        lastVisibleNotification = notificationsSnapshot.docs[notificationsSnapshot.docs.length - 1];
+    
         // Render notifications
-        if (notifications.length === 0) {
-          notificationsList.innerHTML = '<p>No notifications yet.</p>';
-        } else {
-          notificationsList.innerHTML = notifications.map(notification => {
-            if (notification.type === 'reaction') {
-              return `
-                <div class="notification">
-                  <div class="notification-header">
-                    ${notification.reactorProfilePicture
-                      ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
-                      : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
-                    <strong>${notification.reactorName}</strong>
-                    <span style="margin-left: 5px;">
-                      ${notification.reaction === 'like' ? '👍 Liked' :
-                        notification.reaction === 'love' ? '❤️ Loved' :
-                        notification.reaction === 'laugh' ? '😂 Laughed at' : 'Reacted to'}
-                      your post
-                    </span>
-                  </div>
-                  <div class="notification-content">
-                    <p>${notification.postContent}</p>
-                  </div>
-                  <div class="notification-post">
-                    ${new Date(notification.timestamp.toDate()).toLocaleString()}
+        notificationsList.innerHTML += notifications.map(notification => {
+          if (notification.type === 'reaction') {
+            return `
+              <div class="notification">
+                <div class="notification-header">
+                  ${notification.reactorProfilePicture
+                    ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
+                    : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
+                  <strong>${notification.reactorName}</strong>
+                  <span style="margin-left: 5px;">
+                    ${notification.reaction === 'like' ? '👍 Liked' :
+                      notification.reaction === 'love' ? '❤️ Loved' :
+                      notification.reaction === 'laugh' ? '😂 Laughed at' : 'Reacted to'}
+                    your post
+                  </span>
+                </div>
+                <div class="notification-content">
+                  <p>${notification.postContent}</p>
+                </div>
+                <div class="notification-post">
+                  ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                </div>
+              </div>
+            `;
+          } else if (notification.type === 'comment') {
+            return `
+              <div class="notification">
+                <div class="notification-header">
+                  ${notification.reactorProfilePicture
+                    ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
+                    : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
+                  <strong>${notification.reactorName}</strong>
+                  <span style="margin-left: 5px;">commented on your post</span>
+                </div>
+                <div class="notification-content">
+                  <p>${notification.postContent}</p>
+                  <div style="margin-top: 5px; font-style: italic; color: var(--estaco-text-light);">
+                    "${notification.commentContent}"
                   </div>
                 </div>
-              `;
-            } else if (notification.type === 'comment') {
-              return `
-                <div class="notification">
-                  <div class="notification-header">
-                    ${notification.reactorProfilePicture
-                      ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
-                      : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
-                    <strong>${notification.reactorName}</strong>
-                    <span style="margin-left: 5px;">commented on your post</span>
-                  </div>
-                  <div class="notification-content">
-                    <p>${notification.postContent}</p>
-                    <div style="margin-top: 5px; font-style: italic; color: var(--estaco-text-light);">
-                      "${notification.commentContent}"
-                    </div>
-                  </div>
-                  <div class="notification-post">
-                    ${new Date(notification.timestamp.toDate()).toLocaleString()}
-                  </div>
+                <div class="notification-post">
+                  ${new Date(notification.timestamp.toDate()).toLocaleString()}
                 </div>
-              `;
-            }
-          }).join('');
+              </div>
+            `;
+          }
+        }).join('');
+    
+        // Show the "Load More" button if there might be more notifications
+        if (!allNotificationsLoaded) {
+          document.getElementById('load-more-button').style.display = 'block';
         }
+    
+        isLoading = false;
+        document.getElementById('load-more-button').textContent = 'Load More';
+        document.getElementById('load-more-button').disabled = false;
       } catch (error) {
         console.error("Error loading notifications:", error);
         notificationsList.innerHTML = '<p>Error loading notifications. Please try again.</p>';
+        isLoading = false;
       }
     }
+    
+    // Add event listener for the "Load More" button
+    document.getElementById('load-more-button').addEventListener('click', () => {
+      const user = auth.currentUser;
+      if (user) {
+        loadNotifications(user.uid, 5);
+      }
+    });
+    
+    // Check if user is signed in and verified
+    auth.onAuthStateChanged((user) => {
+      if (!user || !user.emailVerified) {
+        alert('Please sign in and verify your email to access notifications.');
+        window.location.href = 'index.html';
+      } else {
+        // Reset pagination variables
+        lastVisibleNotification = null;
+        allNotificationsLoaded = false;
+        notificationsList.innerHTML = '';
+        // Load the first batch of notifications
+        loadNotifications(user.uid, 5);
+      }
+    });
   </script>
 </body>
 </html>
