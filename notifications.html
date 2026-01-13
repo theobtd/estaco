@@ -61,15 +61,12 @@
       display: flex;
       align-items: center;
       margin-bottom: 5px;
+      flex-direction: column; /* Stack elements vertically */
+      align-items: flex-start; /* Align to the left */
     }
-    .notification-author-picture {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      margin-right: 10px;
-    }
+    
     .notification-content {
-      margin-left: 40px;
+      margin-left: 0; /* Remove left margin since there's no profile picture */
       color: var(--estaco-text);
     }
     .notification-post {
@@ -229,7 +226,7 @@
         // Prepare an array to hold all notifications with their post content
         const notifications = [];
     
-        // For each notification, fetch the post content and reactor info
+        // For each notification, fetch the post content and reactor name
         for (const notificationDoc of notificationsSnapshot.docs) {
           const notification = notificationDoc.data();
           const postId = notification.postId;
@@ -243,15 +240,13 @@
             notification.postContent = "[Post deleted]";
           }
     
-          // Fetch the reactor's profile picture and name
+          // Fetch only the reactor's name (no profile picture)
           const reactorDoc = await db.collection('users').doc(notification.reactorId).get();
           if (reactorDoc.exists) {
             const reactorData = reactorDoc.data();
             notification.reactorName = reactorData.name || "Unknown User";
-            notification.reactorProfilePicture = reactorData.profilePictureURL;
           } else {
             notification.reactorName = "Unknown User";
-            notification.reactorProfilePicture = null;
           }
     
           notifications.push(notification);
@@ -266,9 +261,6 @@
             return `
               <div class="notification">
                 <div class="notification-header">
-                  ${notification.reactorProfilePicture
-                    ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
-                    : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
                   <strong>${notification.reactorName}</strong>
                   <span style="margin-left: 5px;">
                     ${notification.reaction === 'like' ? '👍 Liked' :
@@ -289,9 +281,6 @@
             return `
               <div class="notification">
                 <div class="notification-header">
-                  ${notification.reactorProfilePicture
-                    ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
-                    : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
                   <strong>${notification.reactorName}</strong>
                   <span style="margin-left: 5px;">commented on your post</span>
                 </div>
