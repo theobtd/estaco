@@ -678,7 +678,7 @@
             }
     
             Promise.all(uploadPromises)
-              .then(async () => {
+              .then(() => {
                 alert('Post created!');
                 const user = auth.currentUser;
                 const authorName = user.displayName || "Unknown User";
@@ -694,20 +694,11 @@
                   mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
                 };
                 renderNewPost(newPost);
-            
-                // Add the post to the author's own feed sub-collection
-                await addPostToUserFeed(user.uid, docRef.id, new Date());
-            
-                // Add the post to the feed sub-collections of the author's friends
-                const friendUids = await getFriendUidsForUser(user.uid);
-                for (const friendUid of friendUids) {
-                  await addPostToUserFeed(friendUid, docRef.id, new Date());
-                }
-            
                 postContent.value = '';
                 postMedia.value = '';
                 document.getElementById('image-preview-container').style.display = 'none';
                 document.getElementById('video-preview-container').style.display = 'none';
+                // Remove loadPosts(); since the page will reload
               })
               .catch((error) => {
                 errorMessage.textContent = error.message;
@@ -715,10 +706,10 @@
               .finally(() => {
                 // Reset the orientation button state to default (horizontal)
                 document.querySelectorAll('.crop-orientation-button').forEach(button => {
-                  button.classList.remove('selected');
+                    button.classList.remove('selected');
                 });
                 document.querySelector('.crop-orientation-button[data-orientation="horizontal"]').classList.add('selected');
-            
+                
                 // Hide full-screen overlay
                 document.getElementById('upload-overlay').style.display = 'none';
                 postButton.disabled = false;
@@ -748,25 +739,26 @@
             return;
         }
     
-        try {
-            // 1. Get the user's feed sub-collection
-            const feedRef = db.collection(`users/${user.uid}/feed`);
-            let query = feedRef.orderBy('postTimestamp', 'desc');
+        const friendIds = await logUserFriendsWithPosts(user.uid);
+        friendIds.push(user.uid);
     
-            if (lastVisiblePost) {
-                query = query.startAfter(lastVisiblePost.data().postTimestamp);
-            }
+        let query = db.collection('posts')
+            .where('authorId', 'in', friendIds)
+            .orderBy('timestamp', 'desc');
     
-            // Load only 1 post on the first load, otherwise load postLimit
-            if (isFirstLoad) {
-                query = query.limit(1);
-            } else {
-                query = query.limit(postLimit);
-            }
+        if (lastVisiblePost) {
+            query = query.startAfter(lastVisiblePost);
+        }
     
-            const feedSnapshot = await query.get();
+        // Load only 1 post on the first load
+        if (isFirstLoad) {
+            query = query.limit(1);
+        } else {
+            query = query.limit(postLimit);
+        }
     
-            if (feedSnapshot.empty) {
+        query.get().then(async (querySnapshot) => {
+            if (querySnapshot.empty) {
                 if (!feed.querySelector('.post')) {
                     feed.innerHTML = '<p>No posts yet. Create one!</p>';
                 } else {
@@ -775,43 +767,28 @@
                 isLoading = false;
                 return;
             }
-    
-            // 2. Fetch the actual post data for each post ID in the feed
-            const postIds = feedSnapshot.docs.map(doc => doc.data().postId);
-            const postsSnapshot = await db.collection('posts')
-                .where(firebase.firestore.FieldPath.documentId(), 'in', postIds)
-                .get();
-    
+        
             const postsData = [];
-            postsSnapshot.forEach((doc) => {
+            querySnapshot.forEach((doc) => {
                 const post = doc.data();
                 post.id = doc.id;
                 postsData.push(post);
+                lastVisiblePost = doc; // Update lastVisiblePost for pagination
             });
-    
-            // Sort postsData to match the feed order
-            postsData.sort((a, b) => {
-                const aFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === a.id);
-                const bFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === b.id);
-                return bFeedDoc.data().postTimestamp - aFeedDoc.data().postTimestamp;
-            });
-    
-            // Update lastVisiblePost for pagination
-            lastVisiblePost = feedSnapshot.docs[feedSnapshot.docs.length - 1];
-    
+        
             await renderPosts(postsData);
-    
+        
             // After the first load, set the flag to false and load more posts
             if (isFirstLoad) {
                 isFirstLoad = false;
                 setTimeout(() => loadPosts(), 100); // Small delay to ensure DOM is ready
             }
-    
+        
             isLoading = false;
-        } catch (error) {
+        }).catch((error) => {
             errorMessage.textContent = error.message;
             isLoading = false;
-        }
+        });
     }
     
     // Function to render posts
@@ -954,119 +931,100 @@
           button.classList.add('selected');
         }
     
-        // Fetch the post data first
+        // Only update counts for the author's posts
         db.collection('posts').doc(postId).get().then((doc) => {
-          if (!doc.exists) {
-            console.error("Post does not exist!");
-            return;
-          }
-          const post = doc.data();
-    
-          // Only update counts for the author's posts
-          if (post.authorId === user.uid) {
-            const reactions = post.reactions || {};
-            let likeCount = 0, loveCount = 0, laughCount = 0;
-            Object.values(reactions).forEach(r => {
-              if (r.type === 'like') likeCount++;
-              if (r.type === 'love') loveCount++;
-              if (r.type === 'laugh') laughCount++;
-            });
-    
-            const prevReaction = reactions[user.uid];
-            if (prevReaction) {
-              if (prevReaction.type === 'like') likeCount--;
-              if (prevReaction.type === 'love') loveCount--;
-              if (prevReaction.type === 'laugh') laughCount--;
-            }
-    
-            if (!wasSelected) {
-              if (reaction === 'like') likeCount++;
-              if (reaction === 'love') loveCount++;
-              if (reaction === 'laugh') laughCount++;
-            }
-    
-            const likeCountEl = likeButton ? likeButton.querySelector('.reaction-count') : null;
-            const loveCountEl = loveButton ? loveButton.querySelector('.reaction-count') : null;
-            const laughCountEl = laughButton ? laughButton.querySelector('.reaction-count') : null;
-    
-            if (likeCountEl) likeCountEl.textContent = likeCount;
-            if (loveCountEl) loveCountEl.textContent = loveCount;
-            if (laughCountEl) laughCountEl.textContent = laughCount;
-          }
-    
-          // Perform the Firestore transaction
-          db.runTransaction((transaction) => {
-            return transaction.get(postRef).then((doc) => {
-              if (!doc.exists) throw "Post does not exist!";
-              const postData = doc.data();
-              const reactions = postData.reactions || {};
-              const userReaction = reactions[user.uid];
-          
-              if (userReaction && userReaction.type === reaction) {
-                delete reactions[user.uid];
-              } else {
-                reactions[user.uid] = {
-                  type: reaction,
-                  timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-              }
-          
-              transaction.update(postRef, { reactions });
-              return post; // Return the post data for the next .then()
-            });
-          }).then((post) => {
-            // Only add a notification if the reactor is not the author
-            if (post.authorId !== user.uid) {
-              // Delete old reaction notifications first
-              deleteOldReactionNotifications(
-                post.authorId, // Author of the post
-                postId,
-                user.uid // Current user (reactor)
-              ).then(() => {
-                // Add the new reaction notification
-                addReactionNotification(
-                  post.authorId, // Author of the post
-                  postId,
-                  user.uid, // Current user (reactor)
-                  user.displayName || "Unknown User",
-                  reaction,
-                  firebase.firestore.FieldValue.serverTimestamp()
-                );
-              });
-            }
-          }).catch((error) => {
-            console.error("Transaction failed: ", error);
-            // Revert UI on failure
-            if (likeButton) likeButton.classList.remove('selected');
-            if (loveButton) loveButton.classList.remove('selected');
-            if (laughButton) laughButton.classList.remove('selected');
-            if (!wasSelected) {
-              if (reaction === 'like' && likeButton) likeButton.classList.add('selected');
-              if (reaction === 'love' && loveButton) loveButton.classList.add('selected');
-              if (reaction === 'laugh' && laughButton) laughButton.classList.add('selected');
-            }
-            // Revert count for author
+          if (doc.exists) {
+            const post = doc.data();
             if (post.authorId === user.uid) {
-              db.collection('posts').doc(postId).get().then((doc) => {
-                if (doc.exists) {
-                  const post = doc.data();
-                  const reactions = post.reactions || {};
-                  let likeCount = 0, loveCount = 0, laughCount = 0;
-                  Object.values(reactions).forEach(r => {
-                    if (r.type === 'like') likeCount++;
-                    if (r.type === 'love') loveCount++;
-                    if (r.type === 'laugh') laughCount++;
-                  });
-                  const likeCountEl = likeButton ? likeButton.querySelector('.reaction-count') : null;
-                  const loveCountEl = loveButton ? loveButton.querySelector('.reaction-count') : null;
-                  const laughCountEl = laughButton ? laughButton.querySelector('.reaction-count') : null;
-                  if (likeCountEl) likeCountEl.textContent = likeCount;
-                  if (loveCountEl) loveCountEl.textContent = loveCount;
-                  if (laughCountEl) laughCountEl.textContent = laughCount;
-                }
+              // Count reactions
+              const reactions = post.reactions || {};
+              let likeCount = 0, loveCount = 0, laughCount = 0;
+              Object.values(reactions).forEach(r => {
+                if (r.type === 'like') likeCount++;
+                if (r.type === 'love') loveCount++;
+                if (r.type === 'laugh') laughCount++;
               });
+        
+              // Get the previous reaction (if any)
+              const prevReaction = reactions[user.uid];
+        
+              // If there was a previous reaction, decrement its count
+              if (prevReaction) {
+                if (prevReaction.type === 'like') likeCount--;
+                if (prevReaction.type === 'love') loveCount--;
+                if (prevReaction.type === 'laugh') laughCount--;
+              }
+    
+              // If the clicked button was not selected, increment its count
+              if (!wasSelected) {
+                if (reaction === 'like') likeCount++;
+                if (reaction === 'love') loveCount++;
+                if (reaction === 'laugh') laughCount++;
+              }
+    
+              // Update the UI for the author
+              const likeCountEl = likeButton ? likeButton.querySelector('.reaction-count') : null;
+              const loveCountEl = loveButton ? loveButton.querySelector('.reaction-count') : null;
+              const laughCountEl = laughButton ? laughButton.querySelector('.reaction-count') : null;
+    
+              if (likeCountEl) likeCountEl.textContent = likeCount;
+              if (loveCountEl) loveCountEl.textContent = loveCount;
+              if (laughCountEl) laughCountEl.textContent = laughCount;
             }
+          }
+        });
+    
+        // Perform the Firestore transaction
+        db.runTransaction((transaction) => {
+          return transaction.get(postRef).then((doc) => {
+            if (!doc.exists) throw "Post does not exist!";
+            const postData = doc.data();
+            const reactions = postData.reactions || {};
+            const userReaction = reactions[user.uid];
+        
+            if (userReaction && userReaction.type === reaction) {
+              delete reactions[user.uid];
+            } else {
+              reactions[user.uid] = {
+                type: reaction,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              };
+            }
+        
+            transaction.update(postRef, { reactions });
           });
+        }).catch((error) => {
+          console.error(translations[userLanguage]["Transaction failed: "], error);
+          // Revert UI on failure
+          if (likeButton) likeButton.classList.remove('selected');
+          if (loveButton) loveButton.classList.remove('selected');
+          if (laughButton) laughButton.classList.remove('selected');
+          if (!wasSelected) {
+            if (reaction === 'like' && likeButton) likeButton.classList.add('selected');
+            if (reaction === 'love' && loveButton) loveButton.classList.add('selected');
+            if (reaction === 'laugh' && laughButton) laughButton.classList.add('selected');
+          }
+          // Revert count for author
+          if (post.authorId === user.uid) {
+            db.collection('posts').doc(postId).get().then((doc) => {
+              if (doc.exists) {
+                const post = doc.data();
+                const reactions = post.reactions || {};
+                let likeCount = 0, loveCount = 0, laughCount = 0;
+                Object.values(reactions).forEach(r => {
+                  if (r.type === 'like') likeCount++;
+                  if (r.type === 'love') loveCount++;
+                  if (r.type === 'laugh') laughCount++;
+                });
+                const likeCountEl = likeButton ? likeButton.querySelector('.reaction-count') : null;
+                const loveCountEl = loveButton ? loveButton.querySelector('.reaction-count') : null;
+                const laughCountEl = laughButton ? laughButton.querySelector('.reaction-count') : null;
+                if (likeCountEl) likeCountEl.textContent = likeCount;
+                if (loveCountEl) loveCountEl.textContent = loveCount;
+                if (laughCountEl) laughCountEl.textContent = laughCount;
+              }
+            });
+          }
         });
       }
     });
@@ -1097,24 +1055,7 @@
       };
     
       db.collection('posts').doc(postId).collection('comments').add(comment)
-        .then((docRef) => {
-          // Fetch the post to get the author's UID
-          db.collection('posts').doc(postId).get().then((postDoc) => {
-            if (postDoc.exists) {
-              const post = postDoc.data();
-              // Only add a notification if the commenter is not the author
-              if (post.authorId !== user.uid) {
-                addCommentNotification(
-                  post.authorId, // Author of the post
-                  postId,
-                  user.uid, // Current user (commenter)
-                  user.displayName || "Unknown User",
-                  content,
-                  firebase.firestore.FieldValue.serverTimestamp()
-                );
-              }
-            }
-          });
+        .then(() => {
           loadComments(postId);
         })
         .catch((error) => {
@@ -1335,9 +1276,10 @@
     
     // Define the deletePost function
     async function deletePost(postId) {
+
       // Show the overlay
       document.getElementById('upload-overlay').style.display = 'flex';
-    
+      
       try {
         const postRef = db.collection('posts').doc(postId);
         const postDoc = await postRef.get();
@@ -1348,7 +1290,6 @@
     
         const postData = postDoc.data();
         const storage = firebase.storage();
-        const authorId = postData.authorId;
     
         // Delete media from Storage if it exists
         if (postData.photoURL) {
@@ -1362,20 +1303,6 @@
     
         // Delete the post document
         await postRef.delete();
-    
-        // Fetch the list of friends for the author
-        const friendUids = await getFriendUidsForUser(authorId);
-    
-        // Add the author's UID to the list
-        friendUids.push(authorId);
-    
-        // Delete the post from the feed sub-collections of the author and all friends
-        const batch = db.batch();
-        for (const uid of friendUids) {
-          const feedRef = db.collection(`users/${uid}/feed`).doc(postId);
-          batch.delete(feedRef);
-        }
-        await batch.commit();
     
         // Remove the post from the UI
         const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
@@ -1521,119 +1448,6 @@
             });
         }
     });
-
-    /**
-     * Adds a post to a user's feed sub-collection.
-     * @param {string} userId - The user's UID.
-     * @param {string} postId - The post's ID.
-     * @param {Date} timestamp - The post's timestamp.
-     */
-    async function addPostToUserFeed(userId, postId, timestamp) {
-      try {
-        const feedRef = db.collection(`users/${userId}/feed`).doc(postId);
-        await feedRef.set({
-          postId: postId,
-          postTimestamp: timestamp,
-        });
-      } catch (error) {
-        console.error('Error adding post to user feed:', error);
-      }
-    }
-
-    /**
-     * Fetches the list of friend UIDs for a user.
-     * @param {string} userId - The user's UID.
-     * @returns {Promise<string[]>} - Array of friend UIDs.
-     */
-    async function getFriendUidsForUser(userId) {
-      try {
-        const friendsDoc = await db.collection('friends').doc(userId).get();
-        if (friendsDoc.exists) {
-          const friends = friendsDoc.data()?.friends || [];
-          return friends.map(friend => friend.uid);
-        } else {
-          return [];
-        }
-      } catch (error) {
-        console.error('Error fetching friends:', error);
-        return [];
-      }
-    }
-
-    /**
-     * Adds a notification to a user's notifications sub-collection.
-     * @param {string} userId - The user's UID.
-     * @param {string} postId - The post's ID.
-     * @param {string} reactorId - The UID of the user who reacted.
-     * @param {string} reactorName - The name of the user who reacted.
-     * @param {string} reaction - The type of reaction (like, love, laugh).
-     * @param {Date} timestamp - The timestamp of the reaction.
-     */
-    async function addReactionNotification(userId, postId, reactorId, reactorName, reaction, timestamp) {
-      try {
-        const notificationsRef = db.collection(`users/${userId}/notifications`).doc();
-        await notificationsRef.set({
-          type: 'reaction',
-          reactorId,
-          reactorName,
-          reaction,
-          postId,
-          timestamp: timestamp,
-        });
-      } catch (error) {
-        console.error('Error adding reaction notification:', error);
-      }
-    }
-
-    /**
-     * Deletes all reaction notifications for a user on a specific post.
-     * @param {string} userId - The user's UID (post author).
-     * @param {string} postId - The post's ID.
-     * @param {string} reactorId - The UID of the user who reacted.
-     */
-    async function deleteOldReactionNotifications(userId, postId, reactorId) {
-      try {
-        const notificationsRef = db.collection(`users/${userId}/notifications`);
-        const querySnapshot = await notificationsRef
-          .where('type', '==', 'reaction')
-          .where('postId', '==', postId)
-          .where('reactorId', '==', reactorId)
-          .get();
-    
-        const batch = db.batch();
-        querySnapshot.forEach((doc) => {
-          batch.delete(doc.ref);
-        });
-        await batch.commit();
-      } catch (error) {
-        console.error('Error deleting old reaction notifications:', error);
-      }
-    }
-
-    /**
-     * Adds a comment notification to a user's notifications sub-collection.
-     * @param {string} userId - The user's UID (post author).
-     * @param {string} postId - The post's ID.
-     * @param {string} commenterId - The UID of the user who commented.
-     * @param {string} commenterName - The name of the user who commented.
-     * @param {string} commentContent - The content of the comment.
-     * @param {Date} timestamp - The timestamp of the comment.
-     */
-    async function addCommentNotification(userId, postId, commenterId, commenterName, commentContent, timestamp) {
-      try {
-        const notificationsRef = db.collection(`users/${userId}/notifications`).doc();
-        await notificationsRef.set({
-          type: 'comment',
-          reactorId: commenterId,
-          reactorName: commenterName,
-          commentContent: commentContent,
-          postId: postId,
-          timestamp: timestamp,
-        });
-      } catch (error) {
-        console.error('Error adding comment notification:', error);
-      }
-    }
 
     document.getElementById('image-preview').addEventListener('click', () => {
         if (originalImageFile) {
