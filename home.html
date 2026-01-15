@@ -1103,6 +1103,14 @@
         if (content) {
           addComment(postId, content);
           commentInput.value = '';
+    
+          // Automatically show the comments section after posting
+          const commentsList = document.getElementById(`comments-${postId}`);
+          const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
+          if (seeCommentsButton) {
+            seeCommentsButton.textContent = 'Hide comments';
+            commentsList.classList.add('visible');
+          }
         }
       }
     });
