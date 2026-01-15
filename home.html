@@ -1110,6 +1110,7 @@
           if (seeCommentsButton) {
             seeCommentsButton.textContent = 'Hide comments';
             commentsList.classList.add('visible');
+            loadComments(postId); // Load comments here
           }
         }
       }
