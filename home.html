@@ -1179,22 +1179,6 @@
     
           // Update the CommentsVisible flag for all users who have this post in their feed
           updateCommentsVisibleForPost(postId, user.uid);
-    
-          // Immediately append the new comment to the UI
-          appendNewComment(postId, {
-            authorId: user.uid,
-            authorName: user.displayName || "Unknown User",
-            content: content,
-            timestamp: new Date(),
-          });
-    
-          // Show the comments section and the "See comments" button
-          const commentsList = document.getElementById(`comments-${postId}`);
-          const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
-          if (seeCommentsButton) {
-            seeCommentsButton.textContent = 'Hide comments';
-            commentsList.classList.add('visible');
-          }
         })
         .catch((error) => {
           console.error("Error adding comment: ", error);
@@ -1774,39 +1758,6 @@
         console.log('Updated CommentsVisible flag for users who have this post in their feed.');
       } catch (error) {
         console.error('Error updating CommentsVisible flag:', error);
-      }
-    }
-
-    /**
-     * Appends a new comment to the UI immediately.
-     * @param {string} postId - The ID of the post.
-     * @param {Object} comment - The comment object.
-     */
-    async function appendNewComment(postId, comment) {
-      try {
-        const commentsList = document.getElementById(`comments-${postId}`);
-        if (!commentsList) return;
-    
-        // Get the comment author's profile picture
-        const profilePictureHTML = await getCommentAuthorPicture(comment.authorId, comment.authorName);
-    
-        // Create the comment HTML
-        const commentHTML = `
-          <div class="comment">
-            <div class="comment-author-picture">
-              ${profilePictureHTML}
-            </div>
-            <div class="comment-content">
-              <div class="comment-author-name">${comment.authorName}</div>
-              <div>${comment.content}</div>
-            </div>
-          </div>
-        `;
-    
-        // Append the new comment to the comments list
-        commentsList.innerHTML += commentHTML;
-      } catch (error) {
-        console.error("Error appending new comment: ", error);
       }
     }
 
