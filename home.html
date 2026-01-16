@@ -1176,7 +1176,9 @@
               }
             }
           });
-          // Remove this line: loadComments(postId);
+    
+          // Update the CommentsVisible flag for all users who have this post in their feed
+          updateCommentsVisibleForPost(postId, user.uid);
         })
         .catch((error) => {
           console.error("Error adding comment: ", error);
@@ -1693,6 +1695,52 @@
         });
       } catch (error) {
         console.error('Error adding comment notification:', error);
+      }
+    }
+
+    /**
+     * Updates the CommentsVisible flag for all users who have the post in their feed and are friends with the commenter.
+     * @param {string} postId - The ID of the post.
+     * @param {string} commenterId - The UID of the user who commented.
+     */
+    async function updateCommentsVisibleForPost(postId, commenterId) {
+      try {
+        // 1. Find all users who have this post in their feed
+        const usersWithPostSnapshot = await db.collectionGroup('feed')
+          .where('postId', '==', postId)
+          .get();
+    
+        if (usersWithPostSnapshot.empty) {
+          console.log('No users have this post in their feed.');
+          return;
+        }
+    
+        // 2. For each user, check if the commenter is a friend
+        const batch = db.batch();
+        for (const doc of usersWithPostSnapshot.docs) {
+          const userId = doc.ref.parent.parent?.id; // Extract userId from the path
+          if (!userId) continue;
+    
+          // 3. Check if the commenter is a friend of the user
+          const friendsDoc = await db.collection('friends').doc(userId).get();
+          if (friendsDoc.exists) {
+            const friends = friendsDoc.data()?.friends || [];
+            const friendIds = friends.map(friend => friend.uid);
+            friendIds.push(userId); // Include the user themselves
+    
+            if (friendIds.includes(commenterId)) {
+              // 4. Update the CommentsVisible flag to true
+              const feedDocRef = db.collection(`users/${userId}/feed`).doc(postId);
+              batch.update(feedDocRef, { CommentsVisible: true });
+            }
+          }
+        }
+    
+        // 5. Commit the batch update
+        await batch.commit();
+        console.log('Updated CommentsVisible flag for users who have this post in their feed.');
+      } catch (error) {
+        console.error('Error updating CommentsVisible flag:', error);
       }
     }
 
