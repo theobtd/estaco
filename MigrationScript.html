@@ -122,6 +122,34 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    /**
+     * Checks if a post has comments from friends of the user.
+     * @param {string} postId - The ID of the post.
+     * @param {string[]} friendIds - Array of friend UIDs (including the user's own UID).
+     * @returns {Promise<boolean>} - True if the post has comments from friends, false otherwise.
+     */
+    async function postHasFriendComments(postId, friendIds) {
+      try {
+        const commentsSnapshot = await db.collection(`posts/${postId}/comments`).get();
+        if (commentsSnapshot.empty) {
+          return false;
+        }
+    
+        // Check if any commenter is a friend
+        for (const commentDoc of commentsSnapshot.docs) {
+          const comment = commentDoc.data();
+          if (friendIds.includes(comment.authorId)) {
+            return true;
+          }
+        }
+    
+        return false;
+      } catch (error) {
+        console.error(`Error checking comments for post ${postId}:`, error);
+        return false;
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const migrateButton = document.getElementById('migrate-button');
       const userUidInput = document.getElementById('user-uid-input');
@@ -167,16 +195,23 @@
           // 3. Create/update the feed sub-collection
           const batch = db.batch();
           const feedRef = db.collection(`users/${userUid}/feed`);
-
-          postsSnapshot.forEach((postDoc) => {
+          
+          // Process each post
+          for (const postDoc of postsSnapshot.docs) {
             const post = postDoc.data();
             const feedDocRef = feedRef.doc(postDoc.id); // Use post ID as document ID
+          
+            // Check if the post has comments from friends
+            const hasFriendComments = await postHasFriendComments(postDoc.id, friendIds);
+          
+            // Set the feed document with the CommentsVisible flag
             batch.set(feedDocRef, {
               postId: postDoc.id,
               postTimestamp: post.timestamp,
+              CommentsVisible: hasFriendComments,
             });
-          });
-
+          }
+          
           await batch.commit();
 
           statusMessage.textContent = `Successfully migrated ${postsSnapshot.size} posts to the user's feed!`;
