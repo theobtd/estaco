@@ -182,82 +182,62 @@
       }
     });
 
-    // Function to load notifications (reactions to user's posts and friend requests)
+    // Function to load notifications (reactions to user's posts)
     async function loadNotifications(userId) {
       try {
-        // Fetch friend request notifications
-        const friendRequestNotificationsSnapshot = await db.collection(`users/${userId}/notifications`)
-          .where('type', '==', 'friendRequest')
-          .orderBy('timestamp', 'desc')
-          .get();
-    
-        const friendRequestNotifications = friendRequestNotificationsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-    
         // Fetch all posts by the user
         const postsSnapshot = await db.collection('posts')
           .where('authorId', '==', userId)
           .orderBy('timestamp', 'desc')
           .get();
     
+        if (postsSnapshot.empty) {
+          notificationsList.innerHTML = '<p>No posts found.</p>';
+          return;
+        }
+    
         // For each post, fetch reactions and comments
         const notifications = [];
+        for (const postDoc of postsSnapshot.docs) {
+          const post = postDoc.data();
+          const postTimestamp = post.timestamp;
     
-        // Add friend request notifications
-        friendRequestNotifications.forEach(notification => {
-          notifications.push({
-            type: 'friendRequest',
-            requesterId: notification.requesterId,
-            requesterName: notification.requesterName,
-            timestamp: notification.timestamp,
-          });
-        });
-    
-        // Add post-related notifications
-        if (!postsSnapshot.empty) {
-          for (const postDoc of postsSnapshot.docs) {
-            const post = postDoc.data();
-            const postTimestamp = post.timestamp;
-    
-            // Fetch reactions
-            const reactions = post.reactions || {};
-            for (const [reactorId, reactionData] of Object.entries(reactions)) {
-              if (reactorId !== userId) { // Skip self-reactions
-                const reactorDoc = await db.collection('users').doc(reactorId).get();
-                const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
-                const reactorProfilePicture = reactorDoc.exists ? reactorDoc.data().profilePictureURL : null;
-                const reactionTimestamp = reactionData.timestamp || postTimestamp;
-                notifications.push({
-                  type: 'reaction',
-                  reactorId,
-                  reactorName,
-                  reactorProfilePicture,
-                  reaction: reactionData.type || reactionData,
-                  postId: postDoc.id,
-                  postContent: post.content,
-                  timestamp: reactionTimestamp,
-                });
-              }
+          // Fetch reactions
+          const reactions = post.reactions || {};
+          for (const [reactorId, reactionData] of Object.entries(reactions)) {
+            if (reactorId !== userId) { // Skip self-reactions
+              const reactorDoc = await db.collection('users').doc(reactorId).get();
+              const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
+              const reactorProfilePicture = reactorDoc.exists ? reactorDoc.data().profilePictureURL : null;
+              const reactionTimestamp = reactionData.timestamp || postTimestamp;
+              notifications.push({
+                type: 'reaction',
+                reactorId,
+                reactorName,
+                reactorProfilePicture,
+                reaction: reactionData.type || reactionData,
+                postId: postDoc.id,
+                postContent: post.content,
+                timestamp: reactionTimestamp,
+              });
             }
+          }
     
-            // Fetch comments
-            const commentsSnapshot = await db.collection('posts').doc(postDoc.id).collection('comments').get();
-            for (const commentDoc of commentsSnapshot.docs) {
-              const comment = commentDoc.data();
-              if (comment.authorId !== userId) { // Skip self-comments
-                notifications.push({
-                  type: 'comment',
-                  reactorId: comment.authorId,
-                  reactorName: comment.authorName || "Unknown User",
-                  reactorProfilePicture: null,
-                  commentContent: comment.content,
-                  postId: postDoc.id,
-                  postContent: post.content,
-                  timestamp: comment.timestamp,
-                });
-              }
+          // Fetch comments
+          const commentsSnapshot = await db.collection('posts').doc(postDoc.id).collection('comments').get();
+          for (const commentDoc of commentsSnapshot.docs) {
+            const comment = commentDoc.data();
+            if (comment.authorId !== userId) { // Skip self-comments
+              notifications.push({
+                type: 'comment',
+                reactorId: comment.authorId,
+                reactorName: comment.authorName || "Unknown User",
+                reactorProfilePicture: null, // You may want to fetch this from the users collection if available
+                commentContent: comment.content,
+                postId: postDoc.id,
+                postContent: post.content,
+                timestamp: comment.timestamp,
+              });
             }
           }
         }
@@ -308,19 +288,6 @@
                     <div style="margin-top: 5px; font-style: italic; color: var(--estaco-text-light);">
                       "${notification.commentContent}"
                     </div>
-                  </div>
-                  <div class="notification-post">
-                    ${new Date(notification.timestamp.toDate()).toLocaleString()}
-                  </div>
-                </div>
-              `;
-            } else if (notification.type === 'friendRequest') {
-              return `
-                <div class="notification">
-                  <div class="notification-header">
-                    <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
-                    <strong>${notification.requesterName}</strong>
-                    <span style="margin-left: 5px;">sent you a friend request</span>
                   </div>
                   <div class="notification-post">
                     ${new Date(notification.timestamp.toDate()).toLocaleString()}
