@@ -443,6 +443,22 @@
       display: block;
     }
 
+    .comments-loading {
+      display: none;
+      width: 100%;
+      text-align: center;
+      padding: 10px 0;
+    }
+    
+    .comments-loading .spinner {
+      border: 2px solid rgba(0, 0, 0, 0.1);
+      border-top: 2px solid var(--estaco-primary);
+      width: 20px;
+      height: 20px;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+
   </style>
 </head>
 <body>
@@ -922,6 +938,9 @@
                         <button class="comment-button" data-post-id="${post.id}">Post</button>
                       </div>
                       ${seeCommentsButtonHTML}
+                      <div class="comments-loading" id="comments-loading-${post.id}">
+                        <div class="spinner"></div>
+                      </div>
                       <div class="comments-list" id="comments-${post.id}"></div>
                     </div>
                 </div>
@@ -1143,6 +1162,7 @@
         } else {
           commentsList.classList.add('visible');
           button.textContent = 'Hide comments';
+          commentsLoading.style.display = 'block';
           loadComments(postId);
         }
       }
@@ -1192,6 +1212,10 @@
     function loadComments(postId) {
       const user = auth.currentUser;
       if (!user) return;
+
+      // Show loading indicator
+      const commentsLoading = document.getElementById(`comments-loading-${postId}`);
+      commentsLoading.style.display = 'block';
     
       // Get the current user's friends (including themselves)
       db.collection('friends').doc(user.uid).get()
@@ -1236,9 +1260,15 @@
             .catch((error) => {
               console.error("Error loading comments: ", error);
             });
+            .finally(() => {
+              // Hide loading indicator
+              commentsLoading.style.display = 'none';
+            });
         })
         .catch((error) => {
           console.error("Error fetching friends: ", error);
+          // Hide loading indicator
+          commentsLoading.style.display = 'none';
         });
     }
     
