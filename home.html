@@ -1355,7 +1355,7 @@
 
     // Replace your setupIntersectionObserver with this:
     function setupIntersectionObserver() {
-      const options = { root: null, rootMargin: '0px', threshold: 0.1 };
+      const options = { root: null, rootMargin: '200px', threshold: 0.1 };
       const observer = new IntersectionObserver(
         throttle((entries) => {
           entries.forEach((entry) => {
