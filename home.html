@@ -479,6 +479,15 @@
       background: #f0f0f0;
     }
 
+    .tag-validated {
+      background-color: var(--estaco-primary-light);
+      color: var(--estaco-text);
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
   </style>
 </head>
 <body>
@@ -488,7 +497,23 @@
 
   <div id="post-form">
     <h3 data-i18n="Create a Post">Create a Post</h3>
-    <textarea id="post-content" placeholder="How's life treating ya?" rows="3"></textarea>
+    <div
+      id="post-content"
+      contenteditable="true"
+      placeholder="How's life treating ya?"
+      style="
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        resize: none;
+        font-size: 15px;
+        box-sizing: border-box;
+        min-height: 60px;
+        outline: none;
+      "
+    ></div>
     <div class="post-form-actions">
       <label for="post-media" id="post-media-label">
         <span data-i18n="Photo/Video">📷 Photo/Video</span>
@@ -734,16 +759,33 @@
     // Function to insert the selected user into the textarea
     function insertTaggedUser(inputElement, username, atPos) {
       const text = inputElement.value;
-      const newText = text.substring(0, atPos) + `@${username} ` + text.substring(inputElement.selectionStart);
-      inputElement.value = newText;
+      const before = text.substring(0, atPos);
+      const after = text.substring(inputElement.selectionStart);
+      const tag = `@${username}`;
+      const highlightedTag = `<span class="tag-validated" contenteditable="false">${tag}</span>`;
+    
+      // Use innerHTML to insert the highlighted tag
+      inputElement.innerHTML = before + highlightedTag + after;
+    
+      // Move the cursor to the end of the tag
+      const range = document.createRange();
+      const selection = window.getSelection();
+      const lastChild = inputElement.lastChild;
+      range.setStartAfter(lastChild);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    
+      // Focus the textarea
       inputElement.focus();
-      inputElement.selectionStart = inputElement.selectionEnd = atPos + username.length + 2;
     }
     
-    // Listen for @ in the post-content textarea
+    // Listen for @ in the post-content div
     postContent.addEventListener('input', (e) => {
-      const cursorPos = e.target.selectionStart;
-      const text = e.target.value;
+      const selection = window.getSelection();
+      const range = selection.getRangeAt(0);
+      const text = postContent.textContent;
+      const cursorPos = range.startOffset;
       const lastAtPos = text.lastIndexOf('@', cursorPos - 1);
     
       if (lastAtPos !== -1 && cursorPos > lastAtPos) {
@@ -751,6 +793,55 @@
         showUserTagDropdown(e.target, query, lastAtPos);
       } else {
         hideUserTagDropdown();
+      }
+    });
+    
+    // Listen for clicks inside the post-content div
+    postContent.addEventListener('click', (e) => {
+      const selection = window.getSelection();
+      const range = selection.getRangeAt(0);
+      const text = postContent.textContent;
+      const cursorPos = range.startOffset;
+      const lastAtPos = text.lastIndexOf('@', cursorPos - 1);
+    
+      if (lastAtPos !== -1 && cursorPos > lastAtPos) {
+        const query = text.substring(lastAtPos + 1, cursorPos).trim();
+        showUserTagDropdown(e.target, query, lastAtPos);
+      } else {
+        hideUserTagDropdown();
+      }
+    });
+    
+    // Listen for keypresses to detect backspace/delete
+    postContent.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        const selection = window.getSelection();
+        const range = selection.getRangeAt(0);
+        const text = postContent.textContent;
+        const cursorPos = range.startOffset;
+    
+        // Check if the cursor is inside a validated tag
+        const tags = postContent.querySelectorAll('.tag-validated');
+        tags.forEach(tag => {
+          const tagText = tag.textContent;
+          const tagStart = text.indexOf(tagText);
+          const tagEnd = tagStart + tagText.length;
+    
+          if (cursorPos >= tagStart && cursorPos <= tagEnd) {
+            // Remove the tag if backspace/delete is pressed
+            const before = text.substring(0, tagStart);
+            const after = text.substring(tagEnd);
+            postContent.textContent = before + after;
+    
+            // Move the cursor to the position after the removed tag
+            const newRange = document.createRange();
+            const newSelection = window.getSelection();
+            newRange.setStart(postContent.firstChild, tagStart);
+            newRange.collapse(true);
+            newSelection.removeAllRanges();
+            newSelection.addRange(newRange);
+          }
+        });
       }
     });
     
@@ -767,6 +858,7 @@
     // Create a new post
     postButton.addEventListener('click', () => {
       errorMessage.textContent = ''; // Clear any previous error message
+      const content = postContent.textContent.trim();
       const content = postContent.value;
       const mediaFile = postMedia.files[0];
     
