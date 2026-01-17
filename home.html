@@ -824,19 +824,15 @@
       if (e.key === 'Backspace' || e.key === 'Delete') {
         const selection = window.getSelection();
         const range = selection.getRangeAt(0);
-        const text = postContent.textContent;
-        const cursorPos = range.startOffset;
+        const cursorNode = range.startContainer;
+        const cursorOffset = range.startOffset;
     
         // Check if the cursor is inside a validated tag
         const tags = postContent.querySelectorAll('.tag-validated');
         let tagToRemove = null;
     
         tags.forEach(tag => {
-          const tagText = tag.textContent;
-          const tagStart = text.indexOf(tagText);
-          const tagEnd = tagStart + tagText.length;
-    
-          if (cursorPos > tagStart && cursorPos <= tagEnd) {
+          if (tag.contains(cursorNode) || tag === cursorNode) {
             tagToRemove = tag;
           }
         });
@@ -844,10 +840,10 @@
         if (tagToRemove) {
           e.preventDefault();
           const tagText = tagToRemove.textContent;
-          const tagStart = text.indexOf(tagText);
+          const tagStart = postContent.textContent.indexOf(tagText);
           const tagEnd = tagStart + tagText.length;
-          const before = text.substring(0, tagStart);
-          const after = text.substring(tagEnd);
+          const before = postContent.textContent.substring(0, tagStart);
+          const after = postContent.textContent.substring(tagEnd);
     
           postContent.textContent = before + after;
     
