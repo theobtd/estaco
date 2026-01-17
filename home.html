@@ -488,6 +488,13 @@
       white-space: nowrap;
     }
 
+    #post-content:empty::before {
+      content: attr(data-placeholder);
+      color: #999;
+      pointer-events: none;
+      display: block;
+    }
+
   </style>
 </head>
 <body>
@@ -859,7 +866,6 @@
     postButton.addEventListener('click', () => {
       errorMessage.textContent = ''; // Clear any previous error message
       const content = postContent.textContent.trim();
-      const content = postContent.value;
       const mediaFile = postMedia.files[0];
     
       if (!content) {
@@ -939,7 +945,7 @@
                   await addPostToUserFeed(friendUid, docRef.id, new Date());
                 }
             
-                postContent.value = '';
+                postContent.textContent = '';
                 postMedia.value = '';
                 document.getElementById('image-preview-container').style.display = 'none';
                 document.getElementById('video-preview-container').style.display = 'none';
