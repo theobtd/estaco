@@ -767,12 +767,12 @@
     function insertTaggedUser(inputElement, username, atPos) {
       const text = inputElement.textContent;
       const before = text.substring(0, atPos);
-      const after = text.substring(atPos);
+      const after = text.substring(atPos + currentQuery.length + 1); // Skip the @ and the query
       const tag = `@${username}`;
       const highlightedTag = `<span class="tag-validated" contenteditable="false">${tag}</span>`;
     
       // Use innerHTML to insert the highlighted tag
-      inputElement.innerHTML = before + highlightedTag + after;
+      inputElement.innerHTML = before + highlightedTag + ' ' + after;
     
       // Move the cursor to the end of the tag
       const range = document.createRange();
