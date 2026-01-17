@@ -97,7 +97,6 @@
     #feed {
       margin-top: 20px;
       width: 100%;
-      padding-bottom: 60px;
     }
     .post {
       padding: 10px;
@@ -460,26 +459,6 @@
       margin: 0 auto;
     }
 
-    .feed-loading {
-      display: none;
-      width: 100%;
-      padding: 20px 0;
-      text-align: center;
-      background: var(--estaco-background);
-      border-top: 1px solid var(--estaco-border);
-      min-height: 60px; /* Ensure it's tall enough */
-      margin-bottom: 60px; /* Extra margin to avoid overlap */
-    }
-    
-    .feed-loading .spinner {
-      border: 3px solid rgba(0, 0, 0, 0.1);
-      border-top: 3px solid var(--estaco-primary);
-      width: 24px;
-      height: 24px;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto;
-    }
-
   </style>
 </head>
 <body>
@@ -526,9 +505,6 @@
   
   <div id="feed">
     <h3 data-i18n="Your Feed">Your Feed</h3>
-    <div class="feed-loading" id="feed-loading">
-      <div class="spinner"></div>
-    </div>
   </div>
   
   <div id="bottom-nav-bar">
@@ -805,9 +781,6 @@
     async function loadPosts() {
         if (isLoading) return; // Prevent multiple simultaneous loads
         isLoading = true;
-
-        // Show the bottom loader
-        document.getElementById('feed-loading').style.display = 'block';
     
         const user = auth.currentUser;
         if (!user) {
@@ -885,11 +858,9 @@
             }
     
             isLoading = false;
-            document.getElementById('feed-loading').style.display = 'none';
         } catch (error) {
             errorMessage.textContent = error.message;
             isLoading = false;
-            document.getElementById('feed-loading').style.display = 'none';
         }
     }
     
@@ -1422,13 +1393,11 @@
 
     // Replace your setupIntersectionObserver with this:
     function setupIntersectionObserver() {
-      const options = { root: null, rootMargin: '400px', threshold: 0.1 };
+      const options = { root: null, rootMargin: '200px', threshold: 0.1 };
       const observer = new IntersectionObserver(
         throttle((entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting && entry.target === feed.lastElementChild) {
-              // Show the loader before loading posts
-              document.getElementById('feed-loading').style.display = 'block';
               loadPosts();
             }
           });
