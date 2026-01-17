@@ -1179,15 +1179,6 @@
     
           // Update the CommentsVisible flag for all users who have this post in their feed
           updateCommentsVisibleForPost(postId, user.uid);
-    
-          // Immediately show the comments section for the current user
-          const commentsList = document.getElementById(`comments-${postId}`);
-          const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
-          if (commentsList && seeCommentsButton) {
-            commentsList.classList.add('visible');
-            seeCommentsButton.textContent = 'Hide comments';
-            loadComments(postId);
-          }
         })
         .catch((error) => {
           console.error("Error adding comment: ", error);
