@@ -834,8 +834,9 @@
           const tagStart = text.indexOf(tagText);
           const tagEnd = tagStart + tagText.length;
     
-          if (cursorPos >= tagStart && cursorPos <= tagEnd) {
-            // Remove the tag if backspace/delete is pressed
+          if (cursorPos > tagStart && cursorPos <= tagEnd) {
+            // Remove the tag if backspace/delete is pressed and cursor is inside the tag
+            e.preventDefault();
             const before = text.substring(0, tagStart);
             const after = text.substring(tagEnd);
             postContent.textContent = before + after;
