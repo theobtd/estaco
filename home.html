@@ -793,11 +793,29 @@
       const range = selection.getRangeAt(0);
       const text = postContent.textContent;
       const cursorPos = range.startOffset;
-      const lastAtPos = text.lastIndexOf('@', cursorPos - 1);
     
-      if (lastAtPos !== -1 && cursorPos > lastAtPos) {
-        const query = text.substring(lastAtPos + 1, cursorPos).trim();
-        showUserTagDropdown(e.target, query, lastAtPos);
+      // Check if the character before the cursor is @ and not part of a tag
+      if (cursorPos > 0 && text[cursorPos - 1] === '@') {
+        const node = range.startContainer;
+        let isInsideTag = false;
+    
+        // Check if the @ is inside a tag
+        let currentNode = node;
+        while (currentNode && currentNode !== postContent) {
+          if (currentNode.classList && currentNode.classList.contains('tag-validated')) {
+            isInsideTag = true;
+            break;
+          }
+          currentNode = currentNode.parentNode;
+        }
+    
+        if (!isInsideTag) {
+          const lastAtPos = cursorPos - 1;
+          const query = text.substring(lastAtPos + 1, cursorPos).trim();
+          showUserTagDropdown(e.target, query, lastAtPos);
+        } else {
+          hideUserTagDropdown();
+        }
       } else {
         hideUserTagDropdown();
       }
