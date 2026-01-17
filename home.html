@@ -507,7 +507,7 @@
     <div
       id="post-content"
       contenteditable="true"
-      placeholder="How's life treating ya?"
+      data-placeholder="How's life treating ya?"
       style="
         width: 100%;
         padding: 12px;
@@ -745,7 +745,7 @@
         item.textContent = friend.name;
         item.dataset.uid = friend.uid;
         item.addEventListener('click', () => {
-          insertTaggedUser(inputElement, friend.name, atPos);
+          insertTaggedUser(currentInputElement, friend.name, currentAtPosition);
           hideUserTagDropdown();
         });
         dropdown.appendChild(item);
@@ -765,9 +765,9 @@
     
     // Function to insert the selected user into the textarea
     function insertTaggedUser(inputElement, username, atPos) {
-      const text = inputElement.value;
+      const text = inputElement.textContent;
       const before = text.substring(0, atPos);
-      const after = text.substring(inputElement.selectionStart);
+      const after = text.substring(atPos);
       const tag = `@${username}`;
       const highlightedTag = `<span class="tag-validated" contenteditable="false">${tag}</span>`;
     
