@@ -941,7 +941,7 @@
                       <div class="comments-loading" id="comments-loading-${post.id}">
                         <div class="spinner"></div>
                       </div>
-                      <div class="comments-list" id="comments-${post.id}"></div>
+                      <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
                     </div>
                 </div>
             `;
@@ -1163,8 +1163,13 @@
         } else {
           commentsList.classList.add('visible');
           button.textContent = 'Hide comments';
-          commentsLoading.style.display = 'block';
-          loadComments(postId);
+    
+          // Check if comments are already loaded
+          const isLoaded = commentsList.getAttribute('data-loaded') === 'true';
+          if (!isLoaded) {
+            commentsLoading.style.display = 'block';
+            loadComments(postId);
+          }
         }
       }
     });
@@ -1213,7 +1218,7 @@
     function loadComments(postId) {
       const user = auth.currentUser;
       if (!user) return;
-
+    
       // Show loading indicator
       const commentsLoading = document.getElementById(`comments-loading-${postId}`);
       commentsLoading.style.display = 'block';
@@ -1262,8 +1267,10 @@
               console.error("Error loading comments: ", error);
             })
             .finally(() => {
-              // Hide loading indicator
+              // Hide loading indicator and mark comments as loaded
               commentsLoading.style.display = 'none';
+              const commentsList = document.getElementById(`comments-${postId}`);
+              commentsList.setAttribute('data-loaded', 'true');
             });
         })
         .catch((error) => {
