@@ -829,27 +829,36 @@
     
         // Check if the cursor is inside a validated tag
         const tags = postContent.querySelectorAll('.tag-validated');
+        let tagToRemove = null;
+    
         tags.forEach(tag => {
           const tagText = tag.textContent;
           const tagStart = text.indexOf(tagText);
           const tagEnd = tagStart + tagText.length;
     
           if (cursorPos > tagStart && cursorPos <= tagEnd) {
-            // Remove the tag if backspace/delete is pressed and cursor is inside the tag
-            e.preventDefault();
-            const before = text.substring(0, tagStart);
-            const after = text.substring(tagEnd);
-            postContent.textContent = before + after;
-    
-            // Move the cursor to the position after the removed tag
-            const newRange = document.createRange();
-            const newSelection = window.getSelection();
-            newRange.setStart(postContent.firstChild, tagStart);
-            newRange.collapse(true);
-            newSelection.removeAllRanges();
-            newSelection.addRange(newRange);
+            tagToRemove = tag;
           }
         });
+    
+        if (tagToRemove) {
+          e.preventDefault();
+          const tagText = tagToRemove.textContent;
+          const tagStart = text.indexOf(tagText);
+          const tagEnd = tagStart + tagText.length;
+          const before = text.substring(0, tagStart);
+          const after = text.substring(tagEnd);
+    
+          postContent.textContent = before + after;
+    
+          // Move the cursor to the position after the removed tag
+          const newRange = document.createRange();
+          const newSelection = window.getSelection();
+          newRange.setStart(postContent.firstChild, tagStart);
+          newRange.collapse(true);
+          newSelection.removeAllRanges();
+          newSelection.addRange(newRange);
+        }
       }
     });
     
