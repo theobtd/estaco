@@ -1153,6 +1153,7 @@
       if (e.target.classList.contains('see-comments-button')) {
         const postId = e.target.getAttribute('data-post-id');
         const commentsList = document.getElementById(`comments-${postId}`);
+        const commentsLoading = document.getElementById(`comments-loading-${postId}`);
         const button = e.target;
     
         // Toggle visibility
@@ -1259,7 +1260,7 @@
             })
             .catch((error) => {
               console.error("Error loading comments: ", error);
-            });
+            })
             .finally(() => {
               // Hide loading indicator
               commentsLoading.style.display = 'none';
