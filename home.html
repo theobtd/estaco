@@ -1135,8 +1135,9 @@
             }
     
             // Only show the "See comments" button if CommentsVisible is true
-            const seeCommentsButtonHTML = post.CommentsVisible ?
-                `<button class="see-comments-button" data-post-id="${post.id}">See comments</button>` : '';
+            const seeCommentsButtonHTML = `
+                <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
+            `;
     
             let postHTML = `
                 <div class="post" data-post-id="${post.id}">
@@ -1435,13 +1436,19 @@
           // Update the CommentsVisible flag for all users who have this post in their feed
           updateCommentsVisibleForPost(postId, user.uid);
       
-          // Automatically show the comments section after posting
-          const commentsList = document.getElementById(`comments-${postId}`);
-          const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
-          if (seeCommentsButton) {
-            seeCommentsButton.textContent = 'Hide comments';
-            commentsList.classList.add('visible');
-            loadComments(postId); // Load comments here
+          // Force the "See comments" button to appear and open the comments section
+          const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+          if (postElement) {
+            const seeCommentsButton = postElement.querySelector('.see-comments-button');
+            const commentsList = postElement.querySelector('.comments-list');
+            if (seeCommentsButton) {
+              seeCommentsButton.textContent = 'Hide comments';
+              seeCommentsButton.style.display = 'block';
+            }
+            if (commentsList) {
+              commentsList.classList.add('visible');
+              loadComments(postId); // Load comments here
+            }
           }
         })
         .catch((error) => {
