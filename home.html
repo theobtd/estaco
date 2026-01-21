@@ -1411,6 +1411,7 @@
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       };
     
+      // Inside the addComment function, after the Firestore update:
       db.collection('posts').doc(postId).collection('comments').add(comment)
         .then((docRef) => {
           // Fetch the post to get the author's UID
@@ -1430,9 +1431,18 @@
               }
             }
           });
-    
+      
           // Update the CommentsVisible flag for all users who have this post in their feed
           updateCommentsVisibleForPost(postId, user.uid);
+      
+          // Automatically show the comments section after posting
+          const commentsList = document.getElementById(`comments-${postId}`);
+          const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
+          if (seeCommentsButton) {
+            seeCommentsButton.textContent = 'Hide comments';
+            commentsList.classList.add('visible');
+            loadComments(postId); // Load comments here
+          }
         })
         .catch((error) => {
           console.error("Error adding comment: ", error);
