@@ -157,6 +157,15 @@
       padding: 8px;
       border: 1px solid #ddd;
       border-radius: 4px;
+      min-height: 40px;
+      outline: none;
+    }
+    
+    .comment-input:empty::before {
+      content: attr(data-placeholder);
+      color: #999;
+      pointer-events: none;
+      display: block;
     }
     .comment-button {
       padding: 8px 12px;
@@ -675,12 +684,14 @@
           </div>
           <div class="comments-section">
             <div class="comment-form">
-              <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${post.id}">
+              <div
+                class="comment-input"
+                contenteditable="true"
+                data-placeholder="Write a comment..."
+                data-post-id="${post.id}"
+              ></div>
               <button class="comment-button" data-post-id="${post.id}">Post</button>
             </div>
-            <button class="see-comments-button" data-post-id="${post.id}">See comments</button>
-            <div class="comments-list" id="comments-${post.id}"></div>
-          </div>
         </div>
       `;
     
@@ -765,39 +776,24 @@
     
     // Function to insert the selected user into the textarea
     function insertTaggedUser(inputElement, username, atPos) {
-      if (inputElement.contentEditable === 'true') {
-        // Handle post content (contenteditable div)
-        const text = inputElement.textContent;
-        const before = text.substring(0, atPos);
-        const after = text.substring(atPos + currentQuery.length + 1);
-        const tag = `@${username}`;
-        const highlightedTag = `<span class="tag-validated" contenteditable="false">${tag}</span>`;
+      const text = inputElement.textContent;
+      const before = text.substring(0, atPos);
+      const after = text.substring(atPos + currentQuery.length + 1);
+      const tag = `@${username}`;
+      const highlightedTag = `<span class="tag-validated" contenteditable="false">${tag}</span>`;
     
-        inputElement.innerHTML = before + highlightedTag + ' ' + after;
+      inputElement.innerHTML = before + highlightedTag + ' ' + after;
     
-        // Move the cursor to the end of the tag
-        const range = document.createRange();
-        const selection = window.getSelection();
-        const lastChild = inputElement.lastChild;
-        range.setStartAfter(lastChild);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
+      // Move the cursor to the end of the tag
+      const range = document.createRange();
+      const selection = window.getSelection();
+      const lastChild = inputElement.lastChild;
+      range.setStartAfter(lastChild);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
     
-        inputElement.focus();
-      } else {
-        // Handle comment input (input field)
-        const text = inputElement.value;
-        const before = text.substring(0, atPos);
-        const after = text.substring(atPos + currentQuery.length + 1);
-        const tag = `@${username}`;
-        inputElement.value = before + tag + ' ' + after;
-    
-        // Move the cursor to the end of the tag
-        inputElement.selectionStart = before.length + tag.length + 1;
-        inputElement.selectionEnd = before.length + tag.length + 1;
-        inputElement.focus();
-      }
+      inputElement.focus();
     }
     
     // Listen for @ in the post-content div
@@ -895,8 +891,8 @@
         const commentInput = e.target;
         const selection = window.getSelection();
         const range = selection.getRangeAt(0);
-        const text = commentInput.value;
-        const cursorPos = commentInput.selectionStart;
+        const text = commentInput.textContent;
+        const cursorPos = range.startOffset;
     
         // Check if the character before the cursor is @
         if (cursorPos > 0 && text[cursorPos - 1] === '@') {
@@ -912,8 +908,10 @@
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('comment-input')) {
         const commentInput = e.target;
-        const text = commentInput.value;
-        const cursorPos = commentInput.selectionStart;
+        const selection = window.getSelection();
+        const range = selection.getRangeAt(0);
+        const text = commentInput.textContent;
+        const cursorPos = range.startOffset;
         const lastAtPos = text.lastIndexOf('@', cursorPos - 1);
     
         if (lastAtPos !== -1 && cursorPos > lastAtPos) {
@@ -1453,6 +1451,10 @@
     function addComment(postId, content) {
       const user = auth.currentUser;
       if (!user) return;
+
+      // Extract text content (excluding HTML tags)
+      const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+      const contentText = commentInput.textContent.trim();
     
       const comment = {
         authorId: user.uid,
