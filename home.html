@@ -925,7 +925,11 @@
     
     // Hide dropdown when clicking outside
     document.addEventListener('click', (e) => {
-      if (!e.target.matches('#post-content') && !e.target.matches('.user-tag-item')) {
+      if (
+        !e.target.matches('#post-content') &&
+        !e.target.matches('.comment-input') &&
+        !e.target.matches('.user-tag-item')
+      ) {
         hideUserTagDropdown();
       }
     });
@@ -1451,7 +1455,7 @@
     function addComment(postId, content) {
       const user = auth.currentUser;
       if (!user) return;
-
+    
       // Extract text content (excluding HTML tags)
       const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
       const contentText = commentInput.textContent.trim();
@@ -1459,13 +1463,14 @@
       const comment = {
         authorId: user.uid,
         authorName: user.displayName || "Unknown User",
-        content: content,
+        content: contentText,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       };
     
       // Inside the addComment function, after the Firestore update:
       db.collection('posts').doc(postId).collection('comments').add(comment)
         .then((docRef) => {
+          commentInput.innerHTML = '';
           // Fetch the post to get the author's UID
           db.collection('posts').doc(postId).get().then((postDoc) => {
             if (postDoc.exists) {
