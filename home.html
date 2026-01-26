@@ -153,19 +153,19 @@
       margin-bottom: 10px;
     }
     .comment-input {
-      flex: 1;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      min-height: 40px;
-      outline: none;
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        min-height: 40px;
+        outline: none;
     }
     
     .comment-input:empty::before {
-      content: attr(data-placeholder);
-      color: #999;
-      pointer-events: none;
-      display: block;
+        content: attr(data-placeholder);
+        color: #999;
+        pointer-events: none;
+        display: block;
     }
     .comment-button {
       padding: 8px 12px;
@@ -1227,8 +1227,13 @@
                     </div>
                     <div class="comments-section">
                       <div class="comment-form">
-                        <input type="text" class="comment-input" placeholder="Write a comment..." data-post-id="${post.id}">
-                        <button class="comment-button" data-post-id="${post.id}">Post</button>
+                          <div
+                              class="comment-input"
+                              contenteditable="true"
+                              data-placeholder="Write a comment..."
+                              data-post-id="${post.id}"
+                          ></div>
+                          <button class="comment-button" data-post-id="${post.id}">Post</button>
                       </div>
                       ${seeCommentsButtonHTML}
                       <div class="comments-loading" id="comments-loading-${post.id}">
