@@ -885,8 +885,8 @@
       }
     });
 
-    // Listen for @ in all comment inputs
-    document.addEventListener('input', (e) => {
+    // Replace your current comment input listeners with this:
+    document.getElementById('feed').addEventListener('input', (e) => {
       if (e.target.classList.contains('comment-input')) {
         const commentInput = e.target;
         const selection = window.getSelection();
@@ -894,7 +894,6 @@
         const text = commentInput.textContent;
         const cursorPos = range.startOffset;
     
-        // Check if the character before the cursor is @
         if (cursorPos > 0 && text[cursorPos - 1] === '@') {
           const query = text.substring(cursorPos).trim();
           showUserTagDropdown(commentInput, query, cursorPos - 1);
@@ -904,8 +903,7 @@
       }
     });
     
-    // Listen for clicks inside comment inputs
-    document.addEventListener('click', (e) => {
+    document.getElementById('feed').addEventListener('click', (e) => {
       if (e.target.classList.contains('comment-input')) {
         const commentInput = e.target;
         const selection = window.getSelection();
