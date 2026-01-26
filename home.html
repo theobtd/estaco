@@ -885,15 +885,17 @@
       }
     });
 
-    // Replace your current comment input listeners with this:
+    // Listen for input in the feed (event delegation)
     document.getElementById('feed').addEventListener('input', (e) => {
       if (e.target.classList.contains('comment-input')) {
         const commentInput = e.target;
         const selection = window.getSelection();
+        if (selection.rangeCount === 0) return;
         const range = selection.getRangeAt(0);
         const text = commentInput.textContent;
         const cursorPos = range.startOffset;
     
+        // Check if the character before the cursor is @
         if (cursorPos > 0 && text[cursorPos - 1] === '@') {
           const query = text.substring(cursorPos).trim();
           showUserTagDropdown(commentInput, query, cursorPos - 1);
@@ -903,10 +905,12 @@
       }
     });
     
+    // Listen for clicks in the feed (event delegation)
     document.getElementById('feed').addEventListener('click', (e) => {
       if (e.target.classList.contains('comment-input')) {
         const commentInput = e.target;
         const selection = window.getSelection();
+        if (selection.rangeCount === 0) return;
         const range = selection.getRangeAt(0);
         const text = commentInput.textContent;
         const cursorPos = range.startOffset;
@@ -923,7 +927,7 @@
     
     // Hide dropdown when clicking outside
     document.addEventListener('click', (e) => {
-      if (!e.target.matches('#post-content') && !e.target.matches('.user-tag-item')) {
+      if (!e.target.matches('.comment-input, #post-content, .user-tag-item')) {
         hideUserTagDropdown();
       }
     });
