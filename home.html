@@ -1431,8 +1431,8 @@
       if (e.target.classList.contains('comment-button')) {
         const postId = e.target.getAttribute('data-post-id');
         const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
-        const content = commentInput.textContent.trim(); // Use textContent or innerHTML
-        if (content) {
+        const content = commentInput.innerHTML.trim(); // Use innerHTML instead of textContent
+        if (content && content !== '<br>') {
           addComment(postId, content);
           commentInput.innerHTML = ''; // Clear the contenteditable div
           // Automatically show the comments section after posting
@@ -1565,7 +1565,7 @@
                         </div>
                         <div class="comment-content">
                           <div class="comment-author-name">${comment.authorName}</div>
-                          <div>${comment.content}</div>
+                          <div>${comment.content}</div> <!-- This will now render the HTML tags -->
                         </div>
                       </div>
                     `;
