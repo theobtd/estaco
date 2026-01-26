@@ -1431,11 +1431,10 @@
       if (e.target.classList.contains('comment-button')) {
         const postId = e.target.getAttribute('data-post-id');
         const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
-        const content = commentInput.value.trim();
+        const content = commentInput.textContent.trim(); // Use textContent or innerHTML
         if (content) {
           addComment(postId, content);
-          commentInput.value = '';
-    
+          commentInput.innerHTML = ''; // Clear the contenteditable div
           // Automatically show the comments section after posting
           const commentsList = document.getElementById(`comments-${postId}`);
           const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
@@ -1477,15 +1476,11 @@
     function addComment(postId, content) {
       const user = auth.currentUser;
       if (!user) return;
-
-      // Extract text content (excluding HTML tags)
-      const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
-      const contentText = commentInput.textContent.trim();
     
       const comment = {
         authorId: user.uid,
         authorName: user.displayName || "Unknown User",
-        content: content,
+        content: content, // Use the HTML content
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       };
     
@@ -1509,10 +1504,10 @@
               }
             }
           });
-      
+    
           // Update the CommentsVisible flag for all users who have this post in their feed
           updateCommentsVisibleForPost(postId, user.uid);
-      
+    
           // Force the "See comments" button to appear and open the comments section
           const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
           if (postElement) {
