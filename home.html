@@ -956,7 +956,7 @@
     // Create a new post
     postButton.addEventListener('click', () => {
       errorMessage.textContent = ''; // Clear any previous error message
-      const content = postContent.textContent.trim();
+      const content = postContent.innerHTML;
       const mediaFile = postMedia.files[0];
     
       if (!content) {
@@ -1206,6 +1206,7 @@
                 <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
             `;
     
+            // In renderNewPost and renderPosts functions, update the post content line:
             let postHTML = `
                 <div class="post" data-post-id="${post.id}">
                     <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -1214,11 +1215,11 @@
                             <h4 style="margin: 0;">${post.authorName}</h4>
                         </div>
                         <div style="display: flex; align-items: center;">
-                            <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp.toDate())}</span>
+                            <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
                             ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
                         </div>
                     </div>
-                    <p>${post.content}</p>
+                    <p>${post.content}</p> <!-- This will now render the HTML tags -->
                     ${mediaHTML}
                     <div class="reactions">
                         <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
@@ -1226,20 +1227,20 @@
                         <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
                     </div>
                     <div class="comments-section">
-                      <div class="comment-form">
-                          <div
-                              class="comment-input"
-                              contenteditable="true"
-                              data-placeholder="Write a comment..."
-                              data-post-id="${post.id}"
-                          ></div>
-                          <button class="comment-button" data-post-id="${post.id}">Post</button>
-                      </div>
-                      ${seeCommentsButtonHTML}
-                      <div class="comments-loading" id="comments-loading-${post.id}">
-                        <div class="spinner"></div>
-                      </div>
-                      <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
+                        <div class="comment-form">
+                            <div
+                                class="comment-input"
+                                contenteditable="true"
+                                data-placeholder="Write a comment..."
+                                data-post-id="${post.id}"
+                            ></div>
+                            <button class="comment-button" data-post-id="${post.id}">Post</button>
+                        </div>
+                        ${seeCommentsButtonHTML}
+                        <div class="comments-loading" id="comments-loading-${post.id}">
+                            <div class="spinner"></div>
+                        </div>
+                        <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
                     </div>
                 </div>
             `;
