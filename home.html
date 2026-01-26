@@ -684,14 +684,14 @@
           </div>
           <div class="comments-section">
             <div class="comment-form">
-              <div
-                class="comment-input"
-                contenteditable="true"
-                data-placeholder="Write a comment..."
-                data-post-id="${post.id}"
-              ></div>
-              <button class="comment-button" data-post-id="${post.id}">Post</button>
-            </div>
+                <div
+                    class="comment-input"
+                    contenteditable="true"
+                    data-placeholder="Write a comment..."
+                    data-post-id="${post.id}"
+                ></div>
+                <button class="comment-button" data-post-id="${post.id}">Post</button>
+              </div>
         </div>
       `;
     
@@ -885,7 +885,7 @@
       }
     });
 
-    // Listen for input in the feed (event delegation)
+    // Listen for @ in all comment inputs (event delegation)
     document.getElementById('feed').addEventListener('input', (e) => {
       if (e.target.classList.contains('comment-input')) {
         const commentInput = e.target;
@@ -895,17 +895,35 @@
         const text = commentInput.textContent;
         const cursorPos = range.startOffset;
     
-        // Check if the character before the cursor is @
+        // Check if the character before the cursor is @ and not part of a tag
         if (cursorPos > 0 && text[cursorPos - 1] === '@') {
-          const query = text.substring(cursorPos).trim();
-          showUserTagDropdown(commentInput, query, cursorPos - 1);
+          const node = range.startContainer;
+          let isInsideTag = false;
+    
+          // Check if the @ is inside a tag
+          let currentNode = node;
+          while (currentNode && currentNode !== commentInput) {
+            if (currentNode.classList && currentNode.classList.contains('tag-validated')) {
+              isInsideTag = true;
+              break;
+            }
+            currentNode = currentNode.parentNode;
+          }
+    
+          if (!isInsideTag) {
+            const lastAtPos = cursorPos - 1;
+            const query = text.substring(lastAtPos + 1, cursorPos).trim();
+            showUserTagDropdown(commentInput, query, lastAtPos);
+          } else {
+            hideUserTagDropdown();
+          }
         } else {
           hideUserTagDropdown();
         }
       }
     });
     
-    // Listen for clicks in the feed (event delegation)
+    // Listen for clicks inside all comment inputs (event delegation)
     document.getElementById('feed').addEventListener('click', (e) => {
       if (e.target.classList.contains('comment-input')) {
         const commentInput = e.target;
@@ -927,7 +945,7 @@
     
     // Hide dropdown when clicking outside
     document.addEventListener('click', (e) => {
-      if (!e.target.matches('.comment-input, #post-content, .user-tag-item')) {
+      if (!e.target.matches('#post-content, .comment-input, .user-tag-item')) {
         hideUserTagDropdown();
       }
     });
