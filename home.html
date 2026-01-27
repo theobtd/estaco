@@ -643,7 +643,10 @@
       // Get the author's profile picture
       const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
     
-      // Construct the post HTML (reuse your existing post HTML structure)
+      // Process post content for @username tags
+      let processedContent = await processTaggedUsernames(post.content, user.uid);
+    
+      // Construct the post HTML
       let mediaHTML = '';
       if (post.photoURL) {
         const orientation = post.mediaOrientation || 'horizontal';
@@ -675,7 +678,7 @@
               <button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>
             </div>
           </div>
-          <p>${post.content}</p>
+          <p>${processedContent}</p>
           ${mediaHTML}
           <div class="reactions">
             <button class="reaction-button" data-post-id="${post.id}" data-reaction="like">👍</button>
@@ -684,14 +687,15 @@
           </div>
           <div class="comments-section">
             <div class="comment-form">
-                <div
-                    class="comment-input"
-                    contenteditable="true"
-                    data-placeholder="Write a comment..."
-                    data-post-id="${post.id}"
-                ></div>
-                <button class="comment-button" data-post-id="${post.id}">Post</button>
-              </div>
+              <div
+                class="comment-input"
+                contenteditable="true"
+                data-placeholder="Write a comment..."
+                data-post-id="${post.id}"
+              ></div>
+              <button class="comment-button" data-post-id="${post.id}">Post</button>
+            </div>
+          </div>
         </div>
       `;
     
@@ -1158,101 +1162,102 @@
     
     // Function to render posts
     async function renderPosts(postsData) {
-        for (const post of postsData) {
-            if (document.querySelector(`.post[data-post-id="${post.id}"]`)) continue;
-          
-            // Await the profile picture for the post author
-            const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
+      for (const post of postsData) {
+        if (document.querySelector(`.post[data-post-id="${post.id}"]`)) continue;
     
-            // Get the current user's reaction for this post
-            const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
-            const likeClass = userReaction && userReaction.type === 'like' ? 'selected' : '';
-            const loveClass = userReaction && userReaction.type === 'love' ? 'selected' : '';
-            const laughClass = userReaction && userReaction.type === 'laugh' ? 'selected' : '';
+        // Await the profile picture for the post author
+        const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
     
-            const reactions = post.reactions || {};
-            let likeCount = 0, loveCount = 0, laughCount = 0;
-            Object.values(reactions).forEach(reaction => {
-                if (reaction.type === 'like') likeCount++;
-                if (reaction.type === 'love') loveCount++;
-                if (reaction.type === 'laugh') laughCount++;
-            });
+        // Process post content for @username tags
+        let processedContent = await processTaggedUsernames(post.content, auth.currentUser.uid);
     
-            const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
-            const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
-            const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
-            const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
-            let mediaHTML = '';
-            if (post.photoURL) {
-                const orientation = post.mediaOrientation || 'horizontal';
-                mediaHTML = `
-                    <div class="media-container media-${orientation}">
-                        <img src="${post.photoURL}" class="post-media">
-                    </div>
-                `;
-            } else if (post.videoURL) {
-              const orientation = post.mediaOrientation || 'horizontal';
-              mediaHTML = `
-                <div class="media-container media-${orientation}">
-                  <video controls class="post-media" playsinline webkit-playsinline>
-                    <source src="${post.videoURL}" type="video/mp4">
-                  </video>
-                </div>
-              `;
-            }
+        // Get the current user's reaction for this post
+        const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
+        const likeClass = userReaction && userReaction.type === 'like' ? 'selected' : '';
+        const loveClass = userReaction && userReaction.type === 'love' ? 'selected' : '';
+        const laughClass = userReaction && userReaction.type === 'laugh' ? 'selected' : '';
     
-            // Only show the "See comments" button if CommentsVisible is true
-            const seeCommentsButtonHTML = `
-                <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
-            `;
+        const reactions = post.reactions || {};
+        let likeCount = 0, loveCount = 0, laughCount = 0;
+        Object.values(reactions).forEach(reaction => {
+          if (reaction.type === 'like') likeCount++;
+          if (reaction.type === 'love') loveCount++;
+          if (reaction.type === 'laugh') laughCount++;
+        });
     
-            // In renderNewPost and renderPosts functions, update the post content line:
-            let postHTML = `
-                <div class="post" data-post-id="${post.id}">
-                    <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center;">
-                            ${profilePictureHTML}
-                            <h4 style="margin: 0;">${post.authorName}</h4>
-                        </div>
-                        <div style="display: flex; align-items: center;">
-                            <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
-                            ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
-                        </div>
-                    </div>
-                    <p>${post.content}</p> <!-- This will now render the HTML tags -->
-                    ${mediaHTML}
-                    <div class="reactions">
-                        <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
-                        <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
-                        <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
-                    </div>
-                    <div class="comments-section">
-                        <div class="comment-form">
-                            <div
-                                class="comment-input"
-                                contenteditable="true"
-                                data-placeholder="Write a comment..."
-                                data-post-id="${post.id}"
-                            ></div>
-                            <button class="comment-button" data-post-id="${post.id}">Post</button>
-                        </div>
-                        ${seeCommentsButtonHTML}
-                        <div class="comments-loading" id="comments-loading-${post.id}">
-                            <div class="spinner"></div>
-                        </div>
-                        <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
-                    </div>
-                </div>
-            `;
-    
-            // In your renderPosts function, check if the post is already rendered
-            if (document.querySelector(`.post[data-post-id="${post.id}"]`)) {
-              continue; // Skip if already rendered
-            }
-            // feed.innerHTML += postHTML; // Only append if not already present
-            feed.insertAdjacentHTML('beforeend', postHTML);
+        const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
+        const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
+        const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
+        const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
+        let mediaHTML = '';
+        if (post.photoURL) {
+          const orientation = post.mediaOrientation || 'horizontal';
+          mediaHTML = `
+            <div class="media-container media-${orientation}">
+              <img src="${post.photoURL}" class="post-media">
+            </div>
+          `;
+        } else if (post.videoURL) {
+          const orientation = post.mediaOrientation || 'horizontal';
+          mediaHTML = `
+            <div class="media-container media-${orientation}">
+              <video controls class="post-media" playsinline webkit-playsinline>
+                <source src="${post.videoURL}" type="video/mp4">
+              </video>
+            </div>
+          `;
         }
-        setupIntersectionObserver();
+    
+        // Only show the "See comments" button if CommentsVisible is true
+        const seeCommentsButtonHTML = `
+          <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
+        `;
+    
+        let postHTML = `
+          <div class="post" data-post-id="${post.id}">
+            <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center;">
+                ${profilePictureHTML}
+                <h4 style="margin: 0;">${post.authorName}</h4>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
+                ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
+              </div>
+            </div>
+            <p>${processedContent}</p>
+            ${mediaHTML}
+            <div class="reactions">
+              <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
+              <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
+              <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
+            </div>
+            <div class="comments-section">
+              <div class="comment-form">
+                <div
+                  class="comment-input"
+                  contenteditable="true"
+                  data-placeholder="Write a comment..."
+                  data-post-id="${post.id}"
+                ></div>
+                <button class="comment-button" data-post-id="${post.id}">Post</button>
+              </div>
+              ${seeCommentsButtonHTML}
+              <div class="comments-loading" id="comments-loading-${post.id}">
+                <div class="spinner"></div>
+              </div>
+              <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
+            </div>
+          </div>
+        `;
+    
+        // In your renderPosts function, check if the post is already rendered
+        if (document.querySelector(`.post[data-post-id="${post.id}"]`)) {
+          continue; // Skip if already rendered
+        }
+        feed.insertAdjacentHTML('beforeend', postHTML);
+      }
+      setupIntersectionObserver();
     }
     
     // Call loadPosts initially to load the first batch
@@ -1933,6 +1938,51 @@
             });
         }
     });
+
+    /**
+     * Processes post content to replace @username tags with @unknown if the viewing user is not a friend of the tagged user.
+     * @param {string} content - The post content (HTML).
+     * @param {string} viewerUid - The UID of the user viewing the post.
+     * @returns {Promise<string>} - The processed content.
+     */
+    async function processTaggedUsernames(content, viewerUid) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+    
+      // Find all @username tags in the content
+      const tags = tempDiv.querySelectorAll('.tag-validated');
+      for (const tag of tags) {
+        const username = tag.textContent.substring(1); // Remove the @
+        // Get the UID of the tagged user (assuming it's stored in a data-uid attribute)
+        const taggedUserUid = tag.dataset.uid;
+        if (taggedUserUid) {
+          // Check if the viewing user is a friend of the tagged user
+          const isFriend = await areUsersFriends(viewerUid, taggedUserUid);
+          if (!isFriend) {
+            tag.textContent = '@unknown';
+          }
+        }
+      }
+    
+      return tempDiv.innerHTML;
+    }
+
+    /**
+     * Checks if two users are friends.
+     * @param {string} userUid - The UID of the viewing user.
+     * @param {string} taggedUserUid - The UID of the tagged user.
+     * @returns {Promise<boolean>} - True if they are friends, false otherwise.
+     */
+    async function areUsersFriends(userUid, taggedUserUid) {
+      if (userUid === taggedUserUid) return true; // Always show the username to the tagged user
+    
+      const friendsDoc = await db.collection('friends').doc(userUid).get();
+      if (friendsDoc.exists) {
+        const friends = friendsDoc.data()?.friends || [];
+        return friends.some(friend => friend.uid === taggedUserUid);
+      }
+      return false;
+    }
 
     /**
      * Adds a post to a user's feed sub-collection.
