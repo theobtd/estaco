@@ -760,7 +760,7 @@
         item.textContent = friend.name;
         item.dataset.uid = friend.uid;
         item.addEventListener('click', () => {
-          insertTaggedUser(currentInputElement, friend.name, currentAtPosition);
+          insertTaggedUser(currentInputElement, friend.name, currentAtPosition, friend.uid);
           hideUserTagDropdown();
         });
         dropdown.appendChild(item);
@@ -779,12 +779,12 @@
     }
     
     // Function to insert the selected user into the textarea
-    function insertTaggedUser(inputElement, username, atPos) {
+    function insertTaggedUser(inputElement, username, atPos, uid) {
       const text = inputElement.textContent;
       const before = text.substring(0, atPos);
       const after = text.substring(atPos + currentQuery.length + 1);
       const tag = `@${username}`;
-      const highlightedTag = `<span class="tag-validated" contenteditable="false">${tag}</span>`;
+      const highlightedTag = `<span class="tag-validated" contenteditable="false" data-uid="${uid}">${tag}</span>`;
     
       inputElement.innerHTML = before + highlightedTag + ' ' + after;
     
