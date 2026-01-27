@@ -1943,6 +1943,7 @@
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const tags = doc.querySelectorAll('.tag-validated');
+      const currentUser = auth.currentUser;
     
       for (const tag of tags) {
         const tagText = tag.textContent;
@@ -1951,12 +1952,18 @@
           const userSnapshot = await db.collection('users').where('displayName', '==', username).get();
           if (!userSnapshot.empty) {
             const taggedUserId = userSnapshot.docs[0].id;
-            const currentUser = auth.currentUser;
+            // Always show the tag to the post author
+            if (currentUser && currentUser.uid === postAuthorId) {
+              continue;
+            }
+            // For other users, check if they are friends with the tagged user
             if (currentUser) {
               const isFriend = await isFriendWith(taggedUserId);
               if (!isFriend) {
                 tag.textContent = '@unknown';
               }
+            } else {
+              tag.textContent = '@unknown';
             }
           }
         }
