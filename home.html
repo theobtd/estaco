@@ -1952,11 +1952,6 @@
           const userSnapshot = await db.collection('users').where('displayName', '==', username).get();
           if (!userSnapshot.empty) {
             const taggedUserId = userSnapshot.docs[0].id;
-            // Always show the tag to the post author
-            if (currentUser && currentUser.uid === postAuthorId) {
-              continue;
-            }
-            // For other users, check if they are friends with the tagged user
             if (currentUser) {
               const isFriend = await isFriendWith(taggedUserId);
               if (!isFriend) {
