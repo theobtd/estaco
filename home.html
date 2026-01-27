@@ -663,6 +663,7 @@
         `;
       }
     
+      const processedContent = await processTags(post.content);
       const postHTML = `
         <div class="post" data-post-id="${post.id}">
           <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -672,27 +673,34 @@
             </div>
             <div style="display: flex; align-items: center;">
               <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
-              <button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>
+              ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
             </div>
           </div>
-          const processedContent = await processTags(post.content);
-          let postHTML = `
-            <div class="post" data-post-id="${post.id}">
-              <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center;">
-                  ${profilePictureHTML}
-                  <h4 style="margin: 0;">${post.authorName}</h4>
-                </div>
-                <div style="display: flex; align-items: center;">
-                  <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
-                  ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
-                </div>
-              </div>
-              <p>${processedContent}</p>
-              ${mediaHTML}
-              ...
+          <p>${processedContent}</p>
+          ${mediaHTML}
+          <div class="reactions">
+            <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
+            <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
+            <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
+          </div>
+          <div class="comments-section">
+            <div class="comment-form">
+              <div
+                class="comment-input"
+                contenteditable="true"
+                data-placeholder="Write a comment..."
+                data-post-id="${post.id}"
+              ></div>
+              <button class="comment-button" data-post-id="${post.id}">Post</button>
             </div>
-          `;
+            ${seeCommentsButtonHTML}
+            <div class="comments-loading" id="comments-loading-${post.id}">
+              <div class="spinner"></div>
+            </div>
+            <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
+          </div>
+        </div>
+      `;
     
       // Prepend the new post to the feed
       feed.insertAdjacentHTML('afterbegin', postHTML);
@@ -1557,6 +1565,7 @@
                 // Only show comments from friends
                 if (friendIds.includes(comment.authorId)) {
                   const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
+                    const processedContent = await processTags(comment.content);
                     const commentHTML = `
                       <div class="comment">
                         <div class="comment-author-picture">
@@ -1564,19 +1573,8 @@
                         </div>
                         <div class="comment-content">
                           <div class="comment-author-name">${comment.authorName}</div>
-                          const processedContent = await processTags(comment.content);
-                          const commentHTML = `
-                            <div class="comment">
-                              <div class="comment-author-picture">
-                                ${profilePictureHTML}
-                              </div>
-                              <div class="comment-content">
-                                <div class="comment-author-name">${comment.authorName}</div>
-                                <div>${processedContent}</div>
-                              </div>
-                            </div>
-                          `;                        
-                          </div>
+                          <div>${processedContent}</div>
+                        </div>
                       </div>
                     `;
                     commentsList.innerHTML += commentHTML;
