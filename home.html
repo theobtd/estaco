@@ -661,7 +661,7 @@
         `;
       }
     
-      const processedContent = await processTags(post.content);
+      const processedContent = await processTags(post.content, post.authorId);
       const postHTML = `
         <div class="post" data-post-id="${post.id}">
           <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -1201,7 +1201,7 @@
           <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
         `;
     
-        const processedContent = await processTags(post.content);
+        const processedContent = await processTags(post.content, post.authorId);
         const postHTML = `
           <div class="post" data-post-id="${post.id}">
             <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -1547,7 +1547,7 @@
                 const comment = doc.data();
                 if (friendIds.includes(comment.authorId)) {
                   const profilePictureHTML = await getCommentAuthorPicture(comment.authorId, comment.authorName);
-                  const processedContent = await processTags(comment.content);
+                  const processedContent = await processTags(comment.content, comment.authorId);
                   const commentHTML = `
                     <div class="comment">
                       <div class="comment-author-picture">
@@ -1936,9 +1936,10 @@
     /**
      * Processes HTML content to replace tags for non-friends with "@unknown".
      * @param {string} html - The HTML content.
+     * @param {string} postAuthorId - The ID of the post author.
      * @returns {Promise<string>} - The processed HTML.
      */
-    async function processTags(html) {
+    async function processTags(html, postAuthorId) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const tags = doc.querySelectorAll('.tag-validated');
@@ -1949,10 +1950,13 @@
           const username = tagText.substring(1);
           const userSnapshot = await db.collection('users').where('displayName', '==', username).get();
           if (!userSnapshot.empty) {
-            const userId = userSnapshot.docs[0].id;
-            const isFriend = await isFriendWith(userId);
-            if (!isFriend) {
-              tag.textContent = '@unknown';
+            const taggedUserId = userSnapshot.docs[0].id;
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+              const isFriend = await isFriendWith(taggedUserId);
+              if (!isFriend) {
+                tag.textContent = '@unknown';
+              }
             }
           }
         }
