@@ -640,8 +640,10 @@
       const user = auth.currentUser;
       if (!user) return;
     
+      // Get the author's profile picture
       const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
     
+      // Construct the post HTML (reuse your existing post HTML structure)
       let mediaHTML = '';
       if (post.photoURL) {
         const orientation = post.mediaOrientation || 'horizontal';
@@ -661,7 +663,6 @@
         `;
       }
     
-      const processedContent = await processTags(post.content, post.authorId);
       const postHTML = `
         <div class="post" data-post-id="${post.id}">
           <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -674,7 +675,7 @@
               <button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>
             </div>
           </div>
-          <p>${processedContent}</p>
+          <p>${post.content}</p>
           ${mediaHTML}
           <div class="reactions">
             <button class="reaction-button" data-post-id="${post.id}" data-reaction="like">👍</button>
@@ -683,18 +684,18 @@
           </div>
           <div class="comments-section">
             <div class="comment-form">
-              <div
-                class="comment-input"
-                contenteditable="true"
-                data-placeholder="Write a comment..."
-                data-post-id="${post.id}"
-              ></div>
-              <button class="comment-button" data-post-id="${post.id}">Post</button>
-            </div>
-          </div>
+                <div
+                    class="comment-input"
+                    contenteditable="true"
+                    data-placeholder="Write a comment..."
+                    data-post-id="${post.id}"
+                ></div>
+                <button class="comment-button" data-post-id="${post.id}">Post</button>
+              </div>
         </div>
       `;
     
+      // Prepend the new post to the feed
       feed.insertAdjacentHTML('afterbegin', postHTML);
     }
 
@@ -1157,95 +1158,101 @@
     
     // Function to render posts
     async function renderPosts(postsData) {
-      for (const post of postsData) {
-        if (document.querySelector(`.post[data-post-id="${post.id}"]`)) continue;
+        for (const post of postsData) {
+            if (document.querySelector(`.post[data-post-id="${post.id}"]`)) continue;
+          
+            // Await the profile picture for the post author
+            const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
     
-        const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
-        const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
-        const likeClass = userReaction && userReaction.type === 'like' ? 'selected' : '';
-        const loveClass = userReaction && userReaction.type === 'love' ? 'selected' : '';
-        const laughClass = userReaction && userReaction.type === 'laugh' ? 'selected' : '';
+            // Get the current user's reaction for this post
+            const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
+            const likeClass = userReaction && userReaction.type === 'like' ? 'selected' : '';
+            const loveClass = userReaction && userReaction.type === 'love' ? 'selected' : '';
+            const laughClass = userReaction && userReaction.type === 'laugh' ? 'selected' : '';
     
-        const reactions = post.reactions || {};
-        let likeCount = 0, loveCount = 0, laughCount = 0;
-        Object.values(reactions).forEach(reaction => {
-          if (reaction.type === 'like') likeCount++;
-          if (reaction.type === 'love') loveCount++;
-          if (reaction.type === 'laugh') laughCount++;
-        });
+            const reactions = post.reactions || {};
+            let likeCount = 0, loveCount = 0, laughCount = 0;
+            Object.values(reactions).forEach(reaction => {
+                if (reaction.type === 'like') likeCount++;
+                if (reaction.type === 'love') loveCount++;
+                if (reaction.type === 'laugh') laughCount++;
+            });
     
-        const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
-        const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
-        const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
-        const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
-        let mediaHTML = '';
-        if (post.photoURL) {
-          const orientation = post.mediaOrientation || 'horizontal';
-          mediaHTML = `
-            <div class="media-container media-${orientation}">
-              <img src="${post.photoURL}" class="post-media">
-            </div>
-          `;
-        } else if (post.videoURL) {
-          const orientation = post.mediaOrientation || 'horizontal';
-          mediaHTML = `
-            <div class="media-container media-${orientation}">
-              <video controls class="post-media" playsinline webkit-playsinline>
-                <source src="${post.videoURL}" type="video/mp4">
-              </video>
-            </div>
-          `;
+            const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
+            const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
+            const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
+            const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
+            let mediaHTML = '';
+            if (post.photoURL) {
+                const orientation = post.mediaOrientation || 'horizontal';
+                mediaHTML = `
+                    <div class="media-container media-${orientation}">
+                        <img src="${post.photoURL}" class="post-media">
+                    </div>
+                `;
+            } else if (post.videoURL) {
+              const orientation = post.mediaOrientation || 'horizontal';
+              mediaHTML = `
+                <div class="media-container media-${orientation}">
+                  <video controls class="post-media" playsinline webkit-playsinline>
+                    <source src="${post.videoURL}" type="video/mp4">
+                  </video>
+                </div>
+              `;
+            }
+    
+            // Only show the "See comments" button if CommentsVisible is true
+            const seeCommentsButtonHTML = `
+                <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
+            `;
+    
+            // In renderNewPost and renderPosts functions, update the post content line:
+            let postHTML = `
+                <div class="post" data-post-id="${post.id}">
+                    <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center;">
+                            ${profilePictureHTML}
+                            <h4 style="margin: 0;">${post.authorName}</h4>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
+                            ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
+                        </div>
+                    </div>
+                    <p>${post.content}</p> <!-- This will now render the HTML tags -->
+                    ${mediaHTML}
+                    <div class="reactions">
+                        <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
+                        <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
+                        <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
+                    </div>
+                    <div class="comments-section">
+                        <div class="comment-form">
+                            <div
+                                class="comment-input"
+                                contenteditable="true"
+                                data-placeholder="Write a comment..."
+                                data-post-id="${post.id}"
+                            ></div>
+                            <button class="comment-button" data-post-id="${post.id}">Post</button>
+                        </div>
+                        ${seeCommentsButtonHTML}
+                        <div class="comments-loading" id="comments-loading-${post.id}">
+                            <div class="spinner"></div>
+                        </div>
+                        <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
+                    </div>
+                </div>
+            `;
+    
+            // In your renderPosts function, check if the post is already rendered
+            if (document.querySelector(`.post[data-post-id="${post.id}"]`)) {
+              continue; // Skip if already rendered
+            }
+            // feed.innerHTML += postHTML; // Only append if not already present
+            feed.insertAdjacentHTML('beforeend', postHTML);
         }
-    
-        const seeCommentsButtonHTML = `
-          <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
-        `;
-    
-        const processedContent = await processTags(post.content, post.authorId);
-        const postHTML = `
-          <div class="post" data-post-id="${post.id}">
-            <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="display: flex; align-items: center;">
-                ${profilePictureHTML}
-                <h4 style="margin: 0;">${post.authorName}</h4>
-              </div>
-              <div style="display: flex; align-items: center;">
-                <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
-                ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
-              </div>
-            </div>
-            <p>${processedContent}</p>
-            ${mediaHTML}
-            <div class="reactions">
-              <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
-              <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
-              <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
-            </div>
-            <div class="comments-section">
-              <div class="comment-form">
-                <div
-                  class="comment-input"
-                  contenteditable="true"
-                  data-placeholder="Write a comment..."
-                  data-post-id="${post.id}"
-                ></div>
-                <button class="comment-button" data-post-id="${post.id}">Post</button>
-              </div>
-              ${seeCommentsButtonHTML}
-              <div class="comments-loading" id="comments-loading-${post.id}">
-                <div class="spinner"></div>
-              </div>
-              <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
-            </div>
-          </div>
-        `;
-    
-        if (document.querySelector(`.post[data-post-id="${post.id}"]`)) {
-          continue;
-        }
-        feed.insertAdjacentHTML('beforeend', postHTML);
-      }
-      setupIntersectionObserver();
+        setupIntersectionObserver();
     }
     
     // Call loadPosts initially to load the first batch
@@ -1526,53 +1533,63 @@
       const user = auth.currentUser;
       if (!user) return;
     
+      // Show loading indicator
       const commentsLoading = document.getElementById(`comments-loading-${postId}`);
       commentsLoading.style.display = 'block';
     
+      // Get the current user's friends (including themselves)
       db.collection('friends').doc(user.uid).get()
         .then((friendsDoc) => {
           const friends = friendsDoc.data()?.friends || [];
           const friendIds = friends.map(friend => friend.uid);
-          friendIds.push(user.uid);
+          friendIds.push(user.uid); // Include the current user
     
+          // Fetch all comments for the post
           db.collection('posts').doc(postId).collection('comments')
             .orderBy('timestamp', 'asc')
             .get()
-            .then(async (querySnapshot) => {
+            .then((querySnapshot) => {
               const commentsList = document.getElementById(`comments-${postId}`);
               commentsList.innerHTML = '';
               const commentPromises = [];
     
-              for (const doc of querySnapshot.docs) {
+              querySnapshot.forEach((doc) => {
                 const comment = doc.data();
+                // Only show comments from friends
                 if (friendIds.includes(comment.authorId)) {
-                  const profilePictureHTML = await getCommentAuthorPicture(comment.authorId, comment.authorName);
-                  const processedContent = await processTags(comment.content, comment.authorId);
-                  const commentHTML = `
-                    <div class="comment">
-                      <div class="comment-author-picture">
-                        ${profilePictureHTML}
+                  const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
+                    const commentHTML = `
+                      <div class="comment">
+                        <div class="comment-author-picture">
+                          ${profilePictureHTML}
+                        </div>
+                        <div class="comment-content">
+                          <div class="comment-author-name">${comment.authorName}</div>
+                          <div>${comment.content}</div> <!-- This will now render the HTML tags -->
+                        </div>
                       </div>
-                      <div class="comment-content">
-                        <div class="comment-author-name">${comment.authorName}</div>
-                        <div>${processedContent}</div>
-                      </div>
-                    </div>
-                  `;
-                  commentsList.innerHTML += commentHTML;
+                    `;
+                    commentsList.innerHTML += commentHTML;
+                  });
+                  commentPromises.push(promise);
                 }
-              }
+              });
     
-              commentsLoading.style.display = 'none';
-              commentsList.setAttribute('data-loaded', 'true');
+              return Promise.all(commentPromises);
             })
             .catch((error) => {
               console.error("Error loading comments: ", error);
+            })
+            .finally(() => {
+              // Hide loading indicator and mark comments as loaded
               commentsLoading.style.display = 'none';
+              const commentsList = document.getElementById(`comments-${postId}`);
+              commentsList.setAttribute('data-loaded', 'true');
             });
         })
         .catch((error) => {
           console.error("Error fetching friends: ", error);
+          // Hide loading indicator
           commentsLoading.style.display = 'none';
         });
     }
@@ -1916,56 +1933,6 @@
             });
         }
     });
-
-    /**
-     * Checks if the current user is friends with a given user.
-     * @param {string} userId - The user's UID.
-     * @returns {Promise<boolean>} - True if friends, false otherwise.
-     */
-    async function isFriendWith(userId) {
-      const currentUser = auth.currentUser;
-      if (!currentUser) return false;
-    
-      const friendsDoc = await db.collection('friends').doc(currentUser.uid).get();
-      if (!friendsDoc.exists) return false;
-    
-      const friends = friendsDoc.data()?.friends || [];
-      return friends.some(friend => friend.uid === userId);
-    }
-
-    /**
-     * Processes HTML content to replace tags for non-friends with "@unknown".
-     * @param {string} html - The HTML content.
-     * @param {string} postAuthorId - The ID of the post author.
-     * @returns {Promise<string>} - The processed HTML.
-     */
-    async function processTags(html, postAuthorId) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const tags = doc.querySelectorAll('.tag-validated');
-      const currentUser = auth.currentUser;
-    
-      for (const tag of tags) {
-        const tagText = tag.textContent;
-        if (tagText.startsWith('@')) {
-          const username = tagText.substring(1);
-          const userSnapshot = await db.collection('users').where('displayName', '==', username).get();
-          if (!userSnapshot.empty) {
-            const taggedUserId = userSnapshot.docs[0].id;
-            if (currentUser) {
-              const isFriend = await isFriendWith(taggedUserId);
-              if (!isFriend) {
-                tag.textContent = '@unknown';
-              }
-            } else {
-              tag.textContent = '@unknown';
-            }
-          }
-        }
-      }
-    
-      return doc.body.innerHTML;
-    }
 
     /**
      * Adds a post to a user's feed sub-collection.
