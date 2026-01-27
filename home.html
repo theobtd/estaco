@@ -1553,32 +1553,34 @@
           db.collection('posts').doc(postId).collection('comments')
             .orderBy('timestamp', 'asc')
             .get()
-            .then(async (querySnapshot) => {
+            .then((querySnapshot) => {
               const commentsList = document.getElementById(`comments-${postId}`);
               commentsList.innerHTML = '';
               const commentPromises = [];
     
-              for (const doc of querySnapshot.docs) {
+              querySnapshot.forEach((doc) => {
                 const comment = doc.data();
                 // Only show comments from friends
                 if (friendIds.includes(comment.authorId)) {
-                  const profilePictureHTML = await getCommentAuthorPicture(comment.authorId, comment.authorName);
-                  // Process comment content for @username tags
-                  let processedContent = await processTaggedUsernames(comment.content, user.uid);
-                  const commentHTML = `
-                    <div class="comment">
-                      <div class="comment-author-picture">
-                        ${profilePictureHTML}
+                  const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
+                    const commentHTML = `
+                      <div class="comment">
+                        <div class="comment-author-picture">
+                          ${profilePictureHTML}
+                        </div>
+                        <div class="comment-content">
+                          <div class="comment-author-name">${comment.authorName}</div>
+                          <div>${comment.content}</div> <!-- This will now render the HTML tags -->
+                        </div>
                       </div>
-                      <div class="comment-content">
-                        <div class="comment-author-name">${comment.authorName}</div>
-                        <div>${processedContent}</div>
-                      </div>
-                    </div>
-                  `;
-                  commentsList.innerHTML += commentHTML;
+                    `;
+                    commentsList.innerHTML += commentHTML;
+                  });
+                  commentPromises.push(promise);
                 }
-              }
+              });
+    
+              return Promise.all(commentPromises);
             })
             .catch((error) => {
               console.error("Error loading comments: ", error);
