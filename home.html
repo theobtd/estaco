@@ -1030,16 +1030,26 @@
                   mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
                 };
                 renderNewPost(newPost);
-            
-                // Add the post to the author's own feed sub-collection
-                await addPostToUserFeed(user.uid, docRef.id, new Date());
-            
-                // Add the post to the feed sub-collections of the author's friends
-                const friendUids = await getFriendUidsForUser(user.uid);
-                for (const friendUid of friendUids) {
-                  await addPostToUserFeed(friendUid, docRef.id, new Date());
+    
+                // NEW LOGIC: Restrict post visibility to mutual friends if someone is tagged
+                const taggedUserUids = extractTaggedUserUids(content);
+                const posterUid = auth.currentUser.uid;
+    
+                if (taggedUserUids.length > 0) {
+                  for (const taggedUid of taggedUserUids) {
+                    const mutualFriendUids = await getMutualFriendUids(posterUid, taggedUid);
+                    const uidsToAddPost = [...new Set([...mutualFriendUids, posterUid, taggedUid])];
+                    for (const uid of uidsToAddPost) {
+                      await addPostToUserFeed(uid, docRef.id, new Date());
+                    }
+                  }
+                } else {
+                  const friendUids = await getFriendUidsForUser(posterUid);
+                  for (const friendUid of friendUids) {
+                    await addPostToUserFeed(friendUid, docRef.id, new Date());
+                  }
                 }
-            
+    
                 postContent.textContent = '';
                 postMedia.value = '';
                 document.getElementById('image-preview-container').style.display = 'none';
@@ -1054,7 +1064,7 @@
                   button.classList.remove('selected');
                 });
                 document.querySelector('.crop-orientation-button[data-orientation="horizontal"]').classList.add('selected');
-            
+    
                 // Hide full-screen overlay
                 document.getElementById('upload-overlay').style.display = 'none';
                 postButton.disabled = false;
@@ -1725,6 +1735,24 @@
       );
       const posts = document.querySelectorAll('.post');
       if (posts.length > 0) observer.observe(posts[posts.length - 1]);
+    }
+
+    function extractTaggedUserUids(content) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      const tags = tempDiv.querySelectorAll('.tag-validated');
+      const uids = [];
+      tags.forEach(tag => {
+        const uid = tag.dataset.uid;
+        if (uid) uids.push(uid);
+      });
+      return uids;
+    }
+
+    async function getMutualFriendUids(userUid1, userUid2) {
+      const friends1 = await getFriendUidsForUser(userUid1);
+      const friends2 = await getFriendUidsForUser(userUid2);
+      return friends1.filter(uid => friends2.includes(uid));
     }
 
     document.querySelectorAll('.orientation-button').forEach(button => {
