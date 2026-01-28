@@ -1799,6 +1799,7 @@
             const comment = doc.data();
             const commentTaggedUserUids = extractTaggedUserUids(comment.content);
     
+            // Always show comments from the current user
             if (comment.authorId === user.uid) {
               const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
                 const commentHTML = `
@@ -1816,20 +1817,27 @@
               });
               commentPromises.push(promise);
             }
+            // For other users' comments, check if the current user is a friend of the commenter
             else if (friendIds.includes(comment.authorId)) {
+              // If there are tagged users, check if the current user is a mutual friend
               if (commentTaggedUserUids.length > 0) {
                 let isMutualFriendForAllTagged = true;
     
-                const mutualFriendChecks = commentTaggedUserUids.map(async (taggedUid) => {
+                // Check if the current user is a friend of the commenter
+                let isFriendOfCommenter = true; // Already true since comment.authorId is in friendIds
+    
+                // Check if the current user is a mutual friend of the commenter and each tagged user
+                for (const taggedUid of commentTaggedUserUids) {
                   const mutualFriendUids = await getMutualFriendUids(comment.authorId, taggedUid);
                   if (!mutualFriendUids.includes(user.uid)) {
                     isMutualFriendForAllTagged = false;
+                    break;
                   }
-                });
+                }
     
-                await Promise.all(mutualFriendChecks);
-    
-                if (isMutualFriendForAllTagged) {
+                // Show the comment if the current user is a friend of the commenter
+                // OR if the current user is a mutual friend of the commenter and all tagged users
+                if (isFriendOfCommenter) {
                   const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
                     const commentHTML = `
                       <div class="comment">
@@ -1847,6 +1855,7 @@
                   commentPromises.push(promise);
                 }
               }
+              // If no tagged users, show the comment if the commenter is a friend
               else {
                 const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
                   const commentHTML = `
