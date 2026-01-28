@@ -1081,8 +1081,9 @@
                       }
                     } else {
                       const friendUids = await getFriendUidsForUser(posterUid);
-                      for (const friendUid of friendUids) {
-                        await addPostToUserFeed(friendUid, docRef.id, new Date());
+                      const uidsToAddPost = [...new Set([...friendUids, posterUid])];
+                      for (const uid of uidsToAddPost) {
+                        await addPostToUserFeed(uid, docRef.id, new Date());
                       }
                     }
     
@@ -1189,8 +1190,9 @@
                     }
                   } else {
                     const friendUids = await getFriendUidsForUser(posterUid);
-                    for (const friendUid of friendUids) {
-                      await addPostToUserFeed(friendUid, docRef.id, new Date());
+                    const uidsToAddPost = [...new Set([...friendUids, posterUid])];
+                    for (const uid of uidsToAddPost) {
+                      await addPostToUserFeed(uid, docRef.id, new Date());
                     }
                   }
     
