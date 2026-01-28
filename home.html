@@ -1635,7 +1635,7 @@
     });
     
     // Function to add a comment to Firestore
-    function addComment(postId, content) {
+    async function addComment(postId, content) {
       const user = auth.currentUser;
       if (!user) return;
     
@@ -1643,58 +1643,57 @@
     
       if (taggedUserUids.length > 0) {
         // Get mutual friends for each tagged user
-        getMutualFriendUidsForComment(user.uid, taggedUserUids)
-          .then(async (mutualFriendUids) => {
-            // Add the comment to Firestore with taggedUserUids
-            const comment = {
-              authorId: user.uid,
-              authorName: user.displayName || "Unknown User",
-              content: content,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              taggedUserUids: taggedUserUids,
-            };
+        const mutualFriendUids = await getMutualFriendUidsForComment(user.uid, taggedUserUids);
     
-            db.collection('posts').doc(postId).collection('comments').add(comment)
-              .then(async (docRef) => {
-                // Fetch the post to get the author's UID
-                const postDoc = await db.collection('posts').doc(postId).get();
-                if (postDoc.exists) {
-                  const post = postDoc.data();
-                  // Only add a notification if the commenter is not the author
-                  if (post.authorId !== user.uid) {
-                    addCommentNotification(
-                      post.authorId, // Author of the post
-                      postId,
-                      user.uid, // Current user (commenter)
-                      user.displayName || "Unknown User",
-                      content,
-                      firebase.firestore.FieldValue.serverTimestamp()
-                    );
-                  }
-                }
+        // Add the comment to Firestore with taggedUserUids
+        const comment = {
+          authorId: user.uid,
+          authorName: user.displayName || "Unknown User",
+          content: content,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          taggedUserUids: taggedUserUids,
+        };
     
-                // Update the CommentsVisible flag for mutual friends
-                await updateCommentsVisibleForComment(postId, user.uid, taggedUserUids, mutualFriendUids);
+        try {
+          const docRef = await db.collection('posts').doc(postId).collection('comments').add(comment);
     
-                // Force the "See comments" button to appear and open the comments section
-                const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-                if (postElement) {
-                  const seeCommentsButton = postElement.querySelector('.see-comments-button');
-                  const commentsList = postElement.querySelector('.comments-list');
-                  if (seeCommentsButton) {
-                    seeCommentsButton.textContent = 'Hide comments';
-                    seeCommentsButton.style.display = 'block';
-                  }
-                  if (commentsList) {
-                    commentsList.classList.add('visible');
-                    loadComments(postId); // Load comments here
-                  }
-                }
-              })
-              .catch((error) => {
-                console.error("Error adding comment: ", error);
-              });
-          });
+          // Fetch the post to get the author's UID
+          const postDoc = await db.collection('posts').doc(postId).get();
+          if (postDoc.exists) {
+            const post = postDoc.data();
+            // Only add a notification if the commenter is not the author
+            if (post.authorId !== user.uid) {
+              await addCommentNotification(
+                post.authorId, // Author of the post
+                postId,
+                user.uid, // Current user (commenter)
+                user.displayName || "Unknown User",
+                content,
+                firebase.firestore.FieldValue.serverTimestamp()
+              );
+            }
+          }
+    
+          // Update the CommentsVisible flag for mutual friends
+          await updateCommentsVisibleForComment(postId, user.uid, taggedUserUids, mutualFriendUids);
+    
+          // Force the "See comments" button to appear and open the comments section
+          const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+          if (postElement) {
+            const seeCommentsButton = postElement.querySelector('.see-comments-button');
+            const commentsList = postElement.querySelector('.comments-list');
+            if (seeCommentsButton) {
+              seeCommentsButton.textContent = 'Hide comments';
+              seeCommentsButton.style.display = 'block';
+            }
+            if (commentsList) {
+              commentsList.classList.add('visible');
+              loadComments(postId); // Load comments here
+            }
+          }
+        } catch (error) {
+          console.error("Error adding comment: ", error);
+        }
       } else {
         // No tagged users, add comment normally
         const comment = {
@@ -1704,47 +1703,46 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         };
     
-        db.collection('posts').doc(postId).collection('comments').add(comment)
-          .then((docRef) => {
-            // Fetch the post to get the author's UID
-            db.collection('posts').doc(postId).get().then((postDoc) => {
-              if (postDoc.exists) {
-                const post = postDoc.data();
-                // Only add a notification if the commenter is not the author
-                if (post.authorId !== user.uid) {
-                  addCommentNotification(
-                    post.authorId, // Author of the post
-                    postId,
-                    user.uid, // Current user (commenter)
-                    user.displayName || "Unknown User",
-                    content,
-                    firebase.firestore.FieldValue.serverTimestamp()
-                  );
-                }
-              }
-            });
+        try {
+          const docRef = await db.collection('posts').doc(postId).collection('comments').add(comment);
     
-            // Update the CommentsVisible flag for all friends
-            updateCommentsVisibleForPost(postId, user.uid);
-    
-            // Force the "See comments" button to appear and open the comments section
-            const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-            if (postElement) {
-              const seeCommentsButton = postElement.querySelector('.see-comments-button');
-              const commentsList = postElement.querySelector('.comments-list');
-              if (seeCommentsButton) {
-                seeCommentsButton.textContent = 'Hide comments';
-                seeCommentsButton.style.display = 'block';
-              }
-              if (commentsList) {
-                commentsList.classList.add('visible');
-                loadComments(postId); // Load comments here
-              }
+          // Fetch the post to get the author's UID
+          const postDoc = await db.collection('posts').doc(postId).get();
+          if (postDoc.exists) {
+            const post = postDoc.data();
+            // Only add a notification if the commenter is not the author
+            if (post.authorId !== user.uid) {
+              await addCommentNotification(
+                post.authorId, // Author of the post
+                postId,
+                user.uid, // Current user (commenter)
+                user.displayName || "Unknown User",
+                content,
+                firebase.firestore.FieldValue.serverTimestamp()
+              );
             }
-          })
-          .catch((error) => {
-            console.error("Error adding comment: ", error);
-          });
+          }
+    
+          // Update the CommentsVisible flag for all friends
+          await updateCommentsVisibleForPost(postId, user.uid);
+    
+          // Force the "See comments" button to appear and open the comments section
+          const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+          if (postElement) {
+            const seeCommentsButton = postElement.querySelector('.see-comments-button');
+            const commentsList = postElement.querySelector('.comments-list');
+            if (seeCommentsButton) {
+              seeCommentsButton.textContent = 'Hide comments';
+              seeCommentsButton.style.display = 'block';
+            }
+            if (commentsList) {
+              commentsList.classList.add('visible');
+              loadComments(postId); // Load comments here
+            }
+          }
+        } catch (error) {
+          console.error("Error adding comment: ", error);
+        }
       }
     }
 
