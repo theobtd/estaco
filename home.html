@@ -644,8 +644,8 @@
       const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
     
       // Process post content for @username tags
-      let processedContent = await processTaggedUsernames(post.content, user.uid);
-    
+      let processedContent = post.content;
+      
       // Construct the post HTML
       let mediaHTML = '';
       if (post.photoURL) {
@@ -1179,8 +1179,8 @@
         const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
     
         // Process post content for @username tags
-        let processedContent = await processTaggedUsernames(post.content, auth.currentUser.uid);
-    
+        let processedContent = post.content;
+        
         // Get the current user's reaction for this post
         const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
         const likeClass = userReaction && userReaction.type === 'like' ? 'selected' : '';
@@ -1966,51 +1966,6 @@
             });
         }
     });
-
-    /**
-     * Processes post content to replace @username tags with @unknown if the viewing user is not a friend of the tagged user.
-     * @param {string} content - The post content (HTML).
-     * @param {string} viewerUid - The UID of the user viewing the post.
-     * @returns {Promise<string>} - The processed content.
-     */
-    async function processTaggedUsernames(content, viewerUid) {
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = content;
-    
-      // Find all @username tags in the content
-      const tags = tempDiv.querySelectorAll('.tag-validated');
-      for (const tag of tags) {
-        const username = tag.textContent.substring(1); // Remove the @
-        // Get the UID of the tagged user (assuming it's stored in a data-uid attribute)
-        const taggedUserUid = tag.dataset.uid;
-        if (taggedUserUid) {
-          // Check if the viewing user is a friend of the tagged user
-          const isFriend = await areUsersFriends(viewerUid, taggedUserUid);
-          if (!isFriend) {
-            tag.textContent = '@unknown';
-          }
-        }
-      }
-    
-      return tempDiv.innerHTML;
-    }
-
-    /**
-     * Checks if two users are friends.
-     * @param {string} userUid - The UID of the viewing user.
-     * @param {string} taggedUserUid - The UID of the tagged user.
-     * @returns {Promise<boolean>} - True if they are friends, false otherwise.
-     */
-    async function areUsersFriends(userUid, taggedUserUid) {
-      if (userUid === taggedUserUid) return true; // Always show the username to the tagged user
-    
-      const friendsDoc = await db.collection('friends').doc(userUid).get();
-      if (friendsDoc.exists) {
-        const friends = friendsDoc.data()?.friends || [];
-        return friends.some(friend => friend.uid === taggedUserUid);
-      }
-      return false;
-    }
 
     /**
      * Adds a post to a user's feed sub-collection.
