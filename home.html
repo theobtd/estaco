@@ -972,256 +972,111 @@
       document.getElementById('upload-overlay').style.display = 'flex';
       postButton.disabled = true;
     
-      // NEW CHECK: Prevent tagging users who are not friends with each other
-      const taggedUserUids = extractTaggedUserUids(content);
+      const user = auth.currentUser;
+      user.reload().then(() => {
+        const authorName = user.displayName || "Unknown User";
+        const post = {
+          authorId: user.uid,
+          authorName: authorName,
+          content: content,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          reactions: {}
+        };
     
-      if (taggedUserUids.length >= 2) {
-        let allTaggedUsersAreFriends = true;
+        db.collection('posts').add(post)
+          .then((docRef) => {
+            const uploadPromises = [];
+            if (mediaFile) {
+              const storageRef = storage.ref();
+              const mediaType = postMedia.getAttribute('data-type');
+              const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
+              const uploadTask = mediaRef.put(mediaFile);
     
-        // Check every pair of tagged users
-        (async () => {
-          for (let i = 0; i < taggedUserUids.length; i++) {
-            for (let j = i + 1; j < taggedUserUids.length; j++) {
-              const uid1 = taggedUserUids[i];
-              const uid2 = taggedUserUids[j];
-    
-              const friendsOfUid1 = await getFriendUidsForUser(uid1);
-              const friendsOfUid2 = await getFriendUidsForUser(uid2);
-    
-              // Check if uid2 is a friend of uid1 and vice versa
-              if (!friendsOfUid1.includes(uid2) || !friendsOfUid2.includes(uid1)) {
-                allTaggedUsersAreFriends = false;
-                break;
-              }
-            }
-    
-            if (!allTaggedUsersAreFriends) {
-              break;
-            }
-          }
-    
-          if (!allTaggedUsersAreFriends) {
-            alert("You cannot tag users who are not friends with each other.");
-            document.getElementById('upload-overlay').style.display = 'none';
-            postButton.disabled = false;
-            return; // Cancel the post creation
-          }
-    
-          // Continue with post creation
-          const user = auth.currentUser;
-          user.reload().then(() => {
-            const authorName = user.displayName || "Unknown User";
-            const post = {
-              authorId: user.uid,
-              authorName: authorName,
-              content: content,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              reactions: {}
-            };
-    
-            db.collection('posts').add(post)
-              .then((docRef) => {
-                const uploadPromises = [];
-                if (mediaFile) {
-                  const storageRef = storage.ref();
-                  const mediaType = postMedia.getAttribute('data-type');
-                  const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
-                  const uploadTask = mediaRef.put(mediaFile);
-    
-                  uploadPromises.push(
-                    new Promise((resolve, reject) => {
-                      uploadTask.on('state_changed',
-                        null,
-                        (error) => {
-                          console.error('Upload error:', error);
-                          reject(error);
-                        },
-                        () => {
-                          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                            const updateData = mediaType === 'image'
-                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                              : { videoURL: downloadURL, mediaOrientation: 'vertical' };
-                            docRef.update(updateData).then(resolve);
-                          });
-                        }
-                      );
-                    })
+              uploadPromises.push(
+                new Promise((resolve, reject) => {
+                  uploadTask.on('state_changed',
+                    null,
+                    (error) => {
+                      console.error('Upload error:', error);
+                      reject(error);
+                    },
+                    () => {
+                      uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                        const updateData = mediaType === 'image'
+                          ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                          : { videoURL: downloadURL, mediaOrientation: 'vertical' };
+                        docRef.update(updateData).then(resolve);
+                      });
+                    }
                   );
+                })
+              );
+            }
+    
+            Promise.all(uploadPromises)
+              .then(async () => {
+                alert('Post created!');
+                const user = auth.currentUser;
+                const authorName = user.displayName || "Unknown User";
+                const newPost = {
+                  id: docRef.id,
+                  authorId: user.uid,
+                  authorName: authorName,
+                  content: content,
+                  timestamp: new Date(), // Use client-side date for immediate display
+                  reactions: {},
+                  photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
+                  videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
+                  mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
+                };
+                renderNewPost(newPost);
+    
+                // NEW LOGIC: Restrict post visibility to mutual friends if someone is tagged
+                const taggedUserUids = extractTaggedUserUids(content);
+                const posterUid = auth.currentUser.uid;
+    
+                if (taggedUserUids.length > 0) {
+                  for (const taggedUid of taggedUserUids) {
+                    const mutualFriendUids = await getMutualFriendUids(posterUid, taggedUid);
+                    const uidsToAddPost = [...new Set([...mutualFriendUids, posterUid, taggedUid])];
+                    for (const uid of uidsToAddPost) {
+                      await addPostToUserFeed(uid, docRef.id, new Date());
+                    }
+                  }
+                } else {
+                  const friendUids = await getFriendUidsForUser(posterUid);
+                  for (const friendUid of friendUids) {
+                    await addPostToUserFeed(friendUid, docRef.id, new Date());
+                  }
                 }
     
-                Promise.all(uploadPromises)
-                  .then(async () => {
-                    alert('Post created!');
-                    const user = auth.currentUser;
-                    const authorName = user.displayName || "Unknown User";
-                    const newPost = {
-                      id: docRef.id,
-                      authorId: user.uid,
-                      authorName: authorName,
-                      content: content,
-                      timestamp: new Date(), // Use client-side date for immediate display
-                      reactions: {},
-                      photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
-                      videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
-                      mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
-                    };
-                    renderNewPost(newPost);
-    
-                    // NEW LOGIC: Restrict post visibility to mutual friends if someone is tagged
-                    const taggedUserUids = extractTaggedUserUids(content);
-                    const posterUid = auth.currentUser.uid;
-    
-                    if (taggedUserUids.length > 0) {
-                      for (const taggedUid of taggedUserUids) {
-                        const mutualFriendUids = await getMutualFriendUids(posterUid, taggedUid);
-                        const uidsToAddPost = [...new Set([...mutualFriendUids, posterUid, taggedUid])];
-                        for (const uid of uidsToAddPost) {
-                          await addPostToUserFeed(uid, docRef.id, new Date());
-                        }
-                      }
-                    } else {
-                      const friendUids = await getFriendUidsForUser(posterUid);
-                      for (const friendUid of friendUids) {
-                        await addPostToUserFeed(friendUid, docRef.id, new Date());
-                      }
-                    }
-    
-                    postContent.textContent = '';
-                    postMedia.value = '';
-                    document.getElementById('image-preview-container').style.display = 'none';
-                    document.getElementById('video-preview-container').style.display = 'none';
-                  })
-                  .catch((error) => {
-                    errorMessage.textContent = error.message;
-                  })
-                  .finally(() => {
-                    // Reset the orientation button state to default (horizontal)
-                    document.querySelectorAll('.crop-orientation-button').forEach(button => {
-                      button.classList.remove('selected');
-                    });
-                    document.querySelector('.crop-orientation-button[data-orientation="horizontal"]').classList.add('selected');
-    
-                    // Hide full-screen overlay
-                    document.getElementById('upload-overlay').style.display = 'none';
-                    postButton.disabled = false;
-                  });
+                postContent.textContent = '';
+                postMedia.value = '';
+                document.getElementById('image-preview-container').style.display = 'none';
+                document.getElementById('video-preview-container').style.display = 'none';
               })
               .catch((error) => {
                 errorMessage.textContent = error.message;
-                // Hide loader
-                document.getElementById('post-loading').style.display = 'none';
+              })
+              .finally(() => {
+                // Reset the orientation button state to default (horizontal)
+                document.querySelectorAll('.crop-orientation-button').forEach(button => {
+                  button.classList.remove('selected');
+                });
+                document.querySelector('.crop-orientation-button[data-orientation="horizontal"]').classList.add('selected');
+    
+                // Hide full-screen overlay
+                document.getElementById('upload-overlay').style.display = 'none';
                 postButton.disabled = false;
               });
+          })
+          .catch((error) => {
+            errorMessage.textContent = error.message;
+            // Hide loader
+            document.getElementById('post-loading').style.display = 'none';
+            postButton.disabled = false;
           });
-        })();
-      } else {
-        // Continue with post creation if less than 2 users are tagged
-        const user = auth.currentUser;
-        user.reload().then(() => {
-          const authorName = user.displayName || "Unknown User";
-          const post = {
-            authorId: user.uid,
-            authorName: authorName,
-            content: content,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            reactions: {}
-          };
-    
-          db.collection('posts').add(post)
-            .then((docRef) => {
-              const uploadPromises = [];
-              if (mediaFile) {
-                const storageRef = storage.ref();
-                const mediaType = postMedia.getAttribute('data-type');
-                const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
-                const uploadTask = mediaRef.put(mediaFile);
-    
-                uploadPromises.push(
-                  new Promise((resolve, reject) => {
-                    uploadTask.on('state_changed',
-                      null,
-                      (error) => {
-                        console.error('Upload error:', error);
-                        reject(error);
-                      },
-                      () => {
-                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                          const updateData = mediaType === 'image'
-                            ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                            : { videoURL: downloadURL, mediaOrientation: 'vertical' };
-                          docRef.update(updateData).then(resolve);
-                        });
-                      }
-                    );
-                  })
-                );
-              }
-    
-              Promise.all(uploadPromises)
-                .then(async () => {
-                  alert('Post created!');
-                  const user = auth.currentUser;
-                  const authorName = user.displayName || "Unknown User";
-                  const newPost = {
-                    id: docRef.id,
-                    authorId: user.uid,
-                    authorName: authorName,
-                    content: content,
-                    timestamp: new Date(), // Use client-side date for immediate display
-                    reactions: {},
-                    photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
-                    videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
-                    mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
-                  };
-                  renderNewPost(newPost);
-    
-                  // NEW LOGIC: Restrict post visibility to mutual friends if someone is tagged
-                  const taggedUserUids = extractTaggedUserUids(content);
-                  const posterUid = auth.currentUser.uid;
-    
-                  if (taggedUserUids.length > 0) {
-                    for (const taggedUid of taggedUserUids) {
-                      const mutualFriendUids = await getMutualFriendUids(posterUid, taggedUid);
-                      const uidsToAddPost = [...new Set([...mutualFriendUids, posterUid, taggedUid])];
-                      for (const uid of uidsToAddPost) {
-                        await addPostToUserFeed(uid, docRef.id, new Date());
-                      }
-                    }
-                  } else {
-                    const friendUids = await getFriendUidsForUser(posterUid);
-                    for (const friendUid of friendUids) {
-                      await addPostToUserFeed(friendUid, docRef.id, new Date());
-                    }
-                  }
-    
-                  postContent.textContent = '';
-                  postMedia.value = '';
-                  document.getElementById('image-preview-container').style.display = 'none';
-                  document.getElementById('video-preview-container').style.display = 'none';
-                })
-                .catch((error) => {
-                  errorMessage.textContent = error.message;
-                })
-                .finally(() => {
-                  // Reset the orientation button state to default (horizontal)
-                  document.querySelectorAll('.crop-orientation-button').forEach(button => {
-                    button.classList.remove('selected');
-                  });
-                  document.querySelector('.crop-orientation-button[data-orientation="horizontal"]').classList.add('selected');
-    
-                  // Hide full-screen overlay
-                  document.getElementById('upload-overlay').style.display = 'none';
-                  postButton.disabled = false;
-                });
-            })
-            .catch((error) => {
-              errorMessage.textContent = error.message;
-              // Hide loader
-              document.getElementById('post-loading').style.display = 'none';
-              postButton.disabled = false;
-            });
-        });
-      }
+      });
     });
 
 
