@@ -223,6 +223,21 @@
           } else {
             notification.postContent = "[Post deleted]";
           }
+        
+          // Fetch comment content for comment_tag notifications
+          if (notification.type === 'comment_tag') {
+            const commentsSnapshot = await db.collection('posts').doc(notification.postId).collection('comments')
+              .where('taggedUserUids', 'array-contains', userId)
+              .orderBy('timestamp', 'desc')
+              .get();
+        
+            if (!commentsSnapshot.empty) {
+              const commentDoc = commentsSnapshot.docs[0];
+              notification.commentContent = commentDoc.data().content;
+            } else {
+              notification.commentContent = "[Comment deleted]";
+            }
+          }
         }
     
         // Render notifications
@@ -295,7 +310,7 @@
                     <span style="margin-left: 5px;">tagged you in a comment</span>
                   </div>
                   <div class="notification-content">
-                    <p>${notification.postContent}</p>
+                    <p>${notification.commentContent}</p>
                   </div>
                   <div class="notification-post">
                     ${new Date(notification.timestamp.toDate()).toLocaleString()}
