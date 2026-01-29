@@ -1679,15 +1679,22 @@
         const postId = commentContentDiv.closest('.comments-section').querySelector('.comment-input').getAttribute('data-post-id');
         const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
     
-        // Insert @AuthorName into the comment input
-        const atMention = `@${authorName} `;
+        // Insert @AuthorName into the comment input as a tag-validated span
+        const atMention = `@${authorName}`;
+        const tagSpan = `<span class="tag-validated" contenteditable="false">${atMention}</span> `;
         commentInput.focus();
-        document.execCommand('insertText', false, atMention);
     
-        // Move cursor to the end
-        const range = document.createRange();
+        // Insert the tag span
         const selection = window.getSelection();
-        range.setStart(commentInput.childNodes[0], atMention.length);
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = tagSpan;
+        const tagNode = tempDiv.firstChild;
+        range.insertNode(tagNode);
+    
+        // Move cursor to the end of the tag
+        range.setStartAfter(tagNode);
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
