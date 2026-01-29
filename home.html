@@ -2432,8 +2432,14 @@
       try {
         const batch = db.batch();
     
-        // Update CommentsVisible flag for mutual friends
-        for (const uid of mutualFriendUids) {
+        // Create a combined list of users who should see the comment:
+        // 1. Mutual friends of commenter and tagged users
+        // 2. Tagged users themselves
+        // 3. The commenter
+        const allUids = [...new Set([...mutualFriendUids, ...taggedUserUids, commenterId])];
+    
+        // Update CommentsVisible flag for all relevant users
+        for (const uid of allUids) {
           const feedDocRef = db.collection(`users/${uid}/feed`).doc(postId);
           batch.update(feedDocRef, { CommentsVisible: true });
         }
