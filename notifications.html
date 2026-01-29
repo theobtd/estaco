@@ -182,68 +182,48 @@
       }
     });
 
-    // Function to load notifications (reactions to user's posts)
+    // Function to load notifications (reactions, comments, and tags)
     async function loadNotifications(userId) {
       try {
-        // Fetch all posts by the user
-        const postsSnapshot = await db.collection('posts')
-          .where('authorId', '==', userId)
+        // Fetch all notifications from the user's notifications subcollection
+        const notificationsSnapshot = await db.collection(`users/${userId}/notifications`)
           .orderBy('timestamp', 'desc')
           .get();
     
-        if (postsSnapshot.empty) {
-          notificationsList.innerHTML = '<p>No posts found.</p>';
+        if (notificationsSnapshot.empty) {
+          notificationsList.innerHTML = '<p>No notifications yet.</p>';
           return;
         }
     
-        // For each post, fetch reactions and comments
+        // Process notifications
         const notifications = [];
-        for (const postDoc of postsSnapshot.docs) {
-          const post = postDoc.data();
-          const postTimestamp = post.timestamp;
-    
-          // Fetch reactions
-          const reactions = post.reactions || {};
-          for (const [reactorId, reactionData] of Object.entries(reactions)) {
-            if (reactorId !== userId) { // Skip self-reactions
-              const reactorDoc = await db.collection('users').doc(reactorId).get();
-              const reactorName = reactorDoc.exists ? reactorDoc.data().name || "Unknown User" : "Unknown User";
-              const reactorProfilePicture = reactorDoc.exists ? reactorDoc.data().profilePictureURL : null;
-              const reactionTimestamp = reactionData.timestamp || postTimestamp;
-              notifications.push({
-                type: 'reaction',
-                reactorId,
-                reactorName,
-                reactorProfilePicture,
-                reaction: reactionData.type || reactionData,
-                postId: postDoc.id,
-                postContent: post.content,
-                timestamp: reactionTimestamp,
-              });
-            }
-          }
-    
-          // Fetch comments
-          const commentsSnapshot = await db.collection('posts').doc(postDoc.id).collection('comments').get();
-          for (const commentDoc of commentsSnapshot.docs) {
-            const comment = commentDoc.data();
-            if (comment.authorId !== userId) { // Skip self-comments
-              notifications.push({
-                type: 'comment',
-                reactorId: comment.authorId,
-                reactorName: comment.authorName || "Unknown User",
-                reactorProfilePicture: null, // You may want to fetch this from the users collection if available
-                commentContent: comment.content,
-                postId: postDoc.id,
-                postContent: post.content,
-                timestamp: comment.timestamp,
-              });
-            }
-          }
+        for (const notificationDoc of notificationsSnapshot.docs) {
+          const notification = notificationDoc.data();
+          notifications.push({
+            id: notificationDoc.id,
+            type: notification.type,
+            reactorId: notification.reactorId || notification.taggerId,
+            reactorName: notification.reactorName || notification.taggerName || "Unknown User",
+            postId: notification.postId,
+            reaction: notification.reaction,
+            commentContent: notification.commentContent,
+            message: notification.message,
+            timestamp: notification.timestamp,
+          });
         }
     
         // Sort notifications by timestamp (newest first)
         notifications.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+    
+        // Fetch post content for each notification
+        for (const notification of notifications) {
+          const postDoc = await db.collection('posts').doc(notification.postId).get();
+          if (postDoc.exists) {
+            notification.postContent = postDoc.data().content;
+          } else {
+            notification.postContent = "[Post deleted]";
+          }
+        }
     
         // Render notifications
         if (notifications.length === 0) {
@@ -254,9 +234,7 @@
               return `
                 <div class="notification">
                   <div class="notification-header">
-                    ${notification.reactorProfilePicture
-                      ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
-                      : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
+                    <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
                     <strong>${notification.reactorName}</strong>
                     <span style="margin-left: 5px;">
                       ${notification.reaction === 'like' ? '👍 Liked' :
@@ -277,9 +255,7 @@
               return `
                 <div class="notification">
                   <div class="notification-header">
-                    ${notification.reactorProfilePicture
-                      ? `<img src="${notification.reactorProfilePicture}" class="notification-author-picture">`
-                      : `<div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>`}
+                    <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
                     <strong>${notification.reactorName}</strong>
                     <span style="margin-left: 5px;">commented on your post</span>
                   </div>
@@ -288,6 +264,22 @@
                     <div style="margin-top: 5px; font-style: italic; color: var(--estaco-text-light);">
                       "${notification.commentContent}"
                     </div>
+                  </div>
+                  <div class="notification-post">
+                    ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                  </div>
+                </div>
+              `;
+            } else if (notification.type === 'tag') {
+              return `
+                <div class="notification">
+                  <div class="notification-header">
+                    <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
+                    <strong>${notification.reactorName}</strong>
+                    <span style="margin-left: 5px;">tagged you in a post</span>
+                  </div>
+                  <div class="notification-content">
+                    <p>${notification.postContent}</p>
                   </div>
                   <div class="notification-post">
                     ${new Date(notification.timestamp.toDate()).toLocaleString()}
