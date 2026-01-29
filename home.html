@@ -1795,25 +1795,45 @@
                 }
                 // For comments with tagged users, check mutual friendship
                 else if (taggedUserUids.length > 0) {
-                  isMutualFriendForComment(user.uid, comment.authorId, taggedUserUids)
-                    .then((isMutualFriend) => {
-                      if (isMutualFriend) {
-                        getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
-                          const commentHTML = `
-                            <div class="comment">
-                              <div class="comment-author-picture">
-                                ${profilePictureHTML}
-                              </div>
-                              <div class="comment-content">
-                                <div class="comment-author-name">${comment.authorName}</div>
-                                <div>${comment.content}</div>
-                              </div>
-                            </div>
-                          `;
-                          commentsList.innerHTML += commentHTML;
-                        });
-                      }
+                  // Check if the current user is one of the tagged users
+                  if (taggedUserUids.includes(user.uid)) {
+                    // Always show the comment if the current user is tagged
+                    getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
+                      const commentHTML = `
+                        <div class="comment">
+                          <div class="comment-author-picture">
+                            ${profilePictureHTML}
+                          </div>
+                          <div class="comment-content">
+                            <div class="comment-author-name">${comment.authorName}</div>
+                            <div>${comment.content}</div>
+                          </div>
+                        </div>
+                      `;
+                      commentsList.innerHTML += commentHTML;
                     });
+                  } else {
+                    // Otherwise, check if the current user is a mutual friend
+                    isMutualFriendForComment(user.uid, comment.authorId, taggedUserUids)
+                      .then((isMutualFriend) => {
+                        if (isMutualFriend) {
+                          getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
+                            const commentHTML = `
+                              <div class="comment">
+                                <div class="comment-author-picture">
+                                  ${profilePictureHTML}
+                                </div>
+                                <div class="comment-content">
+                                  <div class="comment-author-name">${comment.authorName}</div>
+                                  <div>${comment.content}</div>
+                                </div>
+                              </div>
+                            `;
+                            commentsList.innerHTML += commentHTML;
+                          });
+                        }
+                      });
+                  }
                 }
                 // For comments without tagged users, show if the commenter is a friend
                 else if (friendIds.includes(comment.authorId)) {
