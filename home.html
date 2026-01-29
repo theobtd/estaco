@@ -2431,13 +2431,9 @@
     async function updateCommentsVisibleForComment(postId, commenterId, taggedUserUids, mutualFriendUids) {
       try {
         const batch = db.batch();
-        const user = auth.currentUser;
-        if (!user) return;
     
-        // Include the current user, commenter, tagged users, and mutual friends
-        const allUids = [...new Set([...mutualFriendUids, ...taggedUserUids, commenterId, user.uid])];
-    
-        for (const uid of allUids) {
+        // Update CommentsVisible flag for mutual friends
+        for (const uid of mutualFriendUids) {
           const feedDocRef = db.collection(`users/${uid}/feed`).doc(postId);
           batch.update(feedDocRef, { CommentsVisible: true });
         }
