@@ -2438,6 +2438,16 @@
           batch.update(feedDocRef, { CommentsVisible: true });
         }
     
+        // Update CommentsVisible flag for the commenter
+        const commenterFeedDocRef = db.collection(`users/${commenterId}/feed`).doc(postId);
+        batch.update(commenterFeedDocRef, { CommentsVisible: true });
+    
+        // Update CommentsVisible flag for each tagged user
+        for (const uid of taggedUserUids) {
+          const taggedUserFeedDocRef = db.collection(`users/${uid}/feed`).doc(postId);
+          batch.update(taggedUserFeedDocRef, { CommentsVisible: true });
+        }
+    
         await batch.commit();
       } catch (error) {
         console.error('Error updating CommentsVisible flag for comment:', error);
