@@ -202,8 +202,8 @@
           notifications.push({
             id: notificationDoc.id,
             type: notification.type,
-            reactorId: notification.reactorId || notification.taggerId,
-            reactorName: notification.reactorName || notification.taggerName || "Unknown User",
+            reactorId: notification.reactorId || notification.taggerId || notification.commenterId,
+            reactorName: notification.reactorName || notification.taggerName || notification.commenterName || "Unknown User",
             postId: notification.postId,
             reaction: notification.reaction,
             commentContent: notification.commentContent,
@@ -277,6 +277,22 @@
                     <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
                     <strong>${notification.reactorName}</strong>
                     <span style="margin-left: 5px;">tagged you in a post</span>
+                  </div>
+                  <div class="notification-content">
+                    <p>${notification.postContent}</p>
+                  </div>
+                  <div class="notification-post">
+                    ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                  </div>
+                </div>
+              `;
+            } else if (notification.type === 'comment_tag') {
+              return `
+                <div class="notification">
+                  <div class="notification-header">
+                    <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
+                    <strong>${notification.reactorName}</strong>
+                    <span style="margin-left: 5px;">tagged you in a comment</span>
                   </div>
                   <div class="notification-content">
                     <p>${notification.postContent}</p>
