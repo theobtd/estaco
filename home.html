@@ -1700,6 +1700,17 @@
             }
           }
     
+          // Add tag notifications for each tagged user
+          for (const taggedUid of taggedUserUids) {
+            await addCommentTagNotification(
+              taggedUid, // Tagged user's UID
+              postId, // Post ID
+              user.uid, // Current user's UID (commenter)
+              user.displayName || "Unknown User", // Current user's name
+              firebase.firestore.FieldValue.serverTimestamp()
+            );
+          }
+    
           // Update the CommentsVisible flag for mutual friends
           await updateCommentsVisibleForComment(postId, user.uid, taggedUserUids, mutualFriendUids);
     
@@ -2257,6 +2268,30 @@
             });
         }
     });
+
+    /**
+     * Adds a comment tag notification to a user's notifications sub-collection.
+     * @param {string} taggedUid - The tagged user's UID.
+     * @param {string} postId - The post's ID.
+     * @param {string} commenterId - The UID of the user who commented and tagged.
+     * @param {string} commenterName - The name of the user who commented and tagged.
+     * @param {Date} timestamp - The timestamp of the comment.
+     */
+    async function addCommentTagNotification(taggedUid, postId, commenterId, commenterName, timestamp) {
+      try {
+        const notificationsRef = db.collection(`users/${taggedUid}/notifications`).doc();
+        await notificationsRef.set({
+          type: "comment_tag",
+          commenterId,
+          commenterName,
+          postId,
+          timestamp,
+          message: `${commenterName} tagged you in a comment.`
+        });
+      } catch (error) {
+        console.error("Error adding comment tag notification:", error);
+      }
+    }
 
     /**
      * Adds a tag notification to a user's notifications sub-collection.
