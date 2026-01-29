@@ -504,6 +504,17 @@
       display: block;
     }
 
+    .respond-button {
+      background: none;
+      border: none;
+      color: var(--estaco-secondary);
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 4px;
+      padding: 0;
+      text-decoration: underline;
+    }
+
   </style>
 </head>
 <body>
@@ -1659,6 +1670,29 @@
         }
       }
     });
+
+    // respond to comment
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('respond-button')) {
+        const authorName = e.target.getAttribute('data-author-name');
+        const commentContentDiv = e.target.closest('.comment-content');
+        const postId = commentContentDiv.closest('.comments-section').querySelector('.comment-input').getAttribute('data-post-id');
+        const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+    
+        // Insert @AuthorName into the comment input
+        const atMention = `@${authorName} `;
+        commentInput.focus();
+        document.execCommand('insertText', false, atMention);
+    
+        // Move cursor to the end
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.setStart(commentInput.childNodes[0], atMention.length);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
     
     // Function to add a comment to Firestore
     async function addComment(postId, content) {
@@ -1823,6 +1857,7 @@
                         <div class="comment-content">
                           <div class="comment-author-name">${comment.authorName}</div>
                           <div>${comment.content}</div>
+                          <button class="respond-button" data-author-name="${comment.authorName}">Respond</button>
                         </div>
                       </div>
                     `;
@@ -1844,6 +1879,7 @@
                           <div class="comment-content">
                             <div class="comment-author-name">${comment.authorName}</div>
                             <div>${comment.content}</div>
+                            <button class="respond-button" data-author-name="${comment.authorName}">Respond</button>
                           </div>
                         </div>
                       `;
@@ -1863,6 +1899,7 @@
                                 <div class="comment-content">
                                   <div class="comment-author-name">${comment.authorName}</div>
                                   <div>${comment.content}</div>
+                                  <button class="respond-button" data-author-name="${comment.authorName}">Respond</button>
                                 </div>
                               </div>
                             `;
@@ -1883,6 +1920,7 @@
                         <div class="comment-content">
                           <div class="comment-author-name">${comment.authorName}</div>
                           <div>${comment.content}</div>
+                          <button class="respond-button" data-author-name="${comment.authorName}">Respond</button>
                         </div>
                       </div>
                     `;
