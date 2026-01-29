@@ -215,29 +215,13 @@
         // Sort notifications by timestamp (newest first)
         notifications.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
     
-        // Fetch post content and comment content for each notification
+        // Fetch post content for each notification
         for (const notification of notifications) {
           const postDoc = await db.collection('posts').doc(notification.postId).get();
           if (postDoc.exists) {
             notification.postContent = postDoc.data().content;
           } else {
             notification.postContent = "[Post deleted]";
-          }
-    
-          // Fetch comment content for comment_tag notifications
-          if (notification.type === 'comment_tag') {
-            const commentsSnapshot = await db.collection('posts').doc(notification.postId).collection('comments')
-              .where('authorId', '==', notification.reactorId)
-              .orderBy('timestamp', 'desc')
-              .limit(1)
-              .get();
-    
-            if (!commentsSnapshot.empty) {
-              const commentDoc = commentsSnapshot.docs[0];
-              notification.commentContent = commentDoc.data().content;
-            } else {
-              notification.commentContent = "[Comment deleted]";
-            }
           }
         }
     
@@ -311,7 +295,7 @@
                     <span style="margin-left: 5px;">tagged you in a comment</span>
                   </div>
                   <div class="notification-content">
-                    <p>${notification.commentContent}</p>
+                    <p>${notification.postContent}</p>
                   </div>
                   <div class="notification-post">
                     ${new Date(notification.timestamp.toDate()).toLocaleString()}
