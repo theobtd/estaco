@@ -1087,6 +1087,19 @@
                       }
                     }
     
+                    // NEW: Add tag notifications for each tagged user
+                    if (taggedUserUids.length > 0) {
+                      for (const taggedUid of taggedUserUids) {
+                        await addTagNotification(
+                          taggedUid, // Tagged user's UID
+                          docRef.id, // Post ID
+                          user.uid, // Current user's UID (tagger)
+                          user.displayName || "Unknown User", // Current user's name
+                          firebase.firestore.FieldValue.serverTimestamp()
+                        );
+                      }
+                    }
+    
                     postContent.textContent = '';
                     postMedia.value = '';
                     document.getElementById('image-preview-container').style.display = 'none';
@@ -1193,6 +1206,19 @@
                     const uidsToAddPost = [...new Set([...friendUids, posterUid])];
                     for (const uid of uidsToAddPost) {
                       await addPostToUserFeed(uid, docRef.id, new Date());
+                    }
+                  }
+    
+                  // NEW: Add tag notifications for each tagged user
+                  if (taggedUserUids.length > 0) {
+                    for (const taggedUid of taggedUserUids) {
+                      await addTagNotification(
+                        taggedUid, // Tagged user's UID
+                        docRef.id, // Post ID
+                        user.uid, // Current user's UID (tagger)
+                        user.displayName || "Unknown User", // Current user's name
+                        firebase.firestore.FieldValue.serverTimestamp()
+                      );
                     }
                   }
     
@@ -2231,6 +2257,30 @@
             });
         }
     });
+
+    /**
+     * Adds a tag notification to a user's notifications sub-collection.
+     * @param {string} taggedUid - The tagged user's UID.
+     * @param {string} postId - The post's ID.
+     * @param {string} taggerId - The UID of the user who tagged.
+     * @param {string} taggerName - The name of the user who tagged.
+     * @param {Date} timestamp - The timestamp of the tag.
+     */
+    async function addTagNotification(taggedUid, postId, taggerId, taggerName, timestamp) {
+      try {
+        const notificationsRef = db.collection(`users/${taggedUid}/notifications`).doc();
+        await notificationsRef.set({
+          type: "tag",
+          taggerId,
+          taggerName,
+          postId,
+          timestamp,
+          message: `${taggerName} tagged you in a post.`
+        });
+      } catch (error) {
+        console.error("Error adding tag notification:", error);
+      }
+    }
 
     /**
      * Adds a post to a user's feed sub-collection.
