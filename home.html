@@ -1672,7 +1672,7 @@
     });
 
     // respond to comment
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', async (e) => { // <-- Add 'async' here
       if (e.target.classList.contains('respond-button')) {
         const authorName = e.target.getAttribute('data-author-name');
         const commentContentDiv = e.target.closest('.comment-content');
@@ -1682,7 +1682,7 @@
         // Get the UID of the author being responded to
         const commentElement = e.target.closest('.comment');
         const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
-        const commentAuthorUid = await getUidByUsername(commentAuthorName); // You need to implement this function
+        const commentAuthorUid = await getUidByUsername(commentAuthorName); // Now 'await' works
     
         // Insert @AuthorName into the comment input as a tag-validated span WITH data-uid
         const atMention = `@${authorName}`;
@@ -2066,6 +2066,19 @@
             }
         };
     }
+
+    async function getUidByUsername(username) {
+      const user = auth.currentUser;
+      if (!user) return null;
+    
+      // Fetch the user's friends
+      const friendsDoc = await db.collection('friends').doc(user.uid).get();
+      if (!friendsDoc.exists) return null;
+    
+      const friends = friendsDoc.data()?.friends || [];
+      const friend = friends.find(f => f.name === username);
+      return friend ? friend.uid : null;
+    }
     
     // Function to check if the user has scrolled to the bottom
     function isAtBottom() {
@@ -2105,19 +2118,6 @@
       const friends1 = await getFriendUidsForUser(userUid1);
       const friends2 = await getFriendUidsForUser(userUid2);
       return friends1.filter(uid => friends2.includes(uid));
-    }
-
-    async function getUidByUsername(username) {
-      const user = auth.currentUser;
-      if (!user) return null;
-    
-      // Fetch the user's friends
-      const friendsDoc = await db.collection('friends').doc(user.uid).get();
-      if (!friendsDoc.exists) return null;
-    
-      const friends = friendsDoc.data()?.friends || [];
-      const friend = friends.find(f => f.name === username);
-      return friend ? friend.uid : null;
     }
 
     document.querySelectorAll('.orientation-button').forEach(button => {
