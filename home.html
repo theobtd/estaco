@@ -1679,9 +1679,14 @@
         const postId = commentContentDiv.closest('.comments-section').querySelector('.comment-input').getAttribute('data-post-id');
         const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
     
-        // Insert @AuthorName into the comment input as a tag-validated span
+        // Get the UID of the author being responded to
+        const commentElement = e.target.closest('.comment');
+        const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
+        const commentAuthorUid = await getUidByUsername(commentAuthorName); // You need to implement this function
+    
+        // Insert @AuthorName into the comment input as a tag-validated span WITH data-uid
         const atMention = `@${authorName}`;
-        const tagSpan = `<span class="tag-validated" contenteditable="false">${atMention}</span> `;
+        const tagSpan = `<span class="tag-validated" contenteditable="false" data-uid="${commentAuthorUid}">${atMention}</span> `;
         commentInput.focus();
     
         // Insert the tag span
