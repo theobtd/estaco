@@ -2324,8 +2324,8 @@
      */
     async function addCommentTagNotification(taggedUid, postId, commenterId, commenterName, timestamp) {
       try {
-        const notificationsRef = db.collection(`users/${taggedUid}/notifications`).doc();
-        await notificationsRef.set({
+        const notificationsRef = db.collection(`users/${taggedUid}/notifications`);
+        await notificationsRef.add({ // Use .add() instead of .doc().set()
           type: "comment_tag",
           commenterId,
           commenterName,
