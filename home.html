@@ -2325,16 +2325,35 @@
     async function addCommentTagNotification(taggedUid, postId, commenterId, commenterName, timestamp) {
       try {
         const notificationsRef = db.collection(`users/${taggedUid}/notifications`);
-        await notificationsRef.add({ // Use .add() instead of .doc().set()
-          type: "comment_tag",
-          commenterId,
-          commenterName,
-          postId,
-          timestamp,
-          message: `${commenterName} tagged you in a comment.`
-        });
+    
+        // Query for existing notifications
+        const querySnapshot = await notificationsRef
+          .where('type', '==', 'comment_tag')
+          .where('postId', '==', postId)
+          .where('commenterId', '==', commenterId)
+          .get();
+    
+        if (!querySnapshot.empty) {
+          // Update existing notification
+          querySnapshot.forEach((doc) => {
+            doc.ref.update({
+              timestamp,
+              message: `${commenterName} tagged you again in a comment.`
+            });
+          });
+        } else {
+          // Create new notification
+          await notificationsRef.add({
+            type: "comment_tag",
+            commenterId,
+            commenterName,
+            postId,
+            timestamp,
+            message: `${commenterName} tagged you in a comment.`
+          });
+        }
       } catch (error) {
-        console.error("Error adding comment tag notification:", error);
+        console.error("Error adding/updating comment tag notification:", error);
       }
     }
 
