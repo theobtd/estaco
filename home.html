@@ -587,6 +587,37 @@
       }
     }
 
+    .reaction-list {
+      width: 100%;
+      max-height: 70vh;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    
+    .reaction-list p {
+      font-size: 16px;
+      color: var(--estaco-text-light);
+      text-align: center;
+      margin-top: 20px;
+    }
+    
+    .reaction-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid var(--estaco-border);
+    }
+    
+    .reaction-icon {
+      font-size: 20px;
+      margin-right: 10px;
+    }
+    
+    .reaction-username {
+      font-size: 16px;
+      color: var(--estaco-text);
+    }
+
   </style>
 </head>
 <body>
@@ -675,7 +706,10 @@
   <div id="reaction-popup" class="reaction-popup">
     <div class="reaction-popup-content">
       <button id="close-reaction-popup" class="close-reaction-popup-button">×</button>
-      <p>Do you have reactions? ;)</p>
+      <h3>Reactions to your post</h3>
+      <div id="reaction-list" class="reaction-list">
+        <!-- Reactions will be inserted here -->
+      </div>
     </div>
   </div>
 
@@ -1574,6 +1608,58 @@
         // If the post is yours, show the popup and return
         if (postAuthorId === user.uid) {
           const popup = document.getElementById('reaction-popup');
+          const reactionList = document.getElementById('reaction-list');
+    
+          // Fetch the post data to get reactions
+          db.collection('posts').doc(postId).get().then((doc) => {
+            if (!doc.exists) {
+              console.error("Post does not exist!");
+              return;
+            }
+    
+            const post = doc.data();
+            const reactions = post.reactions || {};
+    
+            // Clear the reaction list
+            reactionList.innerHTML = '';
+    
+            if (Object.keys(reactions).length === 0) {
+              reactionList.innerHTML = '<p>No reactions to your post yet :(</p>';
+            } else {
+              // Group reactions by type
+              const reactionTypes = {
+                like: { icon: '👍', users: [] },
+                love: { icon: '❤️', users: [] },
+                laugh: { icon: '😂', users: [] }
+              };
+    
+              // Populate reactionTypes with usernames
+              Object.entries(reactions).forEach(([userId, reactionData]) => {
+                if (reactionTypes[reactionData.type]) {
+                  reactionTypes[reactionData.type].users.push({
+                    userId,
+                    username: reactionData.username || 'Unknown User'
+                  });
+                }
+              });
+    
+              // Display reactions
+              for (const [type, data] of Object.entries(reactionTypes)) {
+                if (data.users.length > 0) {
+                  data.users.forEach(user => {
+                    const reactionItem = document.createElement('div');
+                    reactionItem.className = 'reaction-item';
+                    reactionItem.innerHTML = `
+                      <span class="reaction-icon">${data.icon}</span>
+                      <span class="reaction-username">${user.username}</span>
+                    `;
+                    reactionList.appendChild(reactionItem);
+                  });
+                }
+              }
+            }
+          });
+    
           popup.style.display = 'block';
           return;
         }
@@ -1644,18 +1730,19 @@
               const postData = doc.data();
               const reactions = postData.reactions || {};
               const userReaction = reactions[user.uid];
-    
+          
               if (userReaction && userReaction.type === reaction) {
                 delete reactions[user.uid];
               } else {
                 reactions[user.uid] = {
                   type: reaction,
-                  timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                  username: user.displayName || "Unknown User"
                 };
               }
-    
+          
               transaction.update(postRef, { reactions });
-              return post; // Return the post data for the next .then()
+              return post;
             });
           }).then((post) => {
             // Only add a notification if the reactor is not the author
@@ -1722,11 +1809,6 @@
           popup.style.animation = '';
         }, 300);
       });
-    });
-
-    document.getElementById('close-reaction-popup').addEventListener('click', () => {
-      const popup = document.getElementById('reaction-popup');
-      popup.style.display = 'none';
     });
 
     document.getElementById('reaction-popup').addEventListener('click', (e) => {
