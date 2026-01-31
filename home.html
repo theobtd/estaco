@@ -1408,7 +1408,7 @@
         `;
     
         let postHTML = `
-          <div class="post" data-post-id="${post.id}">
+          <div class="post" data-post-id="${post.id}" data-author-id="${post.authorId}">
             <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
               <div style="display: flex; align-items: center;">
                 ${profilePictureHTML}
@@ -1489,6 +1489,16 @@
         const user = auth.currentUser;
         if (!user) return;
     
+        // Get the post element and its authorId
+        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+        const postAuthorId = postElement.getAttribute('data-author-id');
+    
+        // If the post is yours, show the popup and return
+        if (postAuthorId === user.uid) {
+          alert("Do you have reactions? ;)");
+          return;
+        }
+    
         // Optimistic UI update: Assume success
         const postRef = db.collection('posts').doc(postId);
         const wasSelected = button.classList.contains('selected');
@@ -1555,7 +1565,7 @@
               const postData = doc.data();
               const reactions = postData.reactions || {};
               const userReaction = reactions[user.uid];
-          
+    
               if (userReaction && userReaction.type === reaction) {
                 delete reactions[user.uid];
               } else {
@@ -1564,7 +1574,7 @@
                   timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 };
               }
-          
+    
               transaction.update(postRef, { reactions });
               return post; // Return the post data for the next .then()
             });
