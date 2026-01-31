@@ -515,6 +515,62 @@
       text-decoration: underline;
     }
 
+    .reaction-popup {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+      padding: 20px;
+      height: 66vh; /* 2/3 of the screen height */
+      z-index: 3000;
+      animation: slideUp 0.3s ease-out forwards;
+      overflow: hidden;
+    }
+    
+    .reaction-popup-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+    }
+    
+    .reaction-popup-content p {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: var(--estaco-text);
+    }
+    
+    .close-reaction-popup {
+      padding: 10px 24px;
+      background: var(--estaco-primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.2s;
+    }
+    
+    .close-reaction-popup:hover {
+      background: var(--estaco-primary-light);
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -600,6 +656,12 @@
 
   <div id="user-tag-dropdown" style="display: none; position: absolute; background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; z-index: 1000; width: 200px;"></div>
 
+  <div id="reaction-popup" class="reaction-popup">
+    <div class="reaction-popup-content">
+      <p>Do you have reactions? ;)</p>
+      <button id="close-reaction-popup" class="close-reaction-popup">OK</button>
+    </div>
+  </div>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
@@ -1495,7 +1557,8 @@
     
         // If the post is yours, show the popup and return
         if (postAuthorId === user.uid) {
-          alert("Do you have reactions? ;)");
+          const popup = document.getElementById('reaction-popup');
+          popup.style.display = 'block';
           return;
         }
     
@@ -1632,6 +1695,17 @@
             }
           });
         });
+      }
+    });
+
+    document.getElementById('close-reaction-popup').addEventListener('click', () => {
+      const popup = document.getElementById('reaction-popup');
+      popup.style.display = 'none';
+    });
+
+    document.getElementById('reaction-popup').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        e.currentTarget.style.display = 'none';
       }
     });
 
