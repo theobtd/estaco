@@ -669,10 +669,16 @@
                                             });
                                             alert(translations[userLanguage]["Friend request accepted!"]);
                                             loadCurrentFriends(toId);
+                                            // Add acceptance notification for the original requester (user B)
+                                            addFriendRequestAcceptedNotification(
+                                              fromId, // Target user's UID (user B)
+                                              toId,   // Accepter's UID (user A)
+                                              toName, // Accepter's name (user A)
+                                              firebase.firestore.FieldValue.serverTimestamp()
+                                            );
                                         });
                                 });
                         });
-                });
         }
 
         function removeFriend(userId, friendUid) {
@@ -873,6 +879,28 @@
             });
           } catch (error) {
             console.error("Error adding friend request notification:", error);
+          }
+        }
+
+        /**
+         * Adds a friend request acceptance notification to a user's notifications sub-collection.
+         * @param {string} targetUid - The target user's UID (the user who sent the original request).
+         * @param {string} accepterId - The UID of the user who accepted the request.
+         * @param {string} accepterName - The name of the user who accepted the request.
+         * @param {Date} timestamp - The timestamp of the acceptance.
+         */
+        async function addFriendRequestAcceptedNotification(targetUid, accepterId, accepterName, timestamp) {
+          try {
+            const notificationsRef = db.collection(`users/${targetUid}/notifications`).doc();
+            await notificationsRef.set({
+              type: "friend_request_accepted",
+              accepterId: accepterId,
+              accepterName: accepterName,
+              timestamp: timestamp,
+              message: `${accepterName} accepted your friend request.`
+            });
+          } catch (error) {
+            console.error("Error adding friend request accepted notification:", error);
           }
         }
         
