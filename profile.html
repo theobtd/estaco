@@ -720,11 +720,13 @@
                                             loadCurrentFriends(toId);
         
                                             // NEW: Populate feeds with existing posts
-                                            populateFeedsWithExistingPosts(fromId, toId);
+                                            populateFeedsWithExistingPosts(fromId, toId).catch(error => {
+                                                console.error('Error populating feeds:', error);
+                                            });
                                         });
                                 });
                         });
-                }
+                });
         }
 
         function removeFriend(userId, friendUid) {
