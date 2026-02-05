@@ -318,22 +318,6 @@
                   </div>
                 </div>
               `;
-            } else if (notification.type === 'friend_request_accepted') {
-              return `
-                <div class="notification">
-                  <div class="notification-header">
-                    <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
-                    <strong>${notification.reactorName}</strong>
-                    <span style="margin-left: 5px;">accepted your friend request</span>
-                  </div>
-                  <div class="notification-content">
-                    <p>You are now friends!</p>
-                  </div>
-                  <div class="notification-post">
-                    ${new Date(notification.timestamp.toDate()).toLocaleString()}
-                  </div>
-                </div>
-              `;
             }
           }).join('');
         }
