@@ -631,6 +631,31 @@
         }
 
         /**
+         * Removes all posts from a user's feed sub-collection that were authored by a specific user.
+         * @param {string} userId - The user's UID.
+         * @param {string} authorId - The UID of the author whose posts should be removed.
+         */
+        async function removePostsFromUserFeed(userId, authorId) {
+            try {
+                // Get all posts in the user's feed that were authored by authorId
+                const feedSnapshot = await db.collection(`users/${userId}/feed`).where('postId', 'in',
+                    (await db.collection('posts').where('authorId', '==', authorId).get())
+                        .docs.map(doc => doc.id)
+                ).get();
+        
+                // Delete each post from the feed
+                const batch = db.batch();
+                feedSnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+                console.log(`Removed all posts from ${authorId} from ${userId}'s feed.`);
+            } catch (error) {
+                console.error('Error removing posts from feed:', error);
+            }
+        }
+
+        /**
          * Adds a post to a user's feed sub-collection.
          * @param {string} userId - The user's UID.
          * @param {string} postId - The post's ID.
@@ -730,13 +755,9 @@
         }
 
         function removeFriend(userId, friendUid) {
-            // Ask for confirmation
             const confirmRemove = confirm(translations[userLanguage]["Are you sure you want to remove this friend?"]);
-            if (!confirmRemove) {
-                return; // Do nothing if the user cancels
-            }
+            if (!confirmRemove) return;
         
-            // Fetch the friend's name and the user's name in parallel
             Promise.all([
                 db.collection('users').doc(friendUid).get(),
                 db.collection('users').doc(userId).get()
@@ -746,7 +767,6 @@
                     const friendName = friendDoc.data().name;
                     const userName = userDoc.data().name;
         
-                    // Update both `friends` and `friendsList` for both users
                     const userFriendsUpdate = db.collection('friends').doc(userId).update({
                         friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName }),
                         friendsList: firebase.firestore.FieldValue.arrayRemove(friendUid)
@@ -757,10 +777,11 @@
                         friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
                     });
         
-                    // Wait for both updates to complete
                     Promise.all([userFriendsUpdate, friendFriendsUpdate])
                         .then(() => {
-                            // Reload the friend list
+                            // Remove posts from each other's feeds
+                            removePostsFromUserFeed(userId, friendUid).catch(console.error);
+                            removePostsFromUserFeed(friendUid, userId).catch(console.error);
                             loadCurrentFriends(userId);
                         })
                         .catch((error) => {
