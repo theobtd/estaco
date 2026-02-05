@@ -577,21 +577,26 @@
                             return;
                         }
         
-                        // Proceed with sending the friend request
-                        db.collection('users').where('name', '==', friendName).get()
-                            .then(snapshot => {
-                                if (!snapshot.empty) {
-                                    const friendDoc = snapshot.docs[0];
-                                    const friendUser = friendDoc.data();
-                                    const friendUid = friendDoc.id;
-                                    sendRequest(user.uid, friendUid, friendUser.name);
-                                } else {
-                                    alert(translations[userLanguage]["User not found"]);
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error searching for user: ', error);
-                                alert(translations[userLanguage]["An error occurred while searching for the user."]);
+                        // Fetch the current user's name
+                        db.collection('users').doc(user.uid).get()
+                            .then((userDoc) => {
+                                const userName = userDoc.data().name;
+                                // Proceed with sending the friend request
+                                db.collection('users').where('name', '==', friendName).get()
+                                    .then(snapshot => {
+                                        if (!snapshot.empty) {
+                                            const friendDoc = snapshot.docs[0];
+                                            const friendUser = friendDoc.data();
+                                            const friendUid = friendDoc.id;
+                                            sendRequest(user.uid, friendUid, userName); // Pass userName instead of friendUser.name
+                                        } else {
+                                            alert(translations[userLanguage]["User not found"]);
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error searching for user: ', error);
+                                        alert(translations[userLanguage]["An error occurred while searching for the user."]);
+                                    });
                             });
                     });
             } else {
