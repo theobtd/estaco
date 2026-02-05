@@ -861,9 +861,9 @@
             const notificationsRef = db.collection(`users/${targetUid}/notifications`).doc();
             await notificationsRef.set({
               type: "friend_request",
-              requesterId,
-              requesterName,
-              timestamp,
+              requesterId: requesterId,
+              requesterName: requesterName,
+              timestamp: timestamp,
               message: `${requesterName} sent you a friend request.`
             });
           } catch (error) {
