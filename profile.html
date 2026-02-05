@@ -630,6 +630,55 @@
             });
         }
 
+        /**
+         * Adds a post to a user's feed sub-collection.
+         * @param {string} userId - The user's UID.
+         * @param {string} postId - The post's ID.
+         * @param {Date} timestamp - The post's timestamp.
+         */
+        async function addPostToUserFeed(userId, postId, timestamp) {
+            try {
+                const feedRef = db.collection(`users/${userId}/feed`).doc(postId);
+                await feedRef.set({
+                    postId: postId,
+                    postTimestamp: timestamp,
+                });
+            } catch (error) {
+                console.error('Error adding post to user feed:', error);
+            }
+        }
+
+        /**
+         * Populates the feeds of two users with all existing posts from each other.
+         * @param {string} userIdA - The UID of the first user.
+         * @param {string} userIdB - The UID of the second user.
+         */
+        async function populateFeedsWithExistingPosts(userIdA, userIdB) {
+            try {
+                // Fetch all posts by userIdA
+                const postsSnapshotA = await db.collection('posts').where('authorId', '==', userIdA).get();
+                const postsA = postsSnapshotA.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+                // Add each post to userIdB's feed
+                for (const post of postsA) {
+                    await addPostToUserFeed(userIdB, post.id, post.timestamp);
+                }
+        
+                // Fetch all posts by userIdB
+                const postsSnapshotB = await db.collection('posts').where('authorId', '==', userIdB).get();
+                const postsB = postsSnapshotB.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+                // Add each post to userIdA's feed
+                for (const post of postsB) {
+                    await addPostToUserFeed(userIdA, post.id, post.timestamp);
+                }
+        
+                console.log('Feeds populated with existing posts.');
+            } catch (error) {
+                console.error('Error populating feeds:', error);
+            }
+        }
+
         // Accept friend request
         function acceptFriendRequest(fromId, toId) {
             // Check if the user already has 15 friends
@@ -669,10 +718,12 @@
                                             });
                                             alert(translations[userLanguage]["Friend request accepted!"]);
                                             loadCurrentFriends(toId);
+        
+                                            // NEW: Populate feeds with existing posts
+                                            populateFeedsWithExistingPosts(fromId, toId);
                                         });
                                 });
                         });
-                });
         }
 
         function removeFriend(userId, friendUid) {
