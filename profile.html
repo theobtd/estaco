@@ -612,6 +612,13 @@
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
                 alert(translations[userLanguage]["Friend request sent!"]);
+                // Add notification for the target user
+                addFriendRequestNotification(
+                  toId, // Target user's UID
+                  fromId, // Requester's UID
+                  fromName, // Requester's name
+                  firebase.firestore.FieldValue.serverTimestamp()
+                );
             }).catch(error => {
                 console.error('Error sending friend request: ', error);
                 alert(translations[userLanguage]["Failed to send friend request."]);
@@ -841,6 +848,28 @@
             }
           }
         });
+
+        /**
+         * Adds a friend request notification to a user's notifications sub-collection.
+         * @param {string} targetUid - The target user's UID.
+         * @param {string} requesterId - The UID of the user who sent the request.
+         * @param {string} requesterName - The name of the user who sent the request.
+         * @param {Date} timestamp - The timestamp of the request.
+         */
+        async function addFriendRequestNotification(targetUid, requesterId, requesterName, timestamp) {
+          try {
+            const notificationsRef = db.collection(`users/${targetUid}/notifications`).doc();
+            await notificationsRef.set({
+              type: "friend_request",
+              requesterId,
+              requesterName,
+              timestamp,
+              message: `${requesterName} sent you a friend request.`
+            });
+          } catch (error) {
+            console.error("Error adding friend request notification:", error);
+          }
+        }
         
         // Handle cancel
         document.getElementById('crop-cancel-button').addEventListener('click', () => {
