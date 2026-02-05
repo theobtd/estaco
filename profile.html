@@ -729,6 +729,51 @@
                 });
         }
 
+        /**
+         * Removes a post from a user's feed sub-collection.
+         * @param {string} userId - The user's UID.
+         * @param {string} postId - The post's ID.
+         */
+        async function removePostFromUserFeed(userId, postId) {
+            try {
+                const feedRef = db.collection(`users/${userId}/feed`).doc(postId);
+                await feedRef.delete();
+            } catch (error) {
+                console.error('Error removing post from user feed:', error);
+            }
+        }
+
+        /**
+         * Removes all posts from both users' feeds.
+         * @param {string} userIdA - The UID of the first user.
+         * @param {string} userIdB - The UID of the second user.
+         */
+        async function removeAllPostsFromFeeds(userIdA, userIdB) {
+            try {
+                // Fetch all posts by userIdA
+                const postsSnapshotA = await db.collection('posts').where('authorId', '==', userIdA).get();
+                const postsA = postsSnapshotA.docs.map(doc => doc.id);
+        
+                // Remove each post from userIdB's feed
+                for (const postId of postsA) {
+                    await removePostFromUserFeed(userIdB, postId);
+                }
+        
+                // Fetch all posts by userIdB
+                const postsSnapshotB = await db.collection('posts').where('authorId', '==', userIdB).get();
+                const postsB = postsSnapshotB.docs.map(doc => doc.id);
+        
+                // Remove each post from userIdA's feed
+                for (const postId of postsB) {
+                    await removePostFromUserFeed(userIdA, postId);
+                }
+        
+                console.log('All posts removed from both users\' feeds.');
+            } catch (error) {
+                console.error('Error removing posts from feeds:', error);
+            }
+        }
+
         function removeFriend(userId, friendUid) {
             // Ask for confirmation
             const confirmRemove = confirm(translations[userLanguage]["Are you sure you want to remove this friend?"]);
@@ -762,6 +807,11 @@
                         .then(() => {
                             // Reload the friend list
                             loadCurrentFriends(userId);
+        
+                            // NEW: Remove all posts from both users' feeds
+                            removeAllPostsFromFeeds(userId, friendUid).catch(error => {
+                                console.error('Error removing posts from feeds:', error);
+                            });
                         })
                         .catch((error) => {
                             console.error("Error updating friends lists: ", error);
