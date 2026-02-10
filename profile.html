@@ -770,27 +770,32 @@
                     const friendName = friendDoc.data().name;
                     const userName = userDoc.data().name;
         
-                    const userFriendsUpdate = db.collection('friends').doc(userId).update({
-                        friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName }),
-                        friendsList: firebase.firestore.FieldValue.arrayRemove(friendUid)
-                    });
-        
-                    const friendFriendsUpdate = db.collection('friends').doc(friendUid).update({
-                        friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName }),
-                        friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
-                    });
-        
-                    Promise.all([userFriendsUpdate, friendFriendsUpdate])
-                        .then(() => {
-                            // Remove posts from each other's feeds
-                            removePostsFromUserFeed(userId, friendUid).catch(console.error);
-                            removePostsFromUserFeed(friendUid, userId).catch(console.error);
-                            loadCurrentFriends(userId);
-                        })
-                        .catch((error) => {
-                            console.error("Error updating friends lists: ", error);
-                            alert(translations[userLanguage]["Failed to update friends lists."]);
+                    // Remove posts from each other's feeds FIRST
+                    Promise.all([
+                        removePostsFromUserFeed(userId, friendUid),
+                        removePostsFromUserFeed(friendUid, userId)
+                    ])
+                    .then(() => {
+                        // Remove friend relationship AFTER posts are removed
+                        const userFriendsUpdate = db.collection('friends').doc(userId).update({
+                            friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName }),
+                            friendsList: firebase.firestore.FieldValue.arrayRemove(friendUid)
                         });
+        
+                        const friendFriendsUpdate = db.collection('friends').doc(friendUid).update({
+                            friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName }),
+                            friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
+                        });
+        
+                        return Promise.all([userFriendsUpdate, friendFriendsUpdate]);
+                    })
+                    .then(() => {
+                        loadCurrentFriends(userId);
+                    })
+                    .catch((error) => {
+                        console.error("Error updating friends lists: ", error);
+                        alert(translations[userLanguage]["Failed to update friends lists."]);
+                    });
                 } else {
                     console.error("User or friend document does not exist.");
                     alert(translations[userLanguage]["Failed to remove friend."]);
