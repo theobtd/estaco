@@ -744,9 +744,12 @@
                                             alert(translations[userLanguage]["Friend request accepted!"]);
                                             loadCurrentFriends(toId);
         
-                                            // NEW: Populate feeds with existing posts
+                                            // Populate feeds with existing posts in both directions
                                             populateFeedsWithExistingPosts(fromId, toId).catch(error => {
-                                                console.error('Error populating feeds:', error);
+                                                console.error('Error populating feeds (fromId to toId):', error);
+                                            });
+                                            populateFeedsWithExistingPosts(toId, fromId).catch(error => {
+                                                console.error('Error populating feeds (toId to fromId):', error);
                                             });
                                         });
                                 });
