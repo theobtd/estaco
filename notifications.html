@@ -188,6 +188,7 @@
         // Fetch all notifications from the user's notifications subcollection
         const notificationsSnapshot = await db.collection(`users/${userId}/notifications`)
           .orderBy('timestamp', 'desc')
+          .limit(5)
           .get();
     
         if (notificationsSnapshot.empty) {
@@ -211,10 +212,7 @@
             timestamp: notification.timestamp,
           });
         }
-    
-        // Sort notifications by timestamp (newest first)
-        notifications.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-    
+        
         // Fetch post content for each notification
         for (const notification of notifications) {
           const postDoc = await db.collection('posts').doc(notification.postId).get();
