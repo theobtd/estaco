@@ -110,6 +110,30 @@
     .nav-button .label {
       font-size: 12px;
     }
+    .accept-friend-request {
+      background-color: var(--estaco-success);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      margin-right: 8px;
+      cursor: pointer;
+    }
+    
+    .reject-friend-request {
+      background-color: var(--estaco-error);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    
+    .notification-status {
+      color: var(--estaco-text-light);
+      font-style: italic;
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -304,6 +328,27 @@
               `;
             } else if (notification.type === 'friend_request') {
               return `
+                <div class="notification" data-notification-id="${notification.id}" data-requester-id="${notification.reactorId}">
+                  <div class="notification-header">
+                    <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
+                    <strong>${notification.reactorName}</strong>
+                    <span style="margin-left: 5px;">sent you a friend request</span>
+                  </div>
+                  <div class="notification-content">
+                    <p>Would you like to accept?</p>
+                    <div class="notification-actions">
+                      <button class="accept-friend-request" data-requester-id="${notification.reactorId}">Accept</button>
+                      <button class="reject-friend-request" data-requester-id="${notification.reactorId}">Reject</button>
+                    </div>
+                    <div class="notification-status" style="display: none;"></div>
+                  </div>
+                  <div class="notification-post">
+                    ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                  </div>
+                </div>
+              `;
+            } else if (notification.type === 'friend_request') {
+              return `
                 <div class="notification">
                   <div class="notification-header">
                     <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
@@ -326,6 +371,164 @@
         notificationsList.innerHTML = '<p>Error loading notifications. Please try again.</p>';
       }
     }
+
+    // Add this after rendering notifications
+    document.querySelectorAll('.accept-friend-request').forEach(button => {
+      button.addEventListener('click', (event) => {
+        const requesterId = event.target.getAttribute('data-requester-id');
+        const userId = auth.currentUser.uid;
+        const notificationDiv = event.target.closest('.notification');
+        const notificationId = notificationDiv.getAttribute('data-notification-id');
+        const actionsDiv = notificationDiv.querySelector('.notification-actions');
+        const statusDiv = notificationDiv.querySelector('.notification-status');
+    
+        acceptFriendRequest(requesterId, userId);
+    
+        // Hide the actions and show the status
+        actionsDiv.style.display = 'none';
+        statusDiv.style.display = 'block';
+        statusDiv.textContent = 'Accepted';
+      });
+    });
+    
+    document.querySelectorAll('.reject-friend-request').forEach(button => {
+      button.addEventListener('click', (event) => {
+        const requesterId = event.target.getAttribute('data-requester-id');
+        const userId = auth.currentUser.uid;
+        const notificationDiv = event.target.closest('.notification');
+        const actionsDiv = notificationDiv.querySelector('.notification-actions');
+        const statusDiv = notificationDiv.querySelector('.notification-status');
+    
+        rejectFriendRequest(requesterId, userId);
+    
+        // Hide the actions and show the status
+        actionsDiv.style.display = 'none';
+        statusDiv.style.display = 'block';
+        statusDiv.textContent = 'Rejected';
+      });
+    });
+
+            // Accept friend request
+        function acceptFriendRequest(fromId, toId) {
+            // Check if the user already has 15 friends
+            db.collection('friends').doc(toId).get()
+                .then((doc) => {
+                    const friends = doc.data()?.friends || [];
+                    if (friends.length >= 15) {
+                        alert('You have reached the maximum number of friends (15).');
+                        return;
+                    }
+        
+                    // Proceed with accepting the friend request
+                    db.collection('users').doc(fromId).get()
+                        .then(fromUserDoc => {
+                            const fromName = fromUserDoc.data().name;
+                            db.collection('users').doc(toId).get()
+                                .then(toUserDoc => {
+                                    const toName = toUserDoc.data().name;
+                                    db.collection('friends').doc(toId).set({
+                                        friends: firebase.firestore.FieldValue.arrayUnion({ uid: fromId, name: fromName }),
+                                        friendsList: firebase.firestore.FieldValue.arrayUnion(fromId)
+                                    }, { merge: true });
+                                    db.collection('friends').doc(fromId).set({
+                                        friends: firebase.firestore.FieldValue.arrayUnion({ uid: toId, name: toName }),
+                                        friendsList: firebase.firestore.FieldValue.arrayUnion(toId)
+                                    }, { merge: true });
+                                    db.collection('friendRequests').where('from', '==', fromId).where('to', '==', toId).get()
+                                        .then(snapshot => {
+                                            snapshot.forEach(doc => {
+                                                doc.ref.delete();
+                                            });
+                                            const pendingRequests = document.querySelectorAll('.pending-friend');
+                                            pendingRequests.forEach(requestDiv => {
+                                                if (requestDiv.textContent.includes(fromName)) {
+                                                    requestDiv.remove();
+                                                }
+                                            });
+                                            alert(translations[userLanguage]["Friend request accepted!"]);
+                                            loadCurrentFriends(toId);
+        
+                                            // Populate feeds with existing posts in both directions
+                                            populateFeedsWithExistingPosts(fromId, toId).catch(error => {
+                                                console.error('Error populating feeds (fromId to toId):', error);
+                                            });
+                                            populateFeedsWithExistingPosts(toId, fromId).catch(error => {
+                                                console.error('Error populating feeds (toId to fromId):', error);
+                                            });
+                                        });
+                                });
+                        });
+                });
+        }
+
+        function rejectFriendRequest(fromId, toId) {
+            db.collection('friendRequests')
+                .where('from', '==', fromId)
+                .where('to', '==', toId)
+                .get()
+                .then(snapshot => {
+                    snapshot.forEach(doc => {
+                        doc.ref.delete();
+                    });
+                    // Remove the pending request from the UI
+                    const requestDiv = document.querySelector(`.pending-friend[data-from-id="${fromId}"]`);
+                    if (requestDiv) {
+                        requestDiv.remove();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error rejecting friend request:', error);
+                });
+        }
+
+        /**
+         * Populates the feeds of two users with all existing posts from each other.
+         * @param {string} userIdA - The UID of the first user.
+         * @param {string} userIdB - The UID of the second user.
+         */
+        async function populateFeedsWithExistingPosts(userIdA, userIdB) {
+            try {
+                // Fetch all posts by userIdA
+                const postsSnapshotA = await db.collection('posts').where('authorId', '==', userIdA).get();
+                const postsA = postsSnapshotA.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+                // Add each post to userIdB's feed
+                for (const post of postsA) {
+                    await addPostToUserFeed(userIdB, post.id, post.timestamp);
+                }
+        
+                // Fetch all posts by userIdB
+                const postsSnapshotB = await db.collection('posts').where('authorId', '==', userIdB).get();
+                const postsB = postsSnapshotB.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+                // Add each post to userIdA's feed
+                for (const post of postsB) {
+                    await addPostToUserFeed(userIdA, post.id, post.timestamp);
+                }
+        
+                console.log('Feeds populated with existing posts.');
+            } catch (error) {
+                console.error('Error populating feeds:', error);
+            }
+        }
+
+        /**
+         * Adds a post to a user's feed sub-collection.
+         * @param {string} userId - The user's UID.
+         * @param {string} postId - The post's ID.
+         * @param {Date} timestamp - The post's timestamp.
+         */
+        async function addPostToUserFeed(userId, postId, timestamp) {
+            try {
+                const feedRef = db.collection(`users/${userId}/feed`).doc(postId);
+                await feedRef.set({
+                    postId: postId,
+                    postTimestamp: timestamp,
+                });
+            } catch (error) {
+                console.error('Error adding post to user feed:', error);
+            }
+        }
   </script>
 </body>
 </html>
