@@ -527,6 +527,7 @@
                                 const requestDiv = document.createElement('div');
                                 requestDiv.className = 'pending-friend';
                                 requestDiv.innerText = fromName;
+                                requestDiv.setAttribute('data-from-id', request.from);
                                 const acceptButton = document.createElement('button');
                                 acceptButton.className = 'friend-button';
                                 acceptButton.innerText = 'Accept';
@@ -774,7 +775,7 @@
                     // Remove the pending request from the UI
                     const pendingRequests = document.querySelectorAll('.pending-friend');
                     pendingRequests.forEach(requestDiv => {
-                        if (requestDiv.textContent.includes(fromId)) {
+                        if (requestDiv.getAttribute('data-from-id') === fromId) {
                             requestDiv.remove();
                         }
                     });
