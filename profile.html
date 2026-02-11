@@ -532,6 +532,11 @@
                                 acceptButton.innerText = 'Accept';
                                 acceptButton.onclick = () => acceptFriendRequest(request.from, userId);
                                 requestDiv.appendChild(acceptButton);
+                                const rejectButton = document.createElement('button');
+                                rejectButton.className = 'friend-button remove';
+                                rejectButton.innerText = 'Reject';
+                                rejectButton.onclick = () => rejectFriendRequest(request.from, userId);
+                                requestDiv.appendChild(rejectButton);
                                 pendingFriendRequestsDiv.appendChild(requestDiv);
                             });
                         promises.push(promise);
@@ -754,6 +759,28 @@
                                         });
                                 });
                         });
+                });
+        }
+
+        function rejectFriendRequest(fromId, toId) {
+            db.collection('friendRequests')
+                .where('from', '==', fromId)
+                .where('to', '==', toId)
+                .get()
+                .then(snapshot => {
+                    snapshot.forEach(doc => {
+                        doc.ref.delete();
+                    });
+                    // Remove the pending request from the UI
+                    const pendingRequests = document.querySelectorAll('.pending-friend');
+                    pendingRequests.forEach(requestDiv => {
+                        if (requestDiv.textContent.includes(fromId)) {
+                            requestDiv.remove();
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error rejecting friend request:', error);
                 });
         }
 
