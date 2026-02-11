@@ -773,12 +773,10 @@
                         doc.ref.delete();
                     });
                     // Remove the pending request from the UI
-                    const pendingRequests = document.querySelectorAll('.pending-friend');
-                    pendingRequests.forEach(requestDiv => {
-                        if (requestDiv.getAttribute('data-from-id') === fromId) {
-                            requestDiv.remove();
-                        }
-                    });
+                    const requestDiv = document.querySelector(`.pending-friend[data-from-id="${fromId}"]`);
+                    if (requestDiv) {
+                        requestDiv.remove();
+                    }
                 })
                 .catch(error => {
                     console.error('Error rejecting friend request:', error);
