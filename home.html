@@ -674,6 +674,22 @@
     .friend-toggle.active {
       background-color: var(--estaco-primary);
     }
+    #select-all-friends {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      font-weight: bold;
+    }
+    
+    #select-all-toggle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: var(--estaco-primary);
+      border: none;
+      cursor: pointer;
+      margin-left: 10px;
+      float: right;
+    }
 
   </style>
 </head>
@@ -2482,6 +2498,16 @@
         if (friendsDoc.exists) {
           const friends = friendsDoc.data()?.friends || [];
           friendsList.innerHTML = '';
+    
+          // Add "Select All Friends" option
+          const selectAllLi = document.createElement('li');
+          selectAllLi.id = 'select-all-friends';
+          selectAllLi.innerHTML = `
+            Select All Friends
+            <button id="select-all-toggle" class="friend-toggle active"></button>
+          `;
+          friendsList.appendChild(selectAllLi);
+    
           if (friends.length === 0) {
             friendsList.innerHTML = '<li>No friends found.</li>';
           } else {
@@ -3054,6 +3080,35 @@
       const commentsSnapshot = await db.collection('posts').doc(postId).collection('comments').get();
       return !commentsSnapshot.empty;
     }
+
+    // Handle "Select All" toggle click
+    document.getElementById('friends-list').addEventListener('click', (e) => {
+      if (e.target.id === 'select-all-toggle') {
+        const isActive = e.target.classList.contains('active');
+        const friendToggles = document.querySelectorAll('.friend-toggle:not(#select-all-toggle)');
+    
+        if (isActive) {
+          e.target.classList.remove('active');
+          friendToggles.forEach(toggle => toggle.classList.remove('active'));
+        } else {
+          e.target.classList.add('active');
+          friendToggles.forEach(toggle => toggle.classList.add('active'));
+        }
+      } else if (e.target.classList.contains('friend-toggle')) {
+        e.target.classList.toggle('active');
+    
+        // If any individual toggle is deselected, deselect "Select All"
+        const allToggles = document.querySelectorAll('.friend-toggle:not(#select-all-toggle)');
+        const allActive = Array.from(allToggles).every(toggle => toggle.classList.contains('active'));
+        const selectAllToggle = document.getElementById('select-all-toggle');
+    
+        if (allActive) {
+          selectAllToggle.classList.add('active');
+        } else {
+          selectAllToggle.classList.remove('active');
+        }
+      }
+    });
 
     // Load posts when page loads
     window.onload = loadPosts;
