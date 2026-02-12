@@ -2487,7 +2487,10 @@
           } else {
             friends.forEach(friend => {
               const li = document.createElement('li');
-              li.textContent = friend.name;
+              li.innerHTML = `
+                ${friend.name}
+                <button class="friend-toggle" data-uid="${friend.uid}"></button>
+              `;
               friendsList.appendChild(li);
             });
           }
