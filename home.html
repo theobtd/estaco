@@ -660,6 +660,20 @@
       border-radius: 4px;
       cursor: pointer;
     }
+    .friend-toggle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: #ddd;
+      border: none;
+      cursor: pointer;
+      margin-left: 10px;
+      float: right;
+    }
+    
+    .friend-toggle.active {
+      background-color: var(--estaco-primary);
+    }
 
   </style>
 </head>
@@ -2364,6 +2378,13 @@
       const friends2 = await getFriendUidsForUser(userUid2);
       return friends1.filter(uid => friends2.includes(uid));
     }
+
+    // Handle toggle clicks (only visual)
+    document.getElementById('friends-list').addEventListener('click', (e) => {
+      if (e.target.classList.contains('friend-toggle')) {
+        e.target.classList.toggle('active');
+      }
+    });
 
     document.querySelectorAll('.orientation-button').forEach(button => {
       button.addEventListener('click', () => {
