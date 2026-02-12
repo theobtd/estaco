@@ -828,6 +828,7 @@
     const errorMessage = document.getElementById('error-message');
 
     let isLoading = false; // Flag to prevent multiple simultaneous loads
+    let isVisibilityAll = true; // Default: all friends selected
     
     // Navigate to Profile Page
     document.getElementById('profile-button').addEventListener('click', () => {
@@ -2526,6 +2527,12 @@
     
     // Close the modal
     document.getElementById('close-visibility-modal').addEventListener('click', () => {
+      const visibilityButton = document.getElementById('visibility-button');
+      if (isVisibilityAll) {
+        visibilityButton.textContent = 'Visibility: all friends';
+      } else {
+        visibilityButton.textContent = 'Visibility: limited';
+      }
       document.getElementById('visibility-modal').style.display = 'none';
     });
 
@@ -2657,6 +2664,9 @@
             });
         }
     });
+
+    // Set default visibility button text
+    document.getElementById('visibility-button').textContent = 'Visibility: all friends';
 
     /**
      * Adds a comment tag notification to a user's notifications sub-collection.
@@ -3074,7 +3084,7 @@
       return !commentsSnapshot.empty;
     }
 
-    // Handle "Select All" toggle click
+    // Handle "Select All" and individual friend toggle clicks
     document.getElementById('friends-list').addEventListener('click', (e) => {
       if (e.target.id === 'select-all-toggle') {
         const isActive = e.target.classList.contains('active');
@@ -3083,9 +3093,11 @@
         if (isActive) {
           e.target.classList.remove('active');
           friendToggles.forEach(toggle => toggle.classList.remove('active'));
+          isVisibilityAll = false;
         } else {
           e.target.classList.add('active');
           friendToggles.forEach(toggle => toggle.classList.add('active'));
+          isVisibilityAll = true;
         }
       } else if (e.target.classList.contains('friend-toggle')) {
         e.target.classList.toggle('active');
@@ -3097,8 +3109,10 @@
     
         if (allActive) {
           selectAllToggle.classList.add('active');
+          isVisibilityAll = true;
         } else {
           selectAllToggle.classList.remove('active');
+          isVisibilityAll = false;
         }
       }
     });
