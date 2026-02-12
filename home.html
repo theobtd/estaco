@@ -828,7 +828,9 @@
     const errorMessage = document.getElementById('error-message');
 
     let isLoading = false; // Flag to prevent multiple simultaneous loads
-    let isVisibilityAll = true; // Default: all friends selected
+    let selectedFriendUids = new Set(); // Track selected friends
+    let isVisibilityAll = true; // Track if all friends are selected
+
     
     // Navigate to Profile Page
     document.getElementById('profile-button').addEventListener('click', () => {
@@ -2498,7 +2500,7 @@
           selectAllLi.id = 'select-all-friends';
           selectAllLi.innerHTML = `
             Select All Friends
-            <button id="select-all-toggle" class="friend-toggle active"></button>
+            <button id="select-all-toggle" class="friend-toggle ${isVisibilityAll ? 'active' : ''}"></button>
           `;
           friendsList.appendChild(selectAllLi);
     
@@ -2507,9 +2509,10 @@
           } else {
             friends.forEach(friend => {
               const li = document.createElement('li');
+              const isActive = selectedFriendUids.has(friend.uid) ? 'active' : '';
               li.innerHTML = `
                 ${friend.name}
-                <button class="friend-toggle active" data-uid="${friend.uid}"></button>
+                <button class="friend-toggle ${isActive}" data-uid="${friend.uid}"></button>
               `;
               friendsList.appendChild(li);
             });
@@ -3093,14 +3096,26 @@
         if (isActive) {
           e.target.classList.remove('active');
           friendToggles.forEach(toggle => toggle.classList.remove('active'));
+          selectedFriendUids.clear();
           isVisibilityAll = false;
         } else {
           e.target.classList.add('active');
           friendToggles.forEach(toggle => toggle.classList.add('active'));
+          // Add all friends to the set
+          document.querySelectorAll('.friend-toggle:not(#select-all-toggle)').forEach(toggle => {
+            selectedFriendUids.add(toggle.getAttribute('data-uid'));
+          });
           isVisibilityAll = true;
         }
       } else if (e.target.classList.contains('friend-toggle')) {
+        const uid = e.target.getAttribute('data-uid');
         e.target.classList.toggle('active');
+    
+        if (e.target.classList.contains('active')) {
+          selectedFriendUids.add(uid);
+        } else {
+          selectedFriendUids.delete(uid);
+        }
     
         // If any individual toggle is deselected, deselect "Select All"
         const allToggles = document.querySelectorAll('.friend-toggle:not(#select-all-toggle)');
