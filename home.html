@@ -2395,13 +2395,6 @@
       return friends1.filter(uid => friends2.includes(uid));
     }
 
-    // Handle toggle clicks (only visual)
-    document.getElementById('friends-list').addEventListener('click', (e) => {
-      if (e.target.classList.contains('friend-toggle')) {
-        e.target.classList.toggle('active');
-      }
-    });
-
     document.querySelectorAll('.orientation-button').forEach(button => {
       button.addEventListener('click', () => {
         document.querySelectorAll('.orientation-button').forEach(b => b.classList.remove('selected'));
