@@ -2510,6 +2510,12 @@
           if (friends.length === 0) {
             friendsList.innerHTML = '<li>No friends found.</li>';
           } else {
+            // If isVisibilityAll is true, add all friend UIDs to selectedFriendUids
+            if (isVisibilityAll) {
+              selectedFriendUids.clear();
+              friends.forEach(friend => selectedFriendUids.add(friend.uid));
+            }
+    
             friends.forEach(friend => {
               const li = document.createElement('li');
               const isActive = selectedFriendUids.has(friend.uid) ? 'active' : '';
