@@ -353,6 +353,32 @@
           margin: 0;
           font-style: italic;
         }
+        #loader-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--estaco-primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 
 </head>
@@ -474,6 +500,10 @@
             <span class="label" data-i18n="Profile">Profile</span>
           </button>
         </div>
+
+    <div id="loader-modal">
+        <div class="loader"></div>
+    </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
@@ -788,6 +818,9 @@
             const confirmRemove = confirm(translations[userLanguage]["Are you sure you want to remove this friend?"]);
             if (!confirmRemove) return;
         
+            // Show loader
+            document.getElementById('loader-modal').style.display = 'flex';
+        
             Promise.all([
                 db.collection('users').doc(friendUid).get(),
                 db.collection('users').doc(userId).get()
@@ -822,15 +855,23 @@
                     .catch((error) => {
                         console.error("Error updating friends lists: ", error);
                         alert(translations[userLanguage]["Failed to update friends lists."]);
+                    })
+                    .finally(() => {
+                        // Hide loader
+                        document.getElementById('loader-modal').style.display = 'none';
                     });
                 } else {
                     console.error("User or friend document does not exist.");
                     alert(translations[userLanguage]["Failed to remove friend."]);
+                    // Hide loader
+                    document.getElementById('loader-modal').style.display = 'none';
                 }
             })
             .catch((error) => {
                 console.error("Error fetching user or friend data: ", error);
                 alert("Failed to remove friend.");
+                // Hide loader
+                document.getElementById('loader-modal').style.display = 'none';
             });
         }
 
