@@ -2259,8 +2259,11 @@
     }
 
     function formatTimestamp(timestamp) {
-      const date = new Date(timestamp);
-      return date.toLocaleString(); // You can customize the format as needed
+      // If timestamp is a Firestore Timestamp, convert it to milliseconds
+      const date = timestamp instanceof firebase.firestore.Timestamp
+        ? timestamp.toDate()
+        : new Date(timestamp);
+      return date.toLocaleString();
     }
 
     // Function to log the current user's friends and their posts to the console
