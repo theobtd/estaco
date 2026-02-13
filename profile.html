@@ -595,6 +595,7 @@
                                             const friendUser = friendDoc.data();
                                             const friendUid = friendDoc.id;
                                             sendRequest(user.uid, friendUid, userName); // Pass userName instead of friendUser.name
+                                            searchFriendInput.value = '';
                                         } else {
                                             alert(translations[userLanguage]["User not found"]);
                                         }
