@@ -2259,11 +2259,12 @@
     }
 
     function formatTimestamp(timestamp) {
-      // If timestamp is a Firestore Timestamp, convert it to milliseconds
       const date = timestamp instanceof firebase.firestore.Timestamp
         ? timestamp.toDate()
         : new Date(timestamp);
-      return date.toLocaleString();
+    
+      // Format as "HH:MM" (e.g., "14:30")
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
     // Function to log the current user's friends and their posts to the console
