@@ -1232,7 +1232,7 @@
             };
     
             db.collection('posts').add(post)
-              .then((docRef) => {
+              .then(async (docRef) => {
                 const uploadPromises = [];
                 if (mediaFile) {
                   const storageRef = storage.ref();
@@ -1279,27 +1279,25 @@
                     };
                     renderNewPost(newPost);
     
-                    // NEW LOGIC: Restrict post visibility to mutual friends if someone is tagged
-                    const taggedUserUids = extractTaggedUserUids(content);
+                    // --- UPDATED LOGIC: Restrict post visibility based on selected friends ---
                     const posterUid = auth.currentUser.uid;
+                    let uidsToAddPost = [];
     
-                    if (taggedUserUids.length > 0) {
-                      for (const taggedUid of taggedUserUids) {
-                        const mutualFriendUids = await getMutualFriendUids(posterUid, taggedUid);
-                        const uidsToAddPost = [...new Set([...mutualFriendUids, posterUid, taggedUid])];
-                        for (const uid of uidsToAddPost) {
-                          await addPostToUserFeed(uid, docRef.id, new Date());
-                        }
-                      }
-                    } else {
+                    if (isVisibilityAll) {
+                      // Add post to all friends' feeds
                       const friendUids = await getFriendUidsForUser(posterUid);
-                      const uidsToAddPost = [...new Set([...friendUids, posterUid])];
-                      for (const uid of uidsToAddPost) {
-                        await addPostToUserFeed(uid, docRef.id, new Date());
-                      }
+                      uidsToAddPost = [...new Set([...friendUids, posterUid])];
+                    } else {
+                      // Add post only to selected friends' feeds
+                      uidsToAddPost = [...new Set([...Array.from(selectedFriendUids), posterUid])];
                     }
     
-                    // NEW: Add tag notifications for each tagged user
+                    for (const uid of uidsToAddPost) {
+                      await addPostToUserFeed(uid, docRef.id, new Date());
+                    }
+                    // --- END UPDATED LOGIC ---
+    
+                    // Add tag notifications for each tagged user
                     if (taggedUserUids.length > 0) {
                       for (const taggedUid of taggedUserUids) {
                         await addTagNotification(
@@ -1354,7 +1352,7 @@
           };
     
           db.collection('posts').add(post)
-            .then((docRef) => {
+            .then(async (docRef) => {
               const uploadPromises = [];
               if (mediaFile) {
                 const storageRef = storage.ref();
@@ -1401,27 +1399,25 @@
                   };
                   renderNewPost(newPost);
     
-                  // NEW LOGIC: Restrict post visibility to mutual friends if someone is tagged
-                  const taggedUserUids = extractTaggedUserUids(content);
+                  // --- UPDATED LOGIC: Restrict post visibility based on selected friends ---
                   const posterUid = auth.currentUser.uid;
+                  let uidsToAddPost = [];
     
-                  if (taggedUserUids.length > 0) {
-                    for (const taggedUid of taggedUserUids) {
-                      const mutualFriendUids = await getMutualFriendUids(posterUid, taggedUid);
-                      const uidsToAddPost = [...new Set([...mutualFriendUids, posterUid, taggedUid])];
-                      for (const uid of uidsToAddPost) {
-                        await addPostToUserFeed(uid, docRef.id, new Date());
-                      }
-                    }
-                  } else {
+                  if (isVisibilityAll) {
+                    // Add post to all friends' feeds
                     const friendUids = await getFriendUidsForUser(posterUid);
-                    const uidsToAddPost = [...new Set([...friendUids, posterUid])];
-                    for (const uid of uidsToAddPost) {
-                      await addPostToUserFeed(uid, docRef.id, new Date());
-                    }
+                    uidsToAddPost = [...new Set([...friendUids, posterUid])];
+                  } else {
+                    // Add post only to selected friends' feeds
+                    uidsToAddPost = [...new Set([...Array.from(selectedFriendUids), posterUid])];
                   }
     
-                  // NEW: Add tag notifications for each tagged user
+                  for (const uid of uidsToAddPost) {
+                    await addPostToUserFeed(uid, docRef.id, new Date());
+                  }
+                  // --- END UPDATED LOGIC ---
+    
+                  // Add tag notifications for each tagged user
                   if (taggedUserUids.length > 0) {
                     for (const taggedUid of taggedUserUids) {
                       await addTagNotification(
