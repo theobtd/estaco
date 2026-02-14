@@ -1574,6 +1574,13 @@
             isLoading = false;
         }
     }
+
+    async function forceReloadFeed() {
+        isFirstLoad = false;
+        lastVisiblePost = null;
+        feed.innerHTML = '';
+        await loadPosts();
+    }
     
     // Function to render posts
     async function renderPosts(postsData) {
