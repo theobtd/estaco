@@ -1553,6 +1553,14 @@
                 })
             ).then(posts => posts.filter(post => post !== null));
     
+            // NEW CHECK: If this is the first load and no posts are found, try again with more posts
+            if (isFirstLoad && filteredPosts.length === 0) {
+                isFirstLoad = false;
+                isLoading = false;
+                loadPosts(); // Try again with more posts
+                return;
+            }
+    
             await renderPosts(filteredPosts);
     
             // After the first load, set the flag to false and load more posts
