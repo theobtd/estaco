@@ -683,6 +683,8 @@
         function sendRequest(fromId, toId, fromName) {
             if (!toId) {
                 console.error('Cannot send friend request: toId is undefined.');
+                // Hide loader
+                document.getElementById('loader-modal').style.display = 'none';
                 return;
             }
             db.collection('friendRequests').add({
@@ -699,9 +701,13 @@
                   fromName, // Requester's name
                   firebase.firestore.FieldValue.serverTimestamp()
                 );
+                // Hide loader
+                document.getElementById('loader-modal').style.display = 'none';
             }).catch(error => {
                 console.error('Error sending friend request: ', error);
                 alert(translations[userLanguage]["Failed to send friend request."]);
+                // Hide loader
+                document.getElementById('loader-modal').style.display = 'none';
             });
         }
 
