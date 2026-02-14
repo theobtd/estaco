@@ -856,7 +856,7 @@
                 // If the current page is home.html, force a feed refresh
                 if (window.location.pathname.endsWith('home.html')) {
                     // Reset feed state and reload
-                    isFirstLoad = true;
+                    isFirstLoad = false;
                     lastVisiblePost = null;
                     const feedElement = document.getElementById('feed');
                     if (feedElement) {
