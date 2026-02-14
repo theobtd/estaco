@@ -1464,6 +1464,15 @@
     let lastVisiblePost = null; // To keep track of the last fetched post
     const postLimit = 3; // Number of posts to load at a time
     let isFirstLoad = true; // Add this flag at the top with your other variables
+
+    async function isFriendWithCurrentUser(authorId) {
+        const user = auth.currentUser;
+        if (!user) return false;
+    
+        const friendsDoc = await db.collection('friends').doc(user.uid).get();
+        const friends = friendsDoc.data()?.friends || [];
+        return friends.some(friend => friend.uid === authorId);
+    }
     
     async function loadPosts() {
         if (isLoading) return; // Prevent multiple simultaneous loads
@@ -1556,15 +1565,6 @@
             errorMessage.textContent = error.message;
             isLoading = false;
         }
-    }
-
-    async function isFriendWithCurrentUser(authorId) {
-        const user = auth.currentUser;
-        if (!user) return false;
-    
-        const friendsDoc = await db.collection('friends').doc(user.uid).get();
-        const friends = friendsDoc.data()?.friends || [];
-        return friends.some(friend => friend.uid === authorId);
     }
     
     // Function to render posts
