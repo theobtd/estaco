@@ -620,11 +620,10 @@
                                 // Check if the entered name matches the current user's name
                                 if (friendName === userName) {
                                     alert(translations[userLanguage]["You cannot send a friend request to yourself."]);
-                                    searchFriendInput.value = '';
                                     return;
                                 }
         
-                                // Proceed with sending the friend request
+                                // Proceed with searching for the target user
                                 db.collection('users').where('name', '==', friendName).get()
                                     .then(snapshot => {
                                         if (!snapshot.empty) {
@@ -636,8 +635,26 @@
                                                 alert(translations[userLanguage]["You cannot send a friend request to yourself."]);
                                                 return;
                                             }
-                                            sendRequest(user.uid, friendUid, userName);
-                                            searchFriendInput.value = '';
+        
+                                            // NEW: Check for existing pending request
+                                            db.collection('friendRequests')
+                                                .where('from', '==', user.uid)
+                                                .where('to', '==', friendUid)
+                                                .get()
+                                                .then((requestSnapshot) => {
+                                                    if (!requestSnapshot.empty) {
+                                                        alert(translations[userLanguage]["You already have a pending friend request to this user."]);
+                                                        return;
+                                                    } else {
+                                                        sendRequest(user.uid, friendUid, userName);
+                                                        searchFriendInput.value = '';
+                                                    }
+                                                })
+                                                .catch(error => {
+                                                    console.error('Error checking for pending request: ', error);
+                                                    alert(translations[userLanguage]["An error occurred while checking for pending requests."]);
+                                                });
+        
                                         } else {
                                             alert(translations[userLanguage]["User not found"]);
                                         }
