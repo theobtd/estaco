@@ -623,6 +623,8 @@
                                 // Check if the entered name matches the current user's name
                                 if (friendName === userName) {
                                     alert(translations[userLanguage]["You cannot send a friend request to yourself."]);
+                                    // Hide loader
+                                    document.getElementById('loader-modal').style.display = 'none';
                                     return;
                                 }
         
@@ -636,6 +638,8 @@
                                             // Double-check if the UID matches (in case of duplicate names)
                                             if (friendUid === user.uid) {
                                                 alert(translations[userLanguage]["You cannot send a friend request to yourself."]);
+                                                // Hide loader
+                                                document.getElementById('loader-modal').style.display = 'none';
                                                 return;
                                             }
         
