@@ -603,6 +603,9 @@
             if (friendName) {
                 const user = auth.currentUser;
                 if (!user) return;
+
+                // Show loader
+                document.getElementById('loader-modal').style.display = 'flex';
         
                 // Check if the user already has 15 friends
                 db.collection('friends').doc(user.uid).get()
@@ -644,6 +647,8 @@
                                                 .then((requestSnapshot) => {
                                                     if (!requestSnapshot.empty) {
                                                         alert(translations[userLanguage]["You already have a pending friend request to this user."]);
+                                                        // Hide loader
+                                                        document.getElementById('loader-modal').style.display = 'none';
                                                         return;
                                                     } else {
                                                         sendRequest(user.uid, friendUid, userName);
@@ -653,6 +658,8 @@
                                                 .catch(error => {
                                                     console.error('Error checking for pending request: ', error);
                                                     alert(translations[userLanguage]["An error occurred while checking for pending requests."]);
+                                                    // Hide loader
+                                                    document.getElementById('loader-modal').style.display = 'none';
                                                 });
         
                                         } else {
@@ -662,6 +669,8 @@
                                     .catch(error => {
                                         console.error('Error searching for user: ', error);
                                         alert(translations[userLanguage]["An error occurred while searching for the user."]);
+                                        // Hide loader
+                                        document.getElementById('loader-modal').style.display = 'none';
                                     });
                             });
                     });
