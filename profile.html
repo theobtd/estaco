@@ -817,65 +817,60 @@
                 });
         }
 
-        function removeFriend(userId, friendUid) {
+        async function removeFriend(userId, friendUid) {
             const confirmRemove = confirm(translations[userLanguage]["Are you sure you want to remove this friend?"]);
             if (!confirmRemove) return;
         
             // Show loader
             document.getElementById('loader-modal').style.display = 'flex';
         
-            Promise.all([
-                db.collection('users').doc(friendUid).get(),
-                db.collection('users').doc(userId).get()
-            ])
-            .then(([friendDoc, userDoc]) => {
-                if (friendDoc.exists && userDoc.exists) {
-                    const friendName = friendDoc.data().name;
-                    const userName = userDoc.data().name;
+            try {
+                // Fetch user and friend names for updates
+                const [userDoc, friendDoc] = await Promise.all([
+                    db.collection('users').doc(userId).get(),
+                    db.collection('users').doc(friendUid).get()
+                ]);
+                const userName = userDoc.data().name;
+                const friendName = friendDoc.data().name;
         
-                    // Remove posts from each other's feeds FIRST
-                    Promise.all([
-                        removePostsFromUserFeed(userId, friendUid),
-                        removePostsFromUserFeed(friendUid, userId)
-                    ])
-                    .then(() => {
-                        // Remove friend relationship AFTER posts are removed
-                        const userFriendsUpdate = db.collection('friends').doc(userId).update({
-                            friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName }),
-                            friendsList: firebase.firestore.FieldValue.arrayRemove(friendUid)
-                        });
+                // Remove posts from both users' feeds
+                await removePostsFromUserFeed(userId, friendUid);
+                await removePostsFromUserFeed(friendUid, userId);
         
-                        const friendFriendsUpdate = db.collection('friends').doc(friendUid).update({
-                            friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName }),
-                            friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
-                        });
+                // Remove friend relationship
+                const userFriendsUpdate = db.collection('friends').doc(userId).update({
+                    friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName }),
+                    friendsList: firebase.firestore.FieldValue.arrayRemove(friendUid)
+                });
         
-                        return Promise.all([userFriendsUpdate, friendFriendsUpdate]);
-                    })
-                    .then(() => {
-                        loadCurrentFriends(userId);
-                    })
-                    .catch((error) => {
-                        console.error("Error updating friends lists: ", error);
-                        alert(translations[userLanguage]["Failed to update friends lists."]);
-                    })
-                    .finally(() => {
-                        // Hide loader
-                        document.getElementById('loader-modal').style.display = 'none';
-                    });
-                } else {
-                    console.error("User or friend document does not exist.");
-                    alert(translations[userLanguage]["Failed to remove friend."]);
-                    // Hide loader
-                    document.getElementById('loader-modal').style.display = 'none';
+                const friendFriendsUpdate = db.collection('friends').doc(friendUid).update({
+                    friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName }),
+                    friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
+                });
+        
+                await Promise.all([userFriendsUpdate, friendFriendsUpdate]);
+        
+                // Reload the current user's friends list
+                loadCurrentFriends(userId);
+        
+                // If the current page is home.html, force a feed refresh
+                if (window.location.pathname.endsWith('home.html')) {
+                    // Reset feed state and reload
+                    isFirstLoad = true;
+                    lastVisiblePost = null;
+                    const feedElement = document.getElementById('feed');
+                    if (feedElement) {
+                        feedElement.innerHTML = '';
+                        loadPosts();
+                    }
                 }
-            })
-            .catch((error) => {
-                console.error("Error fetching user or friend data: ", error);
-                alert("Failed to remove friend.");
+            } catch (error) {
+                console.error("Error removing friend:", error);
+                alert(translations[userLanguage]["Failed to remove friend."]);
+            } finally {
                 // Hide loader
                 document.getElementById('loader-modal').style.display = 'none';
-            });
+            }
         }
 
         // Display user information
