@@ -1536,12 +1536,19 @@
             // Update lastVisiblePost for pagination
             lastVisiblePost = feedSnapshot.docs[feedSnapshot.docs.length - 1];
     
-            await renderPosts(postsData);
+            // Filter out posts from non-friends
+            const filteredPosts = await Promise.all(
+                postsData.map(async (post) => {
+                    const isFriend = await isFriendWithCurrentUser(post.authorId);
+                    return isFriend ? post : null;
+                })
+            ).then(posts => posts.filter(post => post !== null));
+    
+            await renderPosts(filteredPosts);
     
             // After the first load, set the flag to false and load more posts
             if (isFirstLoad) {
                 isFirstLoad = false;
-                // setTimeout(() => loadPosts(), 100); // Small delay to ensure DOM is ready
             }
     
             isLoading = false;
@@ -1549,6 +1556,15 @@
             errorMessage.textContent = error.message;
             isLoading = false;
         }
+    }
+
+    async function isFriendWithCurrentUser(authorId) {
+        const user = auth.currentUser;
+        if (!user) return false;
+    
+        const friendsDoc = await db.collection('friends').doc(user.uid).get();
+        const friends = friendsDoc.data()?.friends || [];
+        return friends.some(friend => friend.uid === authorId);
     }
     
     // Function to render posts
