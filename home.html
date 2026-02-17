@@ -1383,7 +1383,7 @@
     
               Promise.all(uploadPromises)
                 .then(async () => {
-                  alert('Post created!');
+                  alert(translations[userLanguage]["Post created!"]);
                   const user = auth.currentUser;
                   const authorName = user.displayName || "Unknown User";
                   const newPost = {
@@ -2725,7 +2725,7 @@
     });
 
     // Set default visibility button text
-    document.getElementById('visibility-button').textContent = 'Visibility: all friends';
+    document.getElementById('visibility-button').textContent = translations[userLanguage]["Visibility: all friends"];
 
     /**
      * Adds a comment tag notification to a user's notifications sub-collection.
