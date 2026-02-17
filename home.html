@@ -1548,6 +1548,12 @@
             // Filter out posts from non-friends
             const filteredPosts = await Promise.all(
                 postsData.map(async (post) => {
+                    const user = auth.currentUser;
+                    // Always include your own posts
+                    if (post.authorId === user.uid) {
+                        return post;
+                    }
+                    // For others, check if they are friends
                     const isFriend = await isFriendWithCurrentUser(post.authorId);
                     return isFriend ? post : null;
                 })
