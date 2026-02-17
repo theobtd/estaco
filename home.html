@@ -766,7 +766,7 @@
     </button>
     <button class="nav-button" id="notifications-button">
       <span class="icon">🔔</span>
-      <span class="label">data-i18n="Notifications"</span>
+      <span class="label" data-i18n="Notifications">Notifications</span>
     </button>
     <button class="nav-button" id="profile-button">
       <span class="icon">👤</span>
@@ -783,7 +783,7 @@
   <div id="reaction-popup" class="reaction-popup">
     <div class="reaction-popup-content">
       <button id="close-reaction-popup" class="close-reaction-popup-button">×</button>
-      <h3>data-i18n="Reactions to your post"</h3>
+      <h3 data-i18n="Reactions to your post">Reactions to your post</h3>
       <div id="reaction-list" class="reaction-list">
         <!-- Reactions will be inserted here -->
       </div>
@@ -1263,7 +1263,7 @@
     
                 Promise.all(uploadPromises)
                   .then(async () => {
-                    alert('Post created!');
+                    alert(translations[userLanguage]["Post created!"]);
                     const user = auth.currentUser;
                     const authorName = user.displayName || "Unknown User";
                     const newPost = {
@@ -2183,7 +2183,7 @@
                         <div class="comment-content">
                           <div class="comment-author-name">${comment.authorName}</div>
                           <div>${comment.content}</div>
-                          <button class="respond-button" data-author-name="${comment.authorName}">data-i18n="Respond"</button>
+                          <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
                         </div>
                       </div>
                     `;
@@ -2205,7 +2205,7 @@
                           <div class="comment-content">
                             <div class="comment-author-name">${comment.authorName}</div>
                             <div>${comment.content}</div>
-                            <button class="respond-button" data-author-name="${comment.authorName}">data-i18n="Respond"</button>
+                            <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
                           </div>
                         </div>
                       `;
@@ -2225,7 +2225,7 @@
                                 <div class="comment-content">
                                   <div class="comment-author-name">${comment.authorName}</div>
                                   <div>${comment.content}</div>
-                                  <button class="respond-button" data-author-name="${comment.authorName}">data-i18n="Respond"</button>
+                                  <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
                                 </div>
                               </div>
                             `;
@@ -2246,7 +2246,7 @@
                         <div class="comment-content">
                           <div class="comment-author-name">${comment.authorName}</div>
                           <div>${comment.content}</div>
-                          <button class="respond-button" data-author-name="${comment.authorName}">data-i18n="Respond"</button>
+                          <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
                         </div>
                       </div>
                     `;
@@ -3324,6 +3324,9 @@
         }
       });
     }
+
+    // Call updatePageLanguage on page load with the default language
+    updatePageLanguage(userLanguage);
 
   </script>
 </body>
