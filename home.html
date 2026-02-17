@@ -929,7 +929,9 @@
           .then((doc) => {
             if (doc.exists) {
               const userData = doc.data();
-              userLanguage = userData.language || "English"; // Update globally
+              userLanguage = userData.language || "English";
+              // Save to localStorage for persistence
+              localStorage.setItem('userLanguage', userLanguage);
               updatePageLanguage(userLanguage);
             }
           })
@@ -3207,6 +3209,13 @@
 
     let userLanguage = "English"; // Define globally
 
+    // Try to load the language from localStorage first
+    const savedLanguage = localStorage.getItem('userLanguage');
+    if (savedLanguage) {
+      userLanguage = savedLanguage;
+      updatePageLanguage(userLanguage);
+    }
+
     // Translations dictionary
     const translations = {
       English: {
@@ -3322,16 +3331,15 @@
           element.textContent = lang[key];
         }
       });
+      // Update placeholders here
+      document.getElementById('post-content').setAttribute('data-placeholder', lang["How's life treating ya?"]);
+      document.querySelectorAll('.comment-input').forEach(input => {
+        input.setAttribute('data-placeholder', lang["Write a comment..."]);
+      });
     }
 
     // Call updatePageLanguage on page load with the default language
     updatePageLanguage(userLanguage);
-
-    // Update placeholders (after translations is defined)
-    document.getElementById('post-content').setAttribute('data-placeholder', translations[userLanguage]["How's life treating ya?"]);
-    document.querySelectorAll('.comment-input').forEach(input => {
-      input.setAttribute('data-placeholder', translations[userLanguage]["Write a comment..."]);
-    });
 
   </script>
 </body>
