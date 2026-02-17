@@ -766,7 +766,7 @@
     </button>
     <button class="nav-button" id="notifications-button">
       <span class="icon">🔔</span>
-      <span class="label">Notifications</span>
+      <span class="label">data-i18n="Notifications"</span>
     </button>
     <button class="nav-button" id="profile-button">
       <span class="icon">👤</span>
@@ -783,7 +783,7 @@
   <div id="reaction-popup" class="reaction-popup">
     <div class="reaction-popup-content">
       <button id="close-reaction-popup" class="close-reaction-popup-button">×</button>
-      <h3>Reactions to your post</h3>
+      <h3>data-i18n="Reactions to your post"</h3>
       <div id="reaction-list" class="reaction-list">
         <!-- Reactions will be inserted here -->
       </div>
@@ -1504,9 +1504,9 @@
     
             if (feedSnapshot.empty) {
                 if (!feed.querySelector('.post')) {
-                    feed.innerHTML = '<p>No posts yet. Create one!</p>';
+                    feed.innerHTML = `<p data-i18n="No posts yet. Create one!">${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
                 } else {
-                    feed.innerHTML += '<p>No more posts to load.</p>';
+                    feed.innerHTML += `<p data-i18n="No more posts to load.">${translations[userLanguage]["No more posts to load."]}</p>`;
                 }
                 isLoading = false;
                 return;
@@ -1746,7 +1746,7 @@
             reactionList.innerHTML = '';
     
             if (Object.keys(reactions).length === 0) {
-              reactionList.innerHTML = '<p>No reactions to your post yet :(</p>';
+              reactionList.innerHTML = `<p data-i18n="No reactions to your post yet :(">${translations[userLanguage]["No reactions to your post yet :("]}</p>`;
             } else {
               // Group reactions by type
               const reactionTypes = {
@@ -1952,7 +1952,7 @@
           const commentsList = document.getElementById(`comments-${postId}`);
           const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
           if (seeCommentsButton) {
-            seeCommentsButton.textContent = 'Hide comments';
+            seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
             commentsList.classList.add('visible');
             loadComments(postId); // Load comments here
           }
@@ -2080,7 +2080,7 @@
             const seeCommentsButton = postElement.querySelector('.see-comments-button');
             const commentsList = postElement.querySelector('.comments-list');
             if (seeCommentsButton) {
-              seeCommentsButton.textContent = 'Hide comments';
+              seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
               seeCommentsButton.style.display = 'block';
             }
             if (commentsList) {
@@ -2129,7 +2129,7 @@
             const seeCommentsButton = postElement.querySelector('.see-comments-button');
             const commentsList = postElement.querySelector('.comments-list');
             if (seeCommentsButton) {
-              seeCommentsButton.textContent = 'Hide comments';
+              seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
               seeCommentsButton.style.display = 'block';
             }
             if (commentsList) {
@@ -2183,7 +2183,7 @@
                         <div class="comment-content">
                           <div class="comment-author-name">${comment.authorName}</div>
                           <div>${comment.content}</div>
-                          <button class="respond-button" data-author-name="${comment.authorName}">Respond</button>
+                          <button class="respond-button" data-author-name="${comment.authorName}">data-i18n="Respond"</button>
                         </div>
                       </div>
                     `;
@@ -2205,7 +2205,7 @@
                           <div class="comment-content">
                             <div class="comment-author-name">${comment.authorName}</div>
                             <div>${comment.content}</div>
-                            <button class="respond-button" data-author-name="${comment.authorName}">Respond</button>
+                            <button class="respond-button" data-author-name="${comment.authorName}">data-i18n="Respond"</button>
                           </div>
                         </div>
                       `;
@@ -2225,7 +2225,7 @@
                                 <div class="comment-content">
                                   <div class="comment-author-name">${comment.authorName}</div>
                                   <div>${comment.content}</div>
-                                  <button class="respond-button" data-author-name="${comment.authorName}">Respond</button>
+                                  <button class="respond-button" data-author-name="${comment.authorName}">data-i18n="Respond"</button>
                                 </div>
                               </div>
                             `;
@@ -2246,7 +2246,7 @@
                         <div class="comment-content">
                           <div class="comment-author-name">${comment.authorName}</div>
                           <div>${comment.content}</div>
-                          <button class="respond-button" data-author-name="${comment.authorName}">Respond</button>
+                          <button class="respond-button" data-author-name="${comment.authorName}">data-i18n="Respond"</button>
                         </div>
                       </div>
                     `;
@@ -2459,7 +2459,7 @@
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('delete-post-button')) {
         const postId = e.target.getAttribute('data-post-id');
-        const confirmDelete = confirm('Are you sure you want to delete this post?');
+        const confirmDelete = confirm(translations[userLanguage]["Are you sure you want to delete this post?"]);
         if (confirmDelete) {
           deletePost(postId);
         }
@@ -2537,7 +2537,7 @@
       if (!user) return;
     
       const friendsList = document.getElementById('friends-list');
-      friendsList.innerHTML = '<li>Loading...</li>';
+      friendsList.innerHTML = `<li data-i18n="Loading...">${translations[userLanguage]["Loading..."]}</li>`;
     
       try {
         const friendsDoc = await db.collection('friends').doc(user.uid).get();
@@ -2555,7 +2555,7 @@
           friendsList.appendChild(selectAllLi);
     
           if (friends.length === 0) {
-            friendsList.innerHTML = '<li>No friends found.</li>';
+            friendsList.innerHTML = `<li data-i18n="No friends found.">${translations[userLanguage]["No friends found."]}</li>`;
           } else {
             // If isVisibilityAll is true, add all friend UIDs to selectedFriendUids
             if (isVisibilityAll) {
@@ -2574,10 +2574,10 @@
             });
           }
         } else {
-          friendsList.innerHTML = '<li>No friends found.</li>';
+          friendsList.innerHTML = `<li data-i18n="No friends found.">${translations[userLanguage]["No friends found."]}</li>`;
         }
       } catch (error) {
-        friendsList.innerHTML = '<li>Error loading friends.</li>';
+        friendsList.innerHTML = `<li data-i18n="Error loading friends.">${translations[userLanguage]["Error loading friends."]}</li>`;
         console.error("Error fetching friends:", error);
       }
     
