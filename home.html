@@ -3206,11 +3206,6 @@
     }
 
     let userLanguage = "English"; // Define globally
-    // Update placeholders
-    document.getElementById('post-content').placeholder = translations[userLanguage]["How's life treating ya?"];
-    document.querySelectorAll('.comment-input').forEach(input => {
-      input.placeholder = translations[userLanguage]["Write a comment..."];
-    });
 
     // Translations dictionary
     const translations = {
@@ -3327,6 +3322,12 @@
 
     // Call updatePageLanguage on page load with the default language
     updatePageLanguage(userLanguage);
+
+    // Update placeholders (after translations is defined)
+    document.getElementById('post-content').setAttribute('data-placeholder', translations[userLanguage]["How's life treating ya?"]);
+    document.querySelectorAll('.comment-input').forEach(input => {
+      input.setAttribute('data-placeholder', translations[userLanguage]["Write a comment..."]);
+    });
 
   </script>
 </body>
