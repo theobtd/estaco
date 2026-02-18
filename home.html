@@ -724,7 +724,7 @@
       <label for="post-media" id="post-media-label">
         <span data-i18n="Photo/Video">📷 Photo/Video</span>
       </label>
-      <button id="visibility-button" data-i18n="Visibility">Visibility</button>
+      <button id="visibility-button" data-i18n="Visibility"></button>
       <button id="post-button" data-i18n="Post">Post</button>
     </div>
     <input type="file" id="post-media" accept="image/*,video/*" style="display: none;">
@@ -3213,7 +3213,6 @@
     const savedLanguage = localStorage.getItem('userLanguage');
     if (savedLanguage) {
       userLanguage = savedLanguage;
-      updatePageLanguage(userLanguage);
     }
 
     // Translations dictionary
