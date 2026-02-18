@@ -209,6 +209,7 @@
         "Load more": "Load more",
         "Feed": "Feed",
         "Profile": "Profile",
+        "Please sign in and verify your email to access notifications.": "Please sign in and verify your email to access notifications.",
       },
       French: {
         "Notifications": "Notifications",
@@ -227,6 +228,7 @@
         "Load more": "Charger plus",
         "Feed": "Fil d'actualité",
         "Profile": "Profil",
+        "Please sign in and verify your email to access notifications.": "Veuillez vous connecter et vérifier votre email pour accéder aux notifications.",
       },
       Korean: {
         "Notifications": "알림",
@@ -245,6 +247,7 @@
         "Load more": "더 보기",
         "Feed": "피드",
         "Profile": "프로필",
+        "Please sign in and verify your email to access notifications.": "알림에 접근하려면 로그인하고 이메일을 인증해 주세요.",
       }
     };
 
@@ -265,10 +268,25 @@
     // Check if user is signed in and verified
     auth.onAuthStateChanged((user) => {
       if (!user || !user.emailVerified) {
-        alert('Please sign in and verify your email to access notifications.');
+        alert(translations[userLanguage]["Please sign in and verify your email to access notifications."]);
         window.location.href = 'index.html';
       } else {
-        loadNotifications(user.uid);
+        // Load user data from Firestore to get the user's language
+        db.collection('users').doc(user.uid).get()
+          .then((doc) => {
+            if (doc.exists) {
+              const userData = doc.data();
+              userLanguage = userData.language || "English";
+              // Save to localStorage for persistence
+              localStorage.setItem('userLanguage', userLanguage);
+              updatePageLanguage(userLanguage);
+            }
+            loadNotifications(user.uid);
+          })
+          .catch((error) => {
+            console.error("Error loading user data:", error);
+            loadNotifications(user.uid);
+          });
       }
     });
 
@@ -293,7 +311,7 @@
     
         if (notificationsSnapshot.empty) {
           if (!loadMore) {
-            notificationsList.innerHTML = '<p>No notifications yet.</p>';
+            notificationsList.innerHTML = `<p data-i18n="No notifications yet.">${translations[userLanguage]["No notifications yet."]}</p>`;
           }
           return;
         }
@@ -431,7 +449,7 @@
     
       } catch (error) {
         console.error("Error loading notifications:", error);
-        notificationsList.innerHTML = '<p>Error loading notifications. Please try again.</p>';
+        notificationsList.innerHTML = `<p data-i18n="Error loading notifications. Please try again.">${translations[userLanguage]["Error loading notifications. Please try again."]}</p>`;
       } finally {
         isLoading = false;
       }
@@ -444,6 +462,9 @@
         }
       });
     });
+
+    // Call updatePageLanguage on page load with the default language
+    updatePageLanguage(userLanguage);
   </script>
 </body>
 </html>
