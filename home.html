@@ -833,7 +833,7 @@
     let isLoading = false; // Flag to prevent multiple simultaneous loads
     let selectedFriendUids = new Set(); // Track selected friends
     let isVisibilityAll = true; // Track if all friends are selected
-
+    let userLanguage = "English";
     
     // Navigate to Profile Page
     document.getElementById('profile-button').addEventListener('click', () => {
@@ -3207,8 +3207,6 @@
           });
       });
     }
-
-    let userLanguage = "English"; // Define globally
 
     // Try to load the language from localStorage first
     const savedLanguage = localStorage.getItem('userLanguage');
