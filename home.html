@@ -873,6 +873,9 @@
         "Post content cannot be empty.": "Post content cannot be empty.",
         "Write a comment...": "Write a comment...",
         "Transaction failed: ": "Transaction failed: ",
+        "User reported successfully.": "User reported successfully.",
+        "Failed to report user. Please try again.": "Failed to report user. Please try again.",
+        "You must be logged in to report a user.": "You must be logged in to report a user.",
       },
       French: {
         "Create a Post": "Créer une publication",
@@ -913,6 +916,9 @@
         "Notifications": "Notifications",
         "No posts yet. Create one!": "Aucune publication pour l'instant. Créez-en une !",
         "No more posts to load.": "Plus de publications à charger.",
+        "User reported successfully.": "Utilisateur signalé avec succès.",
+        "Failed to report user. Please try again.": "Échec du signalement. Veuillez réessayer.",
+        "You must be logged in to report a user.": "Vous devez être connecté pour signaler un utilisateur.",
       },
       Korean: {
         "Create a Post": "게시물 작성",
@@ -953,6 +959,9 @@
         "Notifications": "알림",
         "No posts yet. Create one!": "아직 게시물이 없습니다. 하나 만들어 보세요!",
         "No more posts to load.": "더 이상 불러올 게시물이 없습니다.",
+        "User reported successfully.": "사용자 신고가 완료되었습니다.",
+        "Failed to report user. Please try again.": "사용자 신고에 실패했습니다. 다시 시도해 주세요.",
+        "You must be logged in to report a user.": "사용자를 신고하려면 로그인해야 합니다.",
       }
     };
     
@@ -3368,7 +3377,7 @@
     async function reportUser(authorId) {
       const user = auth.currentUser;
       if (!user) {
-        alert("You must be logged in to report a user.");
+        alert(translations[userLanguage]["You must be logged in to report a user."] || "You must be logged in to report a user.");
         return;
       }
     
@@ -3380,10 +3389,10 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         });
     
-        alert("User reported successfully.");
+        alert(translations[userLanguage]["User reported successfully."]);
       } catch (error) {
         console.error("Error reporting user:", error);
-        alert("Failed to report user. Please try again.");
+        alert(translations[userLanguage]["Failed to report user. Please try again."]);
       }
     }
 
