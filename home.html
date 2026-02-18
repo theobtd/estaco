@@ -2680,7 +2680,7 @@
           const selectAllLi = document.createElement('li');
           selectAllLi.id = 'select-all-friends';
           selectAllLi.innerHTML = `
-            Select All Friends
+            <span data-i18n="Select All Friends">Select All Friends</span>
             <button id="select-all-toggle" class="friend-toggle ${isVisibilityAll ? 'active' : ''}"></button>
           `;
           friendsList.appendChild(selectAllLi);
@@ -2713,6 +2713,7 @@
       }
     
       document.getElementById('visibility-modal').style.display = 'flex';
+      updatePageLanguage(userLanguage);
     });
     
     // Close the modal
