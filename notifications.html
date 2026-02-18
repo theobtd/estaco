@@ -126,27 +126,27 @@
 </head>
 <body>
   <div id="top-nav-bar">
-    <h1>Notifications</h1>
+    <h1 data-i18n="Notifications">Notifications</h1>
   </div>
 
   <div id="notifications">
-    <h3>Your Notifications</h3>
+    <h3 data-i18n="Your Notifications">Your Notifications</h3>
     <div id="notifications-list"></div>
-    <button id="load-more" style="display: none;">Load more</button>
+    <button id="load-more" style="display: none;" data-i18n="Load more">Load more</button>
   </div>
 
   <div id="bottom-nav-bar">
     <button class="nav-button" id="home-button">
       <span class="icon">🏠</span>
-      <span class="label">Feed</span>
+      <span class="label" data-i18n="Feed">Feed</span>
     </button>
     <button class="nav-button" id="notifications-button">
       <span class="icon">🔔</span>
-      <span class="label">Notifications</span>
+      <span class="label" data-i18n="Notifications">Notifications</span>
     </button>
     <button class="nav-button" id="profile-button">
       <span class="icon">👤</span>
-      <span class="label">Profile</span>
+      <span class="label" data-i18n="Profile">Profile</span>
     </button>
   </div>
 
@@ -170,6 +170,83 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+
+    let userLanguage = "English";
+
+    // Try to load the language from localStorage first
+    const savedLanguage = localStorage.getItem('userLanguage');
+    if (savedLanguage) {
+      userLanguage = savedLanguage;
+    }
+
+    // Function to update the page language
+    function updatePageLanguage(language) {
+      const lang = translations[language] || translations["English"];
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        const key = element.getAttribute("data-i18n");
+        if (lang[key]) {
+          element.textContent = lang[key];
+        }
+      });
+    }
+    
+    // Translations dictionary
+    const translations = {
+      English: {
+        "Notifications": "Notifications",
+        "Your Notifications": "Your Notifications",
+        "No notifications yet.": "No notifications yet.",
+        "Error loading notifications. Please try again.": "Error loading notifications. Please try again.",
+        "Liked": "Liked",
+        "Loved": "Loved",
+        "Laughed at": "Laughed at",
+        "Reacted to": "Reacted to",
+        "commented on your post": "commented on your post",
+        "tagged you in a post": "tagged you in a post",
+        "tagged you in a comment": "tagged you in a comment",
+        "sent you a friend request": "sent you a friend request",
+        "Would you like to accept?": "Would you like to accept?",
+        "Load more": "Load more",
+        "Feed": "Feed",
+        "Profile": "Profile",
+      },
+      French: {
+        "Notifications": "Notifications",
+        "Your Notifications": "Vos notifications",
+        "No notifications yet.": "Aucune notification pour l'instant.",
+        "Error loading notifications. Please try again.": "Erreur lors du chargement des notifications. Veuillez réessayer.",
+        "Liked": "A aimé",
+        "Loved": "A adoré",
+        "Laughed at": "A ri à",
+        "Reacted to": "A réagi à",
+        "commented on your post": "a commenté votre publication",
+        "tagged you in a post": "vous a mentionné dans une publication",
+        "tagged you in a comment": "vous a mentionné dans un commentaire",
+        "sent you a friend request": "vous a envoyé une demande d'ami",
+        "Would you like to accept?": "Souhaitez-vous accepter ?",
+        "Load more": "Charger plus",
+        "Feed": "Fil d'actualité",
+        "Profile": "Profil",
+      },
+      Korean: {
+        "Notifications": "알림",
+        "Your Notifications": "알림",
+        "No notifications yet.": "아직 알림이 없습니다.",
+        "Error loading notifications. Please try again.": "알림을 불러오는 중 오류가 발생했습니다. 다시 시도해 주세요.",
+        "Liked": "좋아요를 눌렀습니다",
+        "Loved": "사랑해요를 눌렀습니다",
+        "Laughed at": "웃음을 눌렀습니다",
+        "Reacted to": "반응했습니다",
+        "commented on your post": "게시물에 댓글을 달았습니다",
+        "tagged you in a post": "게시물에서 당신을 태그했습니다",
+        "tagged you in a comment": "댓글에서 당신을 태그했습니다",
+        "sent you a friend request": "친구 요청을 보냈습니다",
+        "Would you like to accept?": "수락하시겠습니까?",
+        "Load more": "더 보기",
+        "Feed": "피드",
+        "Profile": "프로필",
+      }
+    };
 
     // DOM elements
     const notificationsList = document.getElementById('notifications-list');
@@ -257,9 +334,9 @@
                   <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
                   <strong>${notification.reactorName}</strong>
                   <span style="margin-left: 5px;">
-                    ${notification.reaction === 'like' ? '👍 Liked' :
-                      notification.reaction === 'love' ? '❤️ Loved' :
-                      notification.reaction === 'laugh' ? '😂 Laughed at' : 'Reacted to'}
+                    ${notification.reaction === 'like' ? translations[userLanguage]["Liked"] :
+                      notification.reaction === 'love' ? translations[userLanguage]["Loved"] :
+                      notification.reaction === 'laugh' ? translations[userLanguage]["Laughed at"] : translations[userLanguage]["Reacted to"]}
                     your post
                   </span>
                 </div>
@@ -277,7 +354,7 @@
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
                   <strong>${notification.reactorName}</strong>
-                  <span style="margin-left: 5px;">commented on your post</span>
+                  <span style="margin-left: 5px;">${translations[userLanguage]["commented on your post"]}</span>
                 </div>
                 <div class="notification-content">
                   <p>${notification.postContent}</p>
@@ -296,7 +373,7 @@
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
                   <strong>${notification.reactorName}</strong>
-                  <span style="margin-left: 5px;">tagged you in a post</span>
+                  <span style="margin-left: 5px;">${translations[userLanguage]["tagged you in a post"]}</span>
                 </div>
                 <div class="notification-content">
                   <p>${notification.postContent}</p>
@@ -312,7 +389,7 @@
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
                   <strong>${notification.reactorName}</strong>
-                  <span style="margin-left: 5px;">tagged you in a comment</span>
+                  <span style="margin-left: 5px;">${translations[userLanguage]["tagged you in a comment"]}</span>
                 </div>
                 <div class="notification-content">
                   <p>${notification.postContent}</p>
@@ -328,10 +405,10 @@
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
                   <strong>${notification.reactorName}</strong>
-                  <span style="margin-left: 5px;">sent you a friend request</span>
+                  <span style="margin-left: 5px;">${translations[userLanguage]["sent you a friend request"]}</span>
                 </div>
                 <div class="notification-content">
-                  <p>Would you like to accept?</p>
+                  <p>${translations[userLanguage]["Would you like to accept?"]}</p>
                 </div>
                 <div class="notification-post">
                   ${new Date(notification.timestamp.toDate()).toLocaleString()}
