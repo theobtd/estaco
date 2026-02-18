@@ -693,6 +693,15 @@
     #select-all-toggle.active {
       background-color: var(--estaco-primary);
     }
+    .report-post-button {
+      background: var(--estaco-error);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
 
   </style>
 </head>
@@ -1781,6 +1790,7 @@
               <div style="display: flex; align-items: center;">
                 <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
                 ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
+                ${!isAuthor ? `<button class="report-post-button" data-post-id="${post.id}" data-author-id="${post.authorId}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; margin-left: 5px;">Report</button>` : ''}
               </div>
             </div>
             <p>${processedContent}</p>
@@ -3344,6 +3354,38 @@
     window.addEventListener('DOMContentLoaded', () => {
       updatePageLanguage(userLanguage);
     });
+
+    // Add event listener for report buttons
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('report-post-button')) {
+        const postId = e.target.getAttribute('data-post-id');
+        const authorId = e.target.getAttribute('data-author-id');
+        reportUser(authorId);
+      }
+    });
+    
+    // Function to report a user
+    async function reportUser(authorId) {
+      const user = auth.currentUser;
+      if (!user) {
+        alert("You must be logged in to report a user.");
+        return;
+      }
+    
+      try {
+        // Add the reported user to the "ReportedUsers" collection
+        await db.collection('ReportedUsers').doc(authorId).set({
+          reportedBy: user.uid,
+          reportedUserId: authorId,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+    
+        alert("User reported successfully.");
+      } catch (error) {
+        console.error("Error reporting user:", error);
+        alert("Failed to report user. Please try again.");
+      }
+    }
 
   </script>
 </body>
