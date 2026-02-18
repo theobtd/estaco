@@ -725,7 +725,7 @@
         <span data-i18n="Photo/Video">📷 Photo/Video</span>
       </label>
       <button id="visibility-button" data-i18n="Visibility"></button>
-      <button id="post-button" data-i18n="Post">Post</button>
+      <button id="post-button" data-i18n="Post"></button>
     </div>
     <input type="file" id="post-media" accept="image/*,video/*" style="display: none;">
     <div id="image-preview-container" style="display: none; margin: 10px 0;">
@@ -795,7 +795,7 @@
       <h3 data-i18n="Who can see your post?">Who can see your post?</h3>
       <p data-i18n="This post will be visible to:">This post will be visible to:</p>
       <ul id="friends-list" style="list-style: none; padding: 0;"></ul>
-      <button id="close-visibility-modal" data-i18n="Close">Close</button>
+      <button id="close-visibility-modal" data-i18n="Close"></button>
     </div>
   </div>
 
@@ -1686,6 +1686,7 @@
           continue; // Skip if already rendered
         }
         feed.insertAdjacentHTML('beforeend', postHTML);
+        updatePageLanguage(userLanguage);
       }
       setupIntersectionObserver();
     }
@@ -3339,6 +3340,11 @@
 
     // Call updatePageLanguage on page load with the default language
     updatePageLanguage(userLanguage);
+
+    // Call updatePageLanguage after the DOM is loaded
+    window.addEventListener('DOMContentLoaded', () => {
+      updatePageLanguage(userLanguage);
+    });
 
   </script>
 </body>
