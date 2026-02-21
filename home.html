@@ -734,14 +734,17 @@
       font-size: 12px;
     }
     #visibility-button {
+      display: inline-flex;
+      align-items: center;
       padding: 10px 15px;
+      background: var(--estaco-surface);
       color: var(--estaco-text);
+      border: none;
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
       margin-right: 10px;
-      min-width: 80px; /* Ensures the button doesn't collapse */
-      text-align: center;
+      transition: background-color 0.2s;
     }
     #close-visibility-modal {
       margin-top: 10px;
