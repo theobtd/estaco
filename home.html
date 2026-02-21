@@ -745,7 +745,7 @@
       <label for="post-media" id="post-media-label">
         <span data-i18n="Photo/Video">📷 Photo/Video</span>
       </label>
-      <button id="visibility-button" data-i18n="Visibility">Visibility</button>
+      <button id="visibility-button" data-i18n="Visibility">Visibility: all friends</button>
       <button id="post-button" data-i18n="Post"></button>
     </div>
     <input type="file" id="post-media" accept="image/*,video/*" style="display: none;">
@@ -976,6 +976,9 @@
         "You must be logged in to report a user.": "사용자를 신고하려면 로그인해야 합니다.",
       }
     };
+
+    // Set the default button text immediately
+    document.getElementById('visibility-button').textContent = "Visibility: all friends";
     
     // Function to update the page language
     function updatePageLanguage(language) {
@@ -986,6 +989,10 @@
           element.textContent = lang[key];
         }
       });
+      // Special case for the visibility button
+      document.getElementById('visibility-button').textContent = isVisibilityAll
+        ? "Visibility: all friends"
+        : "Visibility: limited";
       // Update placeholders here
       document.getElementById('post-content').setAttribute('data-placeholder', lang["How's life treating ya?"]);
       document.querySelectorAll('.comment-input').forEach(input => {
