@@ -702,6 +702,18 @@
       cursor: pointer;
       font-size: 12px;
     }
+    #visibility-button {
+      padding: 10px 15px;
+      background-color: var(--estaco-surface);
+      color: var(--estaco-text);
+      border: 1px solid var(--estaco-border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+      min-width: 80px; /* Ensures the button doesn't collapse */
+      text-align: center;
+    }
 
   </style>
 </head>
@@ -733,7 +745,7 @@
       <label for="post-media" id="post-media-label">
         <span data-i18n="Photo/Video">📷 Photo/Video</span>
       </label>
-      <button id="visibility-button" data-i18n="Visibility"></button>
+      <button id="visibility-button" data-i18n="Visibility">Visibility</button>
       <button id="post-button" data-i18n="Post"></button>
     </div>
     <input type="file" id="post-media" accept="image/*,video/*" style="display: none;">
