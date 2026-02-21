@@ -38,7 +38,7 @@
       margin: 0 auto;   /* Center the container */
       width: 100%;      /* Ensure it takes full width on mobile */
       box-sizing: border-box;
-      padding: 0 10px;  /* Optional: Add some padding for smaller screens */
+      padding: 0 15px;  /* Optional: Add some padding for smaller screens */
     }
     
     /* Update the #feed selector */
@@ -53,11 +53,10 @@
       border: 1px solid var(--estaco-border);
       border-radius: 5px;
       margin-bottom: 10px;
-      margin-left: 0;
-      margin-right: 0;
       background: var(--estaco-background);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       width: 100%; /* Ensure posts take full width of the container */
+      box-sizing: border-box;
     }
     #post-form {
       margin-bottom: 20px;
@@ -66,6 +65,7 @@
       border-radius: 8px;
       background-color: #ffffff;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      box-sizing: border-box;
     }
     #post-photo {
       width: 95%;
@@ -91,6 +91,9 @@
     html, body {
       overflow-x: hidden;
       width: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box; /* Add this */
     }
     #post-media-label {
       display: inline-flex;
@@ -131,10 +134,9 @@
       border: 1px solid var(--estaco-border);
       border-radius: 5px;
       margin-bottom: 10px;
-      margin-left: 0;
-      margin-right: 0;
       background: var(--estaco-background);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      box-sizing: border-box;
     }
     #error-message {
       color: red;
