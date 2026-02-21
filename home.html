@@ -31,6 +31,32 @@
         padding-bottom: 60px;
         padding-top: 60px;
     }
+    /* Add this to your existing CSS */
+    .feed-container {
+      max-width: 600px; /* Adjust this value as needed */
+      margin: 0 auto;   /* Center the container */
+      width: 100%;      /* Ensure it takes full width on mobile */
+      padding: 0 10px;  /* Optional: Add some padding for smaller screens */
+    }
+    
+    /* Update the #feed selector */
+    #feed {
+      margin-top: 20px;
+      width: 100%; /* Ensure it takes full width of the container */
+    }
+    
+    /* Update the .post selector */
+    .post {
+      padding: 10px;
+      border: 1px solid var(--estaco-border);
+      border-radius: 5px;
+      margin-bottom: 10px;
+      margin-left: 0;
+      margin-right: 0;
+      background: var(--estaco-background);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      width: 100%; /* Ensure posts take full width of the container */
+    }
     #post-form {
       margin-bottom: 20px;
       padding: 15px;
@@ -788,8 +814,10 @@
     </div>
   </div>
   
-  <div id="feed">
-    <h3 data-i18n="Your Feed">Your Feed</h3>
+  <div class="feed-container">
+    <div id="feed">
+      <h3 data-i18n="Your Feed">Your Feed</h3>
+    </div>
   </div>
   
   <div id="bottom-nav-bar">
