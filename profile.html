@@ -1137,22 +1137,10 @@
           });
         }
 
-        const downloadAppButton = document.getElementById('download-app-button');
         const installGuide = document.getElementById('install-guide');
-        
-        downloadAppButton.addEventListener('click', () => {
-          if (installGuide.style.display === 'none') {
-            installGuide.style.display = 'block';
-            downloadAppButton.textContent = translations[userLanguage]["Hide Guide"];
-          } else {
-            installGuide.style.display = 'none';
-            downloadAppButton.textContent = translations[userLanguage]["Download the App"];
-          }
-        });
 
         const translations = {
           English: {
-            "Download the App": "Download the App",
             "How to Install the App": "How to Install the App",
             "Android": "Android:",
             "Android step 1": "Tap the three dots (⋮) in the top-right corner of your browser.",
@@ -1203,7 +1191,6 @@
               // ... rest of your translations
           },
           French: {
-            "Download the App": "Télécharger l'application",
             "How to Install the App": "Comment installer l'application",
             "Android": "Android :",
             "Android step 1": "Appuyez sur les trois points (⋮) dans le coin supérieur droit de votre navigateur.",
@@ -1254,7 +1241,6 @@
               // ... rest of your translations
           },
           Korean: {
-            "Download the App": "앱 다운로드",
             "How to Install the App": "앱 설치 방법",
             "Android": "안드로이드:",
             "Android step 1": "브라우저 오른쪽 상단 모서리에 있는 세 점(⋮)을 탭하세요.",
