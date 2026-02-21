@@ -188,38 +188,6 @@
     <p id="error-message"></p>
   </div>
 
-  <div id="download-app-section" style="margin-top: 30px; text-align: center;">
-    <button id="download-app-button" style="
-      background-color: var(--estaco-accent);
-      color: var(--estaco-text);
-      border: none;
-      border-radius: 8px;
-      padding: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.3s;
-      width: 100%;
-    " data-i18n="Download the App">
-      Download the App
-    </button>
-    <div id="install-guide" style="display: none; margin-top: 20px; text-align: left; background-color: var(--estaco-surface); padding: 20px; border-radius: 12px;">
-      <h3 style="color: var(--estaco-primary);" data-i18n="How to Install the App">How to Install the App</h3>
-      <p><strong data-i18n="Android">Android:</strong></p>
-      <ol>
-        <li data-i18n="Android step 1">Tap the three dots (⋮)> in the top-right corner of your browser.</li>
-        <li data-i18n="Android step 2">Select "Add to Home screen".</li>
-        <li data-i18n="Android step 3">Tap "Add" to confirm.</li>
-      </ol>
-      <p><strong data-i18n="iPhone (iOS)">iPhone (iOS):</strong></p>
-      <ol>
-        <li data-i18n="iPhone step 1">Tap the Share button (↑) at the bottom of your screen.</li>
-        <li data-i18n="iPhone step 2">Scroll down and select "Add to Home Screen".</li>
-        <li data-i18n="iPhone step 3">Tap "Add" to confirm.</li>
-      </ol>
-      <p style="font-size: 14px; color: var(--estaco-text-light);" data-i18n="App installed message">The app will now appear on your home screen like a normal app!</p>
-    </div>
-  </div>
-
   <div style="
     position: fixed;
     top: 10px;
@@ -414,18 +382,7 @@
       });
     }
 
-    const downloadAppButton = document.getElementById('download-app-button');
     const installGuide = document.getElementById('install-guide');
-    
-    downloadAppButton.addEventListener('click', () => {
-      if (installGuide.style.display === 'none') {
-        installGuide.style.display = 'block';
-        downloadAppButton.textContent = translations[userLanguage]["Hide Guide"];
-      } else {
-        installGuide.style.display = 'none';
-        downloadAppButton.textContent = translations[userLanguage]["Download the App"];
-      }
-    });
 
     let userLanguage = "English"; // Define globally
 
@@ -441,7 +398,6 @@
         "Password": "Password",
         "Confirm Password": "Confirm Password",
         "Sign Up": "Sign Up",
-        "Download the App": "Download the App",
         "How to Install the App": "How to Install the App",
         "Android": "Android:",
         "Android step 1": "Tap the <strong>three dots (⋮)</strong> in the top-right corner of your browser.",
@@ -473,7 +429,6 @@
         "Password": "Mot de passe",
         "Confirm Password": "Confirmer le mot de passe",
         "Sign Up": "S'inscrire",
-        "Download the App": "Télécharger l'application",
         "How to Install the App": "Comment installer l'application",
         "Android": "Android :",
         "Android step 1": "Appuyez sur les <strong>trois points (⋮)</strong> dans le coin supérieur droit de votre navigateur.",
@@ -505,7 +460,6 @@
         "Password": "비밀번호",
         "Confirm Password": "비밀번호 확인",
         "Sign Up": "가입하기",
-        "Download the App": "앱 다운로드",
         "How to Install the App": "앱 설치 방법",
         "Android": "안드로이드:",
         "Android step 1": "<strong>세 점(⋮)</strong>을 브라우저 오른쪽 상단 모서리에 탭하세요.",
