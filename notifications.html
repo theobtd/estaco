@@ -19,6 +19,20 @@
       --estaco-error: #F44336;
       --estaco-success: #4CAF50;
     }
+    html, body {
+      overflow-x: hidden;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .notifications-container {
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0 15px;
+    }
     body {
       font-family: 'Inter', sans-serif;
       margin: 0;
@@ -48,7 +62,9 @@
       font-weight: 500;
     }
     #notifications {
-      padding: 20px;
+      padding: 20px 0; /* Remove horizontal padding */
+      width: 100%;
+      box-sizing: border-box;
     }
     .notification {
       padding: 15px;
@@ -56,6 +72,8 @@
       border-radius: 8px;
       margin-bottom: 10px;
       background: var(--estaco-surface);
+      width: 100%;
+      box-sizing: border-box;
     }
     .notification-header {
       display: flex;
@@ -129,10 +147,12 @@
     <h1 data-i18n="Notifications">Notifications</h1>
   </div>
 
-  <div id="notifications">
-    <h3 data-i18n="Your Notifications">Your Notifications</h3>
-    <div id="notifications-list"></div>
-    <button id="load-more" style="display: none;" data-i18n="Load more">Load more</button>
+  <div class="notifications-container">
+    <div id="notifications">
+      <h3 data-i18n="Your Notifications">Your Notifications</h3>
+      <div id="notifications-list"></div>
+      <button id="load-more" style="display: none;" data-i18n="Load more">Load more</button>
+    </div>
   </div>
 
   <div id="bottom-nav-bar">
