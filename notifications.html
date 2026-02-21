@@ -85,6 +85,13 @@
       height: 30px;
       border-radius: 50%;
       margin-right: 10px;
+      background-color: var(--estaco-primary-light);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
     }
     .notification-content {
       margin-left: 40px;
@@ -369,7 +376,9 @@
             return `
               <div class="notification">
                 <div class="notification-header">
-                  <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
+                  <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
+                    ${notification.reactorName.charAt(0).toUpperCase()}
+                  </div>
                   <strong>${notification.reactorName}</strong>
                   <span style="margin-left: 5px;">
                     ${notification.reaction === 'like' ? translations[userLanguage]["Liked"] :
@@ -390,7 +399,9 @@
             return `
               <div class="notification">
                 <div class="notification-header">
-                  <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
+                  <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
+                    ${notification.reactorName.charAt(0).toUpperCase()}
+                  </div>
                   <strong>${notification.reactorName}</strong>
                   <span style="margin-left: 5px;">${translations[userLanguage]["commented on your post"]}</span>
                 </div>
@@ -409,7 +420,9 @@
             return `
               <div class="notification">
                 <div class="notification-header">
-                  <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
+                  <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
+                    ${notification.reactorName.charAt(0).toUpperCase()}
+                  </div>
                   <strong>${notification.reactorName}</strong>
                   <span style="margin-left: 5px;">${translations[userLanguage]["tagged you in a post"]}</span>
                 </div>
@@ -425,7 +438,9 @@
             return `
               <div class="notification">
                 <div class="notification-header">
-                  <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
+                  <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
+                    ${notification.reactorName.charAt(0).toUpperCase()}
+                  </div>
                   <strong>${notification.reactorName}</strong>
                   <span style="margin-left: 5px;">${translations[userLanguage]["tagged you in a comment"]}</span>
                 </div>
@@ -441,7 +456,9 @@
             return `
               <div class="notification">
                 <div class="notification-header">
-                  <div class="notification-author-picture" style="background: #ddd; display: flex; align-items: center; justify-content: center; color: #666;">?</div>
+                  <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
+                    ${notification.reactorName.charAt(0).toUpperCase()}
+                  </div>
                   <strong>${notification.reactorName}</strong>
                   <span style="margin-left: 5px;">${translations[userLanguage]["sent you a friend request"]}</span>
                 </div>
@@ -482,6 +499,12 @@
         }
       });
     });
+
+    function getColorFromName(name) {
+      const colors = ['#8B8E6F', '#E2725B', '#A7A98C', '#FFD700', '#6B8E23'];
+      const index = name.charCodeAt(0) % colors.length;
+      return colors[index];
+    }
 
     // Call updatePageLanguage on page load with the default language
     updatePageLanguage(userLanguage);
