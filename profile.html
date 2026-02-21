@@ -32,6 +32,22 @@
           color: var(--estaco-text);
           line-height: 1.5;
         }
+
+        html, body {
+          overflow-x: hidden;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        .profile-container {
+          max-width: 600px;
+          margin: 0 auto;
+          width: 100%;
+          box-sizing: border-box;
+          padding: 0 15px;
+        }
     
         #top-nav-bar {
           position: fixed;
@@ -67,6 +83,8 @@
           align-items: center;
           text-align: center;
           border: 1px solid var(--estaco-border);
+          width: 100%;
+          box-sizing: border-box;
         }
     
         .profile-picture-container {
@@ -154,10 +172,14 @@
           border-radius: 12px;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
           border: 1px solid var(--estaco-border);
+          width: 100%;
+          box-sizing: border-box;
         }
     
         .section {
           margin-bottom: 24px;
+          width: 100%;
+          box-sizing: border-box;
         }
     
         .section h3 {
@@ -419,24 +441,25 @@
               <p style="font-size: 14px; color: var(--estaco-text-light);" data-i18n="App installed message">The app will now appear on your home screen like a normal app!</p>
             </div>
         </div>
-
     
-      <!-- Profile Header -->
-      <div class="profile-header">
-        <div class="profile-picture-container">
-          <div id="profile-picture-placeholder" class="profile-picture-placeholder"></div>
-          <img id="profile-picture" src="" alt="Profile Picture" class="profile-picture">
-        </div>
-        <div class="profile-details">
-          <h2 id="user-name">User Name</h2>
-          <p id="user-email">user@example.com</p>
-        </div>
-        <div class="profile-actions">
-          <button id="update-profile-pic-button" class="button" data-i18n="Update Profile Picture">Update Profile Picture</button>
-          <button id="change-password-button" class="button" data-i18n="Change Password">Change Password</button>
-          <button id="logout-button" class="button" data-i18n="Log Out">Log Out</button>
-        </div>
-      </div>
+
+    <div class="profile-container">
+          <!-- Profile Header -->
+          <div class="profile-header">
+            <div class="profile-picture-container">
+              <div id="profile-picture-placeholder" class="profile-picture-placeholder"></div>
+              <img id="profile-picture" src="" alt="Profile Picture" class="profile-picture">
+            </div>
+            <div class="profile-details">
+              <h2 id="user-name">User Name</h2>
+              <p id="user-email">user@example.com</p>
+            </div>
+            <div class="profile-actions">
+              <button id="update-profile-pic-button" class="button" data-i18n="Update Profile Picture">Update Profile Picture</button>
+              <button id="change-password-button" class="button" data-i18n="Change Password">Change Password</button>
+              <button id="logout-button" class="button" data-i18n="Log Out">Log Out</button>
+            </div>
+          </div>
     
         <div class="section">
           <h3 data-i18n="Platform Rules">Platform Rules</h3>
@@ -469,6 +492,7 @@
           <h3 data-i18n="Current Friends">Current Friends</h3>
           <div id="current-friends" class="friend-list"></div>
         </div>
+    </div>
     
       <!-- Cropper Modal -->
         <div id="cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
