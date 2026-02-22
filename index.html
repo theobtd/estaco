@@ -236,6 +236,16 @@
     const db = firebase.firestore();
     const functions = firebase.functions();
 
+    // Set persistence to 'local' (default) or 'session' or 'none'
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .then(() => {
+        // Existing initialization code
+        return firebase.auth().signInWithEmailAndPassword(email, password);
+      })
+      .catch((error) => {
+        console.error("Error setting persistence:", error);
+      });
+
     // Rest of your JavaScript logic remains unchanged
     const showSignup = document.getElementById('show-signup');
     const showSignin = document.getElementById('show-signin');
