@@ -890,6 +890,16 @@
     const storage = firebase.storage();
     const functions = firebase.functions();
 
+    // Set persistence to 'local' (default) or 'session' or 'none'
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .then(() => {
+        // Existing initialization code
+        return firebase.auth().signInWithEmailAndPassword(email, password);
+      })
+      .catch((error) => {
+        console.error("Error setting persistence:", error);
+      });
+
     // DOM elements
     const postContent = document.getElementById('post-content');
     const postMedia = document.getElementById('post-media');
