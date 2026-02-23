@@ -298,6 +298,10 @@
       const acceptTerms = document.getElementById('accept-terms');
     
       // Validate inputs
+      if (!name || !email || !emailConfirm || !password || !passwordConfirm) {
+        errorMessage.textContent = translations[userLanguage]["All fields are required."];
+        return;
+      }
       if (email !== emailConfirm) {
         errorMessage.textContent = translations[userLanguage]["Emails do not match."];
         return;
