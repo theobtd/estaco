@@ -1944,25 +1944,32 @@
           <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
         `;
     
-        let postHTML = `
+        const postHTML = `
           <div class="post" data-post-id="${post.id}" data-author-id="${post.authorId}">
-            <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="post-header" style="display: flex; justify-content: space-between; align-items: center; position: relative;">
               <div style="display: flex; align-items: center;">
                 ${profilePictureHTML}
                 <h4 style="margin: 0;">${post.authorName}</h4>
+                ${!isAuthor ? `<button class="post-options-button" data-post-id="${post.id}">...</button>` : ''}
               </div>
               <div style="display: flex; align-items: center;">
                 <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
                 ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
-                ${!isAuthor ? `<button class="report-post-button" data-post-id="${post.id}" data-author-id="${post.authorId}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; margin-left: 5px;">Report</button>` : ''}
               </div>
+              ${!isAuthor ? `
+                <div class="post-options-dropdown" data-post-id="${post.id}">
+                  <button class="report-option" data-post-id="${post.id}" data-author-id="${post.authorId}">Report</button>
+                  <hr>
+                  <button class="block-option" data-post-id="${post.id}" data-author-id="${post.authorId}">Block</button>
+                </div>
+              ` : ''}
             </div>
             <p>${processedContent}</p>
             ${mediaHTML}
             <div class="reactions">
-              <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
-              <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
-              <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
+              <button class="reaction-button" data-post-id="${post.id}" data-reaction="like">👍</button>
+              <button class="reaction-button" data-post-id="${post.id}" data-reaction="love">❤️</button>
+              <button class="reaction-button" data-post-id="${post.id}" data-reaction="laugh">😂</button>
             </div>
             <div class="comments-section">
               <div class="comment-form">
@@ -1974,11 +1981,6 @@
                 ></div>
                 <button class="comment-button" data-post-id="${post.id}">Post</button>
               </div>
-              ${seeCommentsButtonHTML}
-              <div class="comments-loading" id="comments-loading-${post.id}">
-                <div class="spinner"></div>
-              </div>
-              <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
             </div>
           </div>
         `;
