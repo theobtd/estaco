@@ -2710,6 +2710,9 @@
         // Add the blocked user to the BlockedUsers subcollection
         await addBlockedUser(userId, friendUid);
     
+        // Add a record to the global BlockedUsers collection
+        await addGlobalBlockedUser(userId, friendUid);
+    
         // Force reload the feed
         forceReloadFeed();
     
@@ -3102,6 +3105,26 @@
             });
         }
     });
+
+    /**
+     * Adds a record to the global BlockedUsers collection.
+     * @param {string} blockerId - The UID of the user who is blocking.
+     * @param {string} blockedId - The UID of the user being blocked.
+     */
+    async function addGlobalBlockedUser(blockerId, blockedId) {
+      try {
+        const blockedUserRef = db.collection('BlockedUsers').doc();
+        await blockedUserRef.set({
+          blockerId: blockerId,
+          blockedId: blockedId,
+          blockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`Successfully added block record to global BlockedUsers collection: ${blockerId} blocked ${blockedId}.`);
+      } catch (error) {
+        console.error("Error adding global blocked user:", error);
+        throw error;
+      }
+    }
 
     /**
      * Adds a user to the BlockedUsers subcollection of the current user.
