@@ -773,6 +773,35 @@
     .post-options-button:hover {
       background-color: rgba(0, 0, 0, 0.05);
     }
+    .post-options-dropdown {
+      display: none;
+      position: absolute;
+      background: white;
+      border: 1px solid var(--estaco-border);
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      min-width: 120px;
+    }
+    
+    .post-options-dropdown.show {
+      display: block;
+    }
+    
+    .post-options-dropdown button {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--estaco-text);
+    }
+    
+    .post-options-dropdown button:hover {
+      background-color: var(--estaco-surface);
+    }
 
   </style>
 </head>
@@ -2789,8 +2818,23 @@
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('post-options-button')) {
         const postId = e.target.getAttribute('data-post-id');
-        // Add your logic here (e.g., open a dropdown menu)
-        console.log("Options button clicked for post:", postId);
+        const dropdown = document.createElement('div');
+        dropdown.className = 'post-options-dropdown';
+        dropdown.innerHTML = `
+          <button data-action="copy-link" data-post-id="${postId}">Copy Link</button>
+          <button data-action="mute-user" data-post-id="${postId}">Mute User</button>
+        `;
+        e.target.appendChild(dropdown);
+        dropdown.classList.add('show');
+    
+        // Close dropdown when clicking outside
+        setTimeout(() => {
+          document.addEventListener('click', (closeEvent) => {
+            if (!closeEvent.target.closest('.post-options-button')) {
+              dropdown.remove();
+            }
+          }, { once: true });
+        }, 0);
       }
     });
 
