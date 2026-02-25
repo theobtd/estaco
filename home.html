@@ -3544,6 +3544,11 @@
         });
     
         alert(translations[userLanguage]["User reported successfully."]);
+    
+        // Close the dropdown menu
+        const dropdowns = document.querySelectorAll('.post-options-dropdown.show');
+        dropdowns.forEach(dropdown => dropdown.remove());
+    
       } catch (error) {
         console.error("Error reporting user:", error);
         alert(translations[userLanguage]["Failed to report user. Please try again."]);
