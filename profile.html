@@ -682,28 +682,57 @@
                 document.getElementById('loader-modal').style.display = 'none';
                 return;
             }
-            db.collection('friendRequests').add({
-                from: fromId,
-                to: toId,
-                fromName: fromName,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                alert(translations[userLanguage]["Friend request sent!"]);
-                // Add notification for the target user
-                addFriendRequestNotification(
-                  toId, // Target user's UID
-                  fromId, // Requester's UID
-                  fromName, // Requester's name
-                  firebase.firestore.FieldValue.serverTimestamp()
-                );
-                // Hide loader
-                document.getElementById('loader-modal').style.display = 'none';
-            }).catch(error => {
-                console.error('Error sending friend request: ', error);
-                alert(translations[userLanguage]["Failed to send friend request."]);
-                // Hide loader
-                document.getElementById('loader-modal').style.display = 'none';
+        
+            // Check if the sender is blocked by the recipient
+            isUserBlocked(toId, fromId).then((isBlocked) => {
+                if (isBlocked) {
+                    // Silently fail: show success to the sender, but do not send the request
+                    alert(translations[userLanguage]["Friend request sent!"]);
+                    // Hide loader
+                    document.getElementById('loader-modal').style.display = 'none';
+                    return;
+                } else {
+                    // Proceed with sending the request
+                    db.collection('friendRequests').add({
+                        from: fromId,
+                        to: toId,
+                        fromName: fromName,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }).then(() => {
+                        alert(translations[userLanguage]["Friend request sent!"]);
+                        // Add notification for the target user
+                        addFriendRequestNotification(
+                          toId, // Target user's UID
+                          fromId, // Requester's UID
+                          fromName, // Requester's name
+                          firebase.firestore.FieldValue.serverTimestamp()
+                        );
+                        // Hide loader
+                        document.getElementById('loader-modal').style.display = 'none';
+                    }).catch(error => {
+                        console.error('Error sending friend request: ', error);
+                        alert(translations[userLanguage]["Failed to send friend request."]);
+                        // Hide loader
+                        document.getElementById('loader-modal').style.display = 'none';
+                    });
+                }
             });
+        }
+
+        /**
+         * Checks if a user is blocked by another user.
+         * @param {string} blockerId - The UID of the user who may have blocked.
+         * @param {string} blockedId - The UID of the user to check if blocked.
+         * @returns {Promise<boolean>} - True if blocked, false otherwise.
+         */
+        async function isUserBlocked(blockerId, blockedId) {
+          try {
+            const blockedUserDoc = await db.collection(`users/${blockerId}/BlockedUsers`).doc(blockedId).get();
+            return blockedUserDoc.exists;
+          } catch (error) {
+            console.error("Error checking if user is blocked:", error);
+            return false;
+          }
         }
 
         /**
