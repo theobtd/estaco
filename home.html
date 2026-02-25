@@ -900,6 +900,10 @@
     </div>
   </div>
 
+  <div id="loader-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); z-index: 2000; justify-content: center; align-items: center;">
+    <div class="spinner"></div>
+  </div>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
@@ -992,6 +996,9 @@
         "User reported successfully.": "User reported successfully.",
         "Failed to report user. Please try again.": "Failed to report user. Please try again.",
         "You must be logged in to report a user.": "You must be logged in to report a user.",
+        "Are you sure you want to remove this friend?": "Are you sure you want to remove this friend?",
+        "Friend removed successfully.": "Friend removed successfully.",
+        "Failed to remove friend.": "Failed to remove friend.",
       },
       French: {
         "Create a Post": "Créer une publication",
@@ -1035,6 +1042,9 @@
         "User reported successfully.": "Utilisateur signalé avec succès.",
         "Failed to report user. Please try again.": "Échec du signalement. Veuillez réessayer.",
         "You must be logged in to report a user.": "Vous devez être connecté pour signaler un utilisateur.",
+        "Are you sure you want to remove this friend?": "Êtes-vous sûr de vouloir supprimer cet ami ?",
+        "Friend removed successfully.": "Ami supprimé avec succès.",
+        "Failed to remove friend.": "Échec de la suppression de l'ami.",
       },
       Korean: {
         "Create a Post": "게시물 작성",
@@ -1078,6 +1088,9 @@
         "User reported successfully.": "사용자 신고가 완료되었습니다.",
         "Failed to report user. Please try again.": "사용자 신고에 실패했습니다. 다시 시도해 주세요.",
         "You must be logged in to report a user.": "사용자를 신고하려면 로그인해야 합니다.",
+        "Are you sure you want to remove this friend?": "이 친구를 삭제하시겠습니까?",
+        "Friend removed successfully.": "친구가 성공적으로 삭제되었습니다.",
+        "Failed to remove friend.": "친구 삭제에 실패했습니다.",
       }
     };
 
@@ -2664,55 +2677,47 @@
     }
 
     async function removeFriend(userId, friendUid) {
-            const confirmRemove = confirm(translations[userLanguage]["Are you sure you want to remove this friend?"]);
-            if (!confirmRemove) return;
-        
-            // Show loader
-            document.getElementById('loader-modal').style.display = 'flex';
-        
-            try {
-                // Fetch user and friend names for updates
-                const [userDoc, friendDoc] = await Promise.all([
-                    db.collection('users').doc(userId).get(),
-                    db.collection('users').doc(friendUid).get()
-                ]);
-                const userName = userDoc.data().name;
-                const friendName = friendDoc.data().name;
-        
-                // Remove posts from both users' feeds
-                await removePostsFromUserFeed(userId, friendUid);
-                await removePostsFromUserFeed(friendUid, userId);
-        
-                // Remove friend relationship
-                const userFriendsUpdate = db.collection('friends').doc(userId).update({
-                    friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName }),
-                    friendsList: firebase.firestore.FieldValue.arrayRemove(friendUid)
-                });
-        
-                const friendFriendsUpdate = db.collection('friends').doc(friendUid).update({
-                    friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName }),
-                    friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
-                });
-        
-                await Promise.all([userFriendsUpdate, friendFriendsUpdate]);
-        
-                // Reload the current user's friends list
-                loadCurrentFriends(userId);
-        
-                // If the current page is home.html, force a feed refresh
-                if (window.location.pathname.endsWith('home.html')) {
-                    // Reset feed state and reload
-                    if (typeof forceReloadFeed === 'function') {
-                        forceReloadFeed();
-                    }
-                }
-            } catch (error) {
-                console.error("Error removing friend:", error);
-                alert(translations[userLanguage]["Failed to remove friend."]);
-            } finally {
-                // Hide loader
-                document.getElementById('loader-modal').style.display = 'none';
-            }
+      const confirmRemove = confirm(translations[userLanguage]["Are you sure you want to remove this friend?"]);
+      if (!confirmRemove) return;
+    
+      // Show loader
+      document.getElementById('loader-modal').style.display = 'flex';
+    
+      try {
+        // Fetch user and friend names for updates
+        const [userDoc, friendDoc] = await Promise.all([
+          db.collection('users').doc(userId).get(),
+          db.collection('users').doc(friendUid).get()
+        ]);
+        const userName = userDoc.data().name;
+        const friendName = friendDoc.data().name;
+    
+        // Remove posts from both users' feeds
+        await removePostsFromUserFeed(userId, friendUid);
+        await removePostsFromUserFeed(friendUid, userId);
+    
+        // Remove friend relationship
+        await db.collection('friends').doc(userId).update({
+          friends: firebase.firestore.FieldValue.arrayRemove({ uid: friendUid, name: friendName }),
+          friendsList: firebase.firestore.FieldValue.arrayRemove(friendUid)
+        });
+    
+        await db.collection('friends').doc(friendUid).update({
+          friends: firebase.firestore.FieldValue.arrayRemove({ uid: userId, name: userName }),
+          friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
+        });
+    
+        // Force reload the feed
+        forceReloadFeed();
+    
+        alert(translations[userLanguage]["Friend removed successfully."]);
+      } catch (error) {
+        console.error("Error removing friend:", error);
+        alert(translations[userLanguage]["Failed to remove friend."]);
+      } finally {
+        // Hide loader
+        document.getElementById('loader-modal').style.display = 'none';
+      }
     }
 
     async function getUidByUsername(username) {
