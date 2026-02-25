@@ -759,6 +759,27 @@
       width: 100%;
     }
 
+    .post-options-button {
+      background: none;
+      border: none;
+      color: var(--estaco-text-light);
+      font-size: 18px;
+      cursor: pointer;
+      margin-left: 5px;
+      padding: 0 5px;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s;
+    }
+    
+    .post-options-button:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
   </style>
 </head>
 <body>
@@ -1114,23 +1135,25 @@
       }
     
       const postHTML = `
-        <div class="post" data-post-id="${post.id}">
+        <div class="post" data-post-id="${post.id}" data-author-id="${post.authorId}">
           <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center;">
               ${profilePictureHTML}
               <h4 style="margin: 0;">${post.authorName}</h4>
+              ${!isAuthor ? `<button class="post-options-button">...</button>` : ''}
             </div>
             <div style="display: flex; align-items: center;">
               <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
-              <button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>
+              ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
+              ${!isAuthor ? `<button class="report-post-button" data-post-id="${post.id}" data-author-id="${post.authorId}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; margin-left: 5px;">Report</button>` : ''}
             </div>
           </div>
           <p>${processedContent}</p>
           ${mediaHTML}
           <div class="reactions">
-            <button class="reaction-button" data-post-id="${post.id}" data-reaction="like">👍</button>
-            <button class="reaction-button" data-post-id="${post.id}" data-reaction="love">❤️</button>
-            <button class="reaction-button" data-post-id="${post.id}" data-reaction="laugh">😂</button>
+            <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
+            <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
+            <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
           </div>
           <div class="comments-section">
             <div class="comment-form">
@@ -1142,6 +1165,11 @@
               ></div>
               <button class="comment-button" data-post-id="${post.id}">Post</button>
             </div>
+            ${seeCommentsButtonHTML}
+            <div class="comments-loading" id="comments-loading-${post.id}">
+              <div class="spinner"></div>
+            </div>
+            <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
           </div>
         </div>
       `;
