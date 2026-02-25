@@ -2808,11 +2808,12 @@
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('post-options-button')) {
         const postId = e.target.getAttribute('data-post-id');
+        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+        const authorId = postElement.getAttribute('data-author-id');
         const dropdown = document.createElement('div');
         dropdown.className = 'post-options-dropdown';
         dropdown.innerHTML = `
-          <button data-action="copy-link" data-post-id="${postId}">Copy Link</button>
-          <button data-action="mute-user" data-post-id="${postId}">Mute User</button>
+          <button data-action="report" data-post-id="${postId}" data-author-id="${authorId}">Report</button>
         `;
         e.target.appendChild(dropdown);
         dropdown.classList.add('show');
@@ -2825,6 +2826,13 @@
             }
           }, { once: true });
         }, 0);
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (e.target.getAttribute('data-action') === 'report') {
+        const authorId = e.target.getAttribute('data-author-id');
+        reportUser(authorId);
       }
     });
 
