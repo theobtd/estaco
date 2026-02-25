@@ -1905,7 +1905,8 @@
         const seeCommentsButtonHTML = `
           <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
         `;
-    
+
+        const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
         let postHTML = `
           <div class="post" data-post-id="${post.id}" data-author-id="${post.authorId}">
             <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
