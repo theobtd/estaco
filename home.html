@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+  <script src="utils.js"></script>
   <style>
     :root {
       --estaco-primary: #8B8E6F; /* Light olive */
@@ -2813,6 +2814,7 @@
         dropdown.className = 'post-options-dropdown';
         dropdown.innerHTML = `
           <button data-action="report" data-post-id="${postId}" data-author-id="${authorId}">Report</button>
+          <button data-action="block" data-post-id="${postId}" data-author-id="${authorId}">Block</button>
         `;
         e.target.appendChild(dropdown);
         dropdown.classList.add('show');
@@ -2832,6 +2834,19 @@
       if (e.target.getAttribute('data-action') === 'report') {
         const authorId = e.target.getAttribute('data-author-id');
         reportUser(authorId);
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (e.target.getAttribute('data-action') === 'block') {
+        const authorId = e.target.getAttribute('data-author-id');
+        const user = auth.currentUser;
+        if (user) {
+          removeFriend(user.uid, authorId);
+          // Close the dropdown
+          const dropdowns = document.querySelectorAll('.post-options-dropdown.show');
+          dropdowns.forEach(dropdown => dropdown.remove());
+        }
       }
     });
 
