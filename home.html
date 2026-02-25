@@ -1923,7 +1923,6 @@
             <div style="display: flex; align-items: center;">
               <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
               ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
-              ${!isAuthor ? `<button class="report-post-button" data-post-id="${post.id}" data-author-id="${post.authorId}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; margin-left: 5px;">Report</button>` : ''}
             </div>
           </div>
           <p>${processedContent}</p>
