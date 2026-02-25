@@ -2707,6 +2707,9 @@
           friendsList: firebase.firestore.FieldValue.arrayRemove(userId)
         });
     
+        // Add the blocked user to the BlockedUsers subcollection
+        await addBlockedUser(userId, friendUid);
+    
         // Force reload the feed
         forceReloadFeed();
     
@@ -3099,6 +3102,25 @@
             });
         }
     });
+
+    /**
+     * Adds a user to the BlockedUsers subcollection of the current user.
+     * @param {string} userId - The current user's UID.
+     * @param {string} blockedUserId - The UID of the user to block.
+     */
+    async function addBlockedUser(userId, blockedUserId) {
+      try {
+        const blockedUserRef = db.collection(`users/${userId}/BlockedUsers`).doc(blockedUserId);
+        await blockedUserRef.set({
+          blockedUserId: blockedUserId,
+          blockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`Successfully added ${blockedUserId} to BlockedUsers for ${userId}.`);
+      } catch (error) {
+        console.error("Error adding blocked user:", error);
+        throw error;
+      }
+    }
 
       /**
     * Removes all posts from a user's feed sub-collection that were authored by a specific user.
