@@ -739,48 +739,6 @@
             });
         }
 
-        // Delete Account
-        document.getElementById('delete-account-button').addEventListener('click', () => {
-          const user = auth.currentUser;
-          if (!user) return;
-        
-          const confirmDelete = confirm(
-            translations[userLanguage]["Are you sure you want to delete your account? All your posts will be removed from your friends' feeds."]
-          );
-          if (confirmDelete) {
-            deleteUserPostsFromFriendsFeeds(user.uid);
-          }
-        });
-
-        /**
-         * Removes all posts by the current user from the feed of each friend.
-         * @param {string} userId - The UID of the user whose posts should be removed.
-         */
-        async function deleteUserPostsFromFriendsFeeds(userId) {
-          try {
-            // Show loader
-            document.getElementById('loader-modal').style.display = 'flex';
-            document.getElementById('success-message').textContent = translations[userLanguage]["Deleting posts from friends' feeds..."];
-        
-            // Get the list of friends
-            const friendsDoc = await db.collection('friends').doc(userId).get();
-            const friends = friendsDoc.data()?.friends || [];
-        
-            // For each friend, remove the user's posts from their feed
-            for (const friend of friends) {
-              await removePostsFromUserFeed(friend.uid, userId);
-            }
-        
-            document.getElementById('success-message').textContent = translations[userLanguage]["Posts removed from friends' feeds."];
-          } catch (error) {
-            console.error("Error removing posts from friends' feeds:", error);
-            document.getElementById('error-message').textContent = translations[userLanguage]["Failed to remove posts from friends' feeds."];
-          } finally {
-            // Hide loader
-            document.getElementById('loader-modal').style.display = 'none';
-          }
-        }
-
         /**
          * Removes a user from the current user's BlockedUsers subcollection.
          * @param {string} userId - The current user's UID.
@@ -1379,10 +1337,6 @@
             "You cannot send a friend request to a user you have blocked.": "You cannot send a friend request to a user you have blocked.",
             "Failed to unblock user.": "Failed to unblock user.",
             "Delete Account": "Delete Account",
-            "Are you sure you want to delete your account? All your posts will be removed from your friends' feeds.": "Are you sure you want to delete your account? All your posts will be removed from your friends' feeds.",
-            "Deleting posts from friends' feeds...": "Deleting posts from friends' feeds...",
-            "Posts removed from friends' feeds.": "Posts removed from friends' feeds.",
-            "Failed to remove posts from friends' feeds.": "Failed to remove posts from friends' feeds.",
               // ... rest of your translations
           },
           French: {
@@ -1440,10 +1394,6 @@
             "You cannot send a friend request to a user you have blocked.": "Vous ne pouvez pas envoyer une demande d'ami à un utilisateur que vous avez bloqué.",
             "Failed to unblock user.": "Échec de la suppression du blocage de l'utilisateur.",
             "Delete Account": "Supprimer le compte",
-            "Are you sure you want to delete your account? All your posts will be removed from your friends' feeds.": "Êtes-vous sûr de vouloir supprimer votre compte ? Tous vos posts seront retirés des fils d'actualité de vos amis.",
-            "Deleting posts from friends' feeds...": "Suppression des posts des fils d'actualité de vos amis...",
-            "Posts removed from friends' feeds.": "Posts retirés des fils d'actualité de vos amis.",
-            "Failed to remove posts from friends' feeds.": "Échec de la suppression des posts des fils d'actualité de vos amis.",
               // ... rest of your translations
           },
           Korean: {
@@ -1501,10 +1451,6 @@
             "You cannot send a friend request to a user you have blocked.": "차단한 사용자에게 친구 요청을 보낼 수 없습니다.",
             "Failed to unblock user.": "사용자 차단 해제에 실패했습니다.",
             "Delete Account": "계정 삭제",
-            "Are you sure you want to delete your account? All your posts will be removed from your friends' feeds.": "정말 계정을 삭제하시겠습니까? 당신의 모든 게시물이 친구들의 피드에서 삭제됩니다.",
-            "Deleting posts from friends' feeds...": "친구들의 피드에서 게시물을 삭제하는 중...",
-            "Posts removed from friends' feeds.": "친구들의 피드에서 게시물이 삭제되었습니다.",
-            "Failed to remove posts from friends' feeds.": "친구들의 피드에서 게시물을 삭제하는 데 실패했습니다.",
               // ... rest of your translations
           }
         };
