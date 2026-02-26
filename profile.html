@@ -599,7 +599,7 @@
             if (friendName) {
                 const user = auth.currentUser;
                 if (!user) return;
-
+        
                 // Show loader
                 document.getElementById('loader-modal').style.display = 'flex';
         
@@ -609,6 +609,8 @@
                         const friends = doc.data()?.friends || [];
                         if (friends.length >= 15) {
                             alert(translations[userLanguage]["You have reached the maximum number of friends (15)."]);
+                            // Hide loader
+                            document.getElementById('loader-modal').style.display = 'none';
                             return;
                         }
         
@@ -639,31 +641,43 @@
                                                 return;
                                             }
         
-                                            // NEW: Check for existing pending request
-                                            db.collection('friendRequests')
-                                                .where('from', '==', user.uid)
-                                                .where('to', '==', friendUid)
-                                                .get()
-                                                .then((requestSnapshot) => {
-                                                    if (!requestSnapshot.empty) {
-                                                        alert(translations[userLanguage]["You already have a pending friend request to this user."]);
-                                                        // Hide loader
-                                                        document.getElementById('loader-modal').style.display = 'none';
-                                                        return;
-                                                    } else {
-                                                        sendRequest(user.uid, friendUid, userName);
-                                                        searchFriendInput.value = '';
-                                                    }
-                                                })
-                                                .catch(error => {
-                                                    console.error('Error checking for pending request: ', error);
-                                                    alert(translations[userLanguage]["An error occurred while checking for pending requests."]);
+                                            // NEW: Check if the current user has blocked the target
+                                            hasUserBlockedTarget(user.uid, friendUid).then((hasBlocked) => {
+                                                if (hasBlocked) {
+                                                    alert(translations[userLanguage]["You cannot send a friend request to a user you have blocked."]);
                                                     // Hide loader
                                                     document.getElementById('loader-modal').style.display = 'none';
-                                                });
+                                                    return;
+                                                } else {
+                                                    // NEW: Check for existing pending request
+                                                    db.collection('friendRequests')
+                                                        .where('from', '==', user.uid)
+                                                        .where('to', '==', friendUid)
+                                                        .get()
+                                                        .then((requestSnapshot) => {
+                                                            if (!requestSnapshot.empty) {
+                                                                alert(translations[userLanguage]["You already have a pending friend request to this user."]);
+                                                                // Hide loader
+                                                                document.getElementById('loader-modal').style.display = 'none';
+                                                                return;
+                                                            } else {
+                                                                sendRequest(user.uid, friendUid, userName);
+                                                                searchFriendInput.value = '';
+                                                            }
+                                                        })
+                                                        .catch(error => {
+                                                            console.error('Error checking for pending request: ', error);
+                                                            alert(translations[userLanguage]["An error occurred while checking for pending requests."]);
+                                                            // Hide loader
+                                                            document.getElementById('loader-modal').style.display = 'none';
+                                                        });
+                                                }
+                                            });
         
                                         } else {
                                             alert(translations[userLanguage]["User not found"]);
+                                            // Hide loader
+                                            document.getElementById('loader-modal').style.display = 'none';
                                         }
                                     })
                                     .catch(error => {
@@ -722,6 +736,22 @@
                     });
                 }
             });
+        }
+
+        /**
+         * Checks if the current user has blocked the target user.
+         * @param {string} userId - The current user's UID.
+         * @param {string} targetId - The target user's UID.
+         * @returns {Promise<boolean>} - True if the current user has blocked the target, false otherwise.
+         */
+        async function hasUserBlockedTarget(userId, targetId) {
+          try {
+            const blockedUserDoc = await db.collection(`users/${userId}/BlockedUsers`).doc(targetId).get();
+            return blockedUserDoc.exists;
+          } catch (error) {
+            console.error("Error checking if user has blocked target:", error);
+            return false;
+          }
         }
 
         /**
@@ -1269,6 +1299,7 @@
             "Blocked Users": "Blocked Users",
             "You don't have any blocked users.": "You don't have any blocked users.",
             "Error loading blocked users.": "Error loading blocked users.",
+            "You cannot send a friend request to a user you have blocked.": "You cannot send a friend request to a user you have blocked.",
               // ... rest of your translations
           },
           French: {
@@ -1323,6 +1354,7 @@
             "Blocked Users": "Utilisateurs bloqués",
             "You don't have any blocked users.": "Vous n'avez aucun utilisateur bloqué.",
             "Error loading blocked users.": "Erreur lors du chargement des utilisateurs bloqués.",
+            "You cannot send a friend request to a user you have blocked.": "Vous ne pouvez pas envoyer une demande d'ami à un utilisateur que vous avez bloqué.",
               // ... rest of your translations
           },
           Korean: {
@@ -1377,6 +1409,7 @@
             "Blocked Users": "차단된 사용자",
             "You don't have any blocked users.": "차단된 사용자가 없습니다.",
             "Error loading blocked users.": "차단된 사용자 목록을 불러오는 중 오류가 발생했습니다.",
+            "You cannot send a friend request to a user you have blocked.": "차단한 사용자에게 친구 요청을 보낼 수 없습니다.",
               // ... rest of your translations
           }
         };
