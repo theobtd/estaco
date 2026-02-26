@@ -739,6 +739,32 @@
         }
 
         /**
+         * Removes a user from the current user's BlockedUsers subcollection.
+         * @param {string} userId - The current user's UID.
+         * @param {string} blockedUserId - The UID of the user to unblock.
+         */
+        async function unblockUser(userId, blockedUserId) {
+          try {
+            // Show loader
+            document.getElementById('loader-modal').style.display = 'flex';
+        
+            // Remove the blocked user from the BlockedUsers subcollection
+            await db.collection(`users/${userId}/BlockedUsers`).doc(blockedUserId).delete();
+        
+            // Reload the blocked users list
+            loadBlockedUsers(userId);
+        
+            // Hide loader
+            document.getElementById('loader-modal').style.display = 'none';
+          } catch (error) {
+            console.error("Error unblocking user:", error);
+            alert(translations[userLanguage]["Failed to unblock user."]);
+            // Hide loader
+            document.getElementById('loader-modal').style.display = 'none';
+          }
+        }
+
+        /**
          * Checks if the current user has blocked the target user.
          * @param {string} userId - The current user's UID.
          * @param {string} targetId - The target user's UID.
@@ -779,6 +805,14 @@
                       const blockedUserDiv = document.createElement('div');
                       blockedUserDiv.className = 'friend';
                       blockedUserDiv.innerText = blockedUserName;
+        
+                      // Add an "Unblock" button
+                      const unblockButton = document.createElement('button');
+                      unblockButton.className = 'friend-button';
+                      unblockButton.innerText = 'Unblock';
+                      unblockButton.onclick = () => unblockUser(userId, blockedUserId);
+                      blockedUserDiv.appendChild(unblockButton);
+        
                       blockedUsersDiv.appendChild(blockedUserDiv);
                     }
                   });
@@ -1300,6 +1334,7 @@
             "You don't have any blocked users.": "You don't have any blocked users.",
             "Error loading blocked users.": "Error loading blocked users.",
             "You cannot send a friend request to a user you have blocked.": "You cannot send a friend request to a user you have blocked.",
+            "Failed to unblock user.": "Failed to unblock user.",
               // ... rest of your translations
           },
           French: {
@@ -1355,6 +1390,7 @@
             "You don't have any blocked users.": "Vous n'avez aucun utilisateur bloqué.",
             "Error loading blocked users.": "Erreur lors du chargement des utilisateurs bloqués.",
             "You cannot send a friend request to a user you have blocked.": "Vous ne pouvez pas envoyer une demande d'ami à un utilisateur que vous avez bloqué.",
+            "Failed to unblock user.": "Échec de la suppression du blocage de l'utilisateur.",
               // ... rest of your translations
           },
           Korean: {
@@ -1410,6 +1446,7 @@
             "You don't have any blocked users.": "차단된 사용자가 없습니다.",
             "Error loading blocked users.": "차단된 사용자 목록을 불러오는 중 오류가 발생했습니다.",
             "You cannot send a friend request to a user you have blocked.": "차단한 사용자에게 친구 요청을 보낼 수 없습니다.",
+            "Failed to unblock user.": "사용자 차단 해제에 실패했습니다.",
               // ... rest of your translations
           }
         };
