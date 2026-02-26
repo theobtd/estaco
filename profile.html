@@ -459,6 +459,11 @@
           <h3 data-i18n="Current Friends">Current Friends</h3>
           <div id="current-friends" class="friend-list"></div>
         </div>
+
+        <div class="section">
+          <h3 data-i18n="Blocked Users">Blocked Users</h3>
+          <div id="blocked-users" class="friend-list"></div>
+        </div>
     </div>
     
       <!-- Cropper Modal -->
@@ -720,6 +725,44 @@
         }
 
         /**
+         * Loads the list of blocked users for the current user.
+         * @param {string} userId - The current user's UID.
+         */
+        function loadBlockedUsers(userId) {
+          const blockedUsersDiv = document.getElementById('blocked-users');
+          blockedUsersDiv.innerHTML = '';
+        
+          db.collection(`users/${userId}/BlockedUsers`).get()
+            .then((snapshot) => {
+              if (snapshot.empty) {
+                blockedUsersDiv.innerHTML = '<p class="message" data-i18n="You don\'t have any blocked users.">You don\'t have any blocked users.</p>';
+                return;
+              }
+        
+              const promises = [];
+              snapshot.forEach((doc) => {
+                const blockedUserId = doc.id;
+                const promise = db.collection('users').doc(blockedUserId).get()
+                  .then((userDoc) => {
+                    if (userDoc.exists) {
+                      const blockedUserName = userDoc.data().name;
+                      const blockedUserDiv = document.createElement('div');
+                      blockedUserDiv.className = 'friend';
+                      blockedUserDiv.innerText = blockedUserName;
+                      blockedUsersDiv.appendChild(blockedUserDiv);
+                    }
+                  });
+                promises.push(promise);
+              });
+              return Promise.all(promises);
+            })
+            .catch((error) => {
+              console.error("Error loading blocked users:", error);
+              blockedUsersDiv.innerHTML = '<p class="message" data-i18n="Error loading blocked users.">Error loading blocked users.</p>';
+            });
+        }
+
+        /**
          * Checks if a user is blocked by another user.
          * @param {string} blockerId - The UID of the user who may have blocked.
          * @param {string} blockedId - The UID of the user to check if blocked.
@@ -967,6 +1010,11 @@
               .catch((error) => {
                 console.error("Error loading user data:", error);
               });
+        
+            // Load pending requests, current friends, and blocked users
+            loadPendingRequests(user.uid);
+            loadCurrentFriends(user.uid);
+            loadBlockedUsers(user.uid);
           }
         });
         
@@ -1218,6 +1266,9 @@
             "Hide Guide": "Hide Guide",
             "An error occurred while searching for the user.": "An error occurred while searching for the user.",
             "Privacy Policy": "Privacy Policy",
+            "Blocked Users": "Blocked Users",
+            "You don't have any blocked users.": "You don't have any blocked users.",
+            "Error loading blocked users.": "Error loading blocked users.",
               // ... rest of your translations
           },
           French: {
@@ -1269,6 +1320,9 @@
             "Hide Guide": "Masquer le guide",
             "An error occurred while searching for the user.": "Une erreur s'est produite lors de la recherche de l'utilisateur.",
             "Privacy Policy": "Politique de confidentialité",
+            "Blocked Users": "Utilisateurs bloqués",
+            "You don't have any blocked users.": "Vous n'avez aucun utilisateur bloqué.",
+            "Error loading blocked users.": "Erreur lors du chargement des utilisateurs bloqués.",
               // ... rest of your translations
           },
           Korean: {
@@ -1320,6 +1374,9 @@
             "Hide Guide": "가이드 숨기기",
             "An error occurred while searching for the user.": "사용자를 검색하는 동안 오류가 발생했습니다.",
             "Privacy Policy": "개인정보 처리방침",
+            "Blocked Users": "차단된 사용자",
+            "You don't have any blocked users.": "차단된 사용자가 없습니다.",
+            "Error loading blocked users.": "차단된 사용자 목록을 불러오는 중 오류가 발생했습니다.",
               // ... rest of your translations
           }
         };
