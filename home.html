@@ -3011,37 +3011,38 @@
     }
     
     // Show the camera authorization modal
-    function showCameraAuthModal(callback) {
-      const modal = document.getElementById('camera-auth-modal');
-      modal.style.display = 'flex';
+    function showCameraAuthModal() {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('camera-auth-modal');
+        modal.style.display = 'flex';
     
-      document.getElementById('camera-auth-agree').onclick = () => {
-        modal.style.display = 'none';
-        callback(true);
-      };
+        document.getElementById('camera-auth-agree').onclick = () => {
+          modal.style.display = 'none';
+          resolve(true);
+        };
     
-      document.getElementById('camera-auth-cancel').onclick = () => {
-        modal.style.display = 'none';
-        callback(false);
-      };
+        document.getElementById('camera-auth-cancel').onclick = () => {
+          modal.style.display = 'none';
+          resolve(false);
+        };
+      });
     }
     
-    // Modify the postMedia click handler
     document.getElementById('post-media-label').addEventListener('click', async (e) => {
       e.preventDefault(); // Prevent default behavior
       const hasAuth = await checkCameraAuthorization();
       if (!hasAuth) {
-        showCameraAuthModal(async (agreed) => {
-          if (agreed) {
-            await updateCameraAuthorization(true);
-            // Only trigger the file input after the user agrees
+        const agreed = await showCameraAuthModal();
+        if (agreed) {
+          await updateCameraAuthorization(true);
+          // Use a small delay to ensure the popup is fully closed
+          setTimeout(() => {
             document.getElementById('post-media').click();
-          } else {
-            console.log('User declined camera access.');
-          }
-        });
+          }, 100);
+        } else {
+          console.log('User declined camera access.');
+        }
       } else {
-        // Only trigger the file input if already authorized
         document.getElementById('post-media').click();
       }
     });
