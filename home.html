@@ -3028,20 +3028,20 @@
     
     // Modify the postMedia click handler
     document.getElementById('post-media-label').addEventListener('click', async (e) => {
+      e.preventDefault(); // Prevent default behavior
       const hasAuth = await checkCameraAuthorization();
       if (!hasAuth) {
         showCameraAuthModal(async (agreed) => {
           if (agreed) {
             await updateCameraAuthorization(true);
-            // Proceed with the original logic
+            // Only trigger the file input after the user agrees
             document.getElementById('post-media').click();
           } else {
-            // Abort
             console.log('User declined camera access.');
           }
         });
       } else {
-        // Proceed with the original logic
+        // Only trigger the file input if already authorized
         document.getElementById('post-media').click();
       }
     });
