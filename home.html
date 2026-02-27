@@ -2006,14 +2006,6 @@
     // Call loadPosts initially to load the first batch
     loadPosts();
 
-    // Add this inside the auth.onAuthStateChanged block, after updateAuthorisationButton()
-    db.collection('users').doc(user.uid).onSnapshot((doc) => {
-      if (doc.exists) {
-        const hasGivenAuthorisation = doc.data().HasGivenAuthorisation || false;
-        document.getElementById('authorisation-button').textContent = hasGivenAuthorisation.toString();
-      }
-    });
-
     function getInitialsFallback(name) {
       const firstLetter = name.charAt(0).toUpperCase();
       const pastelColors = ['#FFD1DC', '#FFE4B5', '#B5EAD7', '#C7CEEA', '#E2F0CB', '#FFB7B2'];
