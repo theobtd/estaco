@@ -3039,7 +3039,8 @@
         const agreed = await showCameraAuthModal();
         if (agreed) {
           await updateCameraAuthorization(true);
-          // Do NOT trigger the file picker here
+          // AFTER updating the state, trigger the file picker
+          document.getElementById('post-media').click();
         } else {
           console.log('User declined camera access.');
         }
