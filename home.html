@@ -3029,16 +3029,22 @@
     }
     
     document.getElementById('post-media-label').addEventListener('click', async (e) => {
-      e.preventDefault(); // Prevent default behavior
+      e.preventDefault();
       const hasAuth = await checkCameraAuthorization();
       if (!hasAuth) {
         const agreed = await showCameraAuthModal();
         if (agreed) {
           await updateCameraAuthorization(true);
-          // Use a small delay to ensure the popup is fully closed
+          // Highlight the label to encourage the user to click it again
+          const label = document.getElementById('post-media-label');
+          label.style.backgroundColor = 'var(--estaco-accent)';
+          label.style.color = 'white';
+          label.textContent = '📷 Click to Upload Photo/Video';
           setTimeout(() => {
-            document.getElementById('post-media').click();
-          }, 100);
+            label.style.backgroundColor = '';
+            label.style.color = '';
+            label.textContent = '📷 Photo/Video';
+          }, 3000);
         } else {
           console.log('User declined camera access.');
         }
@@ -3175,6 +3181,16 @@
             });
         }
     });
+
+    async function checkCameraAuthorization() {
+      const user = auth.currentUser;
+      if (!user) return false;
+    
+      const userDoc = await db.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) return false;
+    
+      return userDoc.data().HasGivenAuthorisation || false;
+    }
 
     /**
      * Adds a record to the global BlockedUsers collection.
