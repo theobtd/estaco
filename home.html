@@ -965,6 +965,7 @@
     let selectedFriendUids = new Set(); // Track selected friends
     let isVisibilityAll = true; // Track if all friends are selected
     let userLanguage = "English";
+    let hasGivenAuthorisation = false;
 
     // Try to load the language from localStorage first
     const savedLanguage = localStorage.getItem('userLanguage');
@@ -1208,7 +1209,7 @@
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
           const userData = userDoc.data();
-          const hasGivenAuthorisation = userData.HasGivenAuthorisation || false;
+          hasGivenAuthorisation = userData.HasGivenAuthorisation || false;
           document.getElementById('authorisation-button').textContent = hasGivenAuthorisation.toString();
         }
       } catch (error) {
@@ -1247,9 +1248,18 @@
           if (doc.exists) {
             const hasGivenAuthorisation = doc.data().HasGivenAuthorisation || false;
             document.getElementById('authorisation-button').textContent = hasGivenAuthorisation.toString();
+            window.hasGivenAuthorisation = hasGivenAuthorisation;
           }
         });
       }
+    });
+
+    document.getElementById('post-media-label').addEventListener('click', (e) => {
+      if (!hasGivenAuthorisation) {
+        e.preventDefault();
+        return;
+      }
+      // If the flag is true, the default behavior (opening the file dialog) will proceed
     });
 
     // Global variables for the dropdown
