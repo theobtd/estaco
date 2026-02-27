@@ -1221,9 +1221,8 @@
       if (!user || !user.emailVerified) {
         alert('Please sign in and verify your email to access the home feed.');
         window.location.href = 'index.html';
-        updateAuthorisationButton();
       } else {
-        logUserFriendsWithPosts(user.uid); // Call the new function
+        logUserFriendsWithPosts(user.uid);
         loadPosts();
     
         // Load user data from Firestore to get the user's language
@@ -1232,7 +1231,6 @@
             if (doc.exists) {
               const userData = doc.data();
               userLanguage = userData.language || "English";
-              // Save to localStorage for persistence
               localStorage.setItem('userLanguage', userLanguage);
               updatePageLanguage(userLanguage);
             }
@@ -1240,6 +1238,17 @@
           .catch((error) => {
             console.error("Error loading user data:", error);
           });
+    
+        // Call updateAuthorisationButton immediately
+        updateAuthorisationButton();
+    
+        // Attach a real-time listener for the user's document
+        db.collection('users').doc(user.uid).onSnapshot((doc) => {
+          if (doc.exists) {
+            const hasGivenAuthorisation = doc.data().HasGivenAuthorisation || false;
+            document.getElementById('authorisation-button').textContent = hasGivenAuthorisation.toString();
+          }
+        });
       }
     });
 
