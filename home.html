@@ -900,6 +900,18 @@
     </div>
   </div>
 
+  <div id="camera-auth-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 3000; justify-content: center; align-items: center;">
+    <div style="max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; max-height: 80vh; overflow-y: auto;">
+      <h3>Camera Access Required</h3>
+      <p>To create posts with photos or videos, we need access to your camera. This allows you to capture and share moments with your friends.</p>
+      <p>We respect your privacy and will only use your camera when you explicitly choose to take a photo or video.</p>
+      <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <button id="camera-auth-cancel" style="margin-right: 10px; padding: 8px 16px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+        <button id="camera-auth-agree" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Agree</button>
+      </div>
+    </div>
+  </div>
+
   <div id="loader-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); z-index: 2000; justify-content: center; align-items: center;">
     <div class="spinner"></div>
   </div>
@@ -2975,6 +2987,63 @@
         visibilityButton.textContent = 'Visibility: limited';
       }
       document.getElementById('visibility-modal').style.display = 'none';
+    });
+
+    // Function to check if user has given camera authorization
+    async function checkCameraAuthorization() {
+      const user = auth.currentUser;
+      if (!user) return false;
+    
+      const userDoc = await db.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) return false;
+    
+      return userDoc.data().HasGivenAuthorisation || false;
+    }
+    
+    // Function to update camera authorization status
+    async function updateCameraAuthorization(status) {
+      const user = auth.currentUser;
+      if (!user) return;
+    
+      await db.collection('users').doc(user.uid).update({
+        HasGivenAuthorisation: status,
+      });
+    }
+    
+    // Show the camera authorization modal
+    function showCameraAuthModal(callback) {
+      const modal = document.getElementById('camera-auth-modal');
+      modal.style.display = 'flex';
+    
+      document.getElementById('camera-auth-agree').onclick = () => {
+        modal.style.display = 'none';
+        callback(true);
+      };
+    
+      document.getElementById('camera-auth-cancel').onclick = () => {
+        modal.style.display = 'none';
+        callback(false);
+      };
+    }
+    
+    // Modify the postMedia click handler
+    document.getElementById('post-media-label').addEventListener('click', async (e) => {
+      const hasAuth = await checkCameraAuthorization();
+      if (!hasAuth) {
+        showCameraAuthModal(async (agreed) => {
+          if (agreed) {
+            await updateCameraAuthorization(true);
+            // Proceed with the original logic
+            document.getElementById('post-media').click();
+          } else {
+            // Abort
+            console.log('User declined camera access.');
+          }
+        });
+      } else {
+        // Proceed with the original logic
+        document.getElementById('post-media').click();
+      }
     });
 
     postMedia.addEventListener('change', (event) => {
