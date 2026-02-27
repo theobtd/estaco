@@ -3031,25 +3031,18 @@
     document.getElementById('post-media-label').addEventListener('click', async (e) => {
       e.preventDefault();
       const hasAuth = await checkCameraAuthorization();
-      if (!hasAuth) {
+      if (hasAuth) {
+        // User has already authorized, proceed with file picker
+        document.getElementById('post-media').click();
+      } else {
+        // User has not authorized, show the popup
         const agreed = await showCameraAuthModal();
         if (agreed) {
           await updateCameraAuthorization(true);
-          // Highlight the label to encourage the user to click it again
-          const label = document.getElementById('post-media-label');
-          label.style.backgroundColor = 'var(--estaco-accent)';
-          label.style.color = 'white';
-          label.textContent = '📷 Click to Upload Photo/Video';
-          setTimeout(() => {
-            label.style.backgroundColor = '';
-            label.style.color = '';
-            label.textContent = '📷 Photo/Video';
-          }, 3000);
+          // Do NOT trigger the file picker here
         } else {
           console.log('User declined camera access.');
         }
-      } else {
-        document.getElementById('post-media').click();
       }
     });
 
