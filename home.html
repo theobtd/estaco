@@ -838,7 +838,7 @@
     </div>
     <p id="error-message"></p>
   </div>
-    
+  
   <div id="image-cropper-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000;">
     <div style="max-width: 500px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px;">
       <h3 data-i18n="Adjust Image">Adjust Image</h3>
@@ -897,19 +897,6 @@
       <p data-i18n="This post will be visible to:">This post will be visible to:</p>
       <ul id="friends-list" style="list-style: none; padding: 0;"></ul>
       <button id="close-visibility-modal" data-i18n="Close">×</button>
-    </div>
-  </div>
-
-  <div id="authorisation-popup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 3000; justify-content: center; align-items: center;">
-    <div style="max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; text-align: center;">
-      <p style="font-size: 18px; margin: 0; color: var(--estaco-text);">
-        Do you agree to sharing your photos and videos with Estaco?
-      </p>
-      <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
-        <button id="accept-authorisation" style="padding: 8px 16px; background: var(--estaco-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">Accept</button>
-        <button id="reject-authorisation" style="padding: 8px 16px; background: var(--estaco-error); color: white; border: none; border-radius: 4px; cursor: pointer;">Reject</button>
-      </div>
-      <button id="close-authorisation-popup" style="margin-top: 15px; padding: 8px 12px; background: var(--estaco-surface); color: var(--estaco-text); border: none; border-radius: 4px; cursor: pointer;">Close</button>
     </div>
   </div>
 
@@ -976,7 +963,6 @@
     let selectedFriendUids = new Set(); // Track selected friends
     let isVisibilityAll = true; // Track if all friends are selected
     let userLanguage = "English";
-    let hasGivenAuthorisation = false;
 
     // Try to load the language from localStorage first
     const savedLanguage = localStorage.getItem('userLanguage');
@@ -1211,29 +1197,13 @@
       feed.insertAdjacentHTML('afterbegin', postHTML);
     }
 
-    // Fetch and update the authorisation button
-    async function updateAuthorisationButton() {
-      const user = auth.currentUser;
-      if (!user) return;
-    
-      try {
-        const userDoc = await db.collection('users').doc(user.uid).get();
-        if (userDoc.exists) {
-          const userData = userDoc.data();
-          hasGivenAuthorisation = userData.HasGivenAuthorisation || false;
-        }
-      } catch (error) {
-        console.error("Error fetching authorisation status:", error);
-      }
-    }
-
     // Check if user is signed in and verified
     auth.onAuthStateChanged((user) => {
       if (!user || !user.emailVerified) {
         alert('Please sign in and verify your email to access the home feed.');
         window.location.href = 'index.html';
       } else {
-        logUserFriendsWithPosts(user.uid);
+        logUserFriendsWithPosts(user.uid); // Call the new function
         loadPosts();
     
         // Load user data from Firestore to get the user's language
@@ -1242,6 +1212,7 @@
             if (doc.exists) {
               const userData = doc.data();
               userLanguage = userData.language || "English";
+              // Save to localStorage for persistence
               localStorage.setItem('userLanguage', userLanguage);
               updatePageLanguage(userLanguage);
             }
@@ -1249,52 +1220,7 @@
           .catch((error) => {
             console.error("Error loading user data:", error);
           });
-    
-        // Call updateAuthorisationButton immediately
-        updateAuthorisationButton();
-    
-        // Attach a real-time listener for the user's document
-        db.collection('users').doc(user.uid).onSnapshot((doc) => {
-          if (doc.exists) {
-            const hasGivenAuthorisation = doc.data().HasGivenAuthorisation || false;
-            document.getElementById('authorisation-button').textContent = hasGivenAuthorisation.toString();
-            window.hasGivenAuthorisation = hasGivenAuthorisation;
-          }
-        });
       }
-    });
-
-    document.getElementById('post-media-label').addEventListener('click', (e) => {
-      if (!hasGivenAuthorisation) {
-        e.preventDefault();
-        document.getElementById('authorisation-popup').style.display = 'flex';
-        return;
-      }
-      // If the flag is true, the default behavior (opening the file dialog) will proceed
-    });
-    
-    document.getElementById('accept-authorisation').addEventListener('click', async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-    
-      try {
-        await db.collection('users').doc(user.uid).update({
-          HasGivenAuthorisation: true
-        });
-        hasGivenAuthorisation = true;
-        document.getElementById('authorisation-popup').style.display = 'none';
-        document.getElementById('authorisation-button').textContent = 'true';
-      } catch (error) {
-        console.error("Error updating authorisation status:", error);
-      }
-    });
-    
-    document.getElementById('reject-authorisation').addEventListener('click', () => {
-      document.getElementById('authorisation-popup').style.display = 'none';
-    });
-    
-    document.getElementById('close-authorisation-popup').addEventListener('click', () => {
-      document.getElementById('authorisation-popup').style.display = 'none';
     });
 
     // Global variables for the dropdown
