@@ -902,6 +902,13 @@
     </div>
   </div>
 
+  <div id="authorisation-popup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 3000; justify-content: center; align-items: center;">
+    <div style="max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; text-align: center;">
+      <p style="font-size: 18px; margin: 0; color: var(--estaco-text);">hello!</p>
+      <button id="close-authorisation-popup" style="margin-top: 15px; padding: 8px 12px; background: var(--estaco-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">OK</button>
+    </div>
+  </div>
+
   <div id="loader-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); z-index: 2000; justify-content: center; align-items: center;">
     <div class="spinner"></div>
   </div>
@@ -1257,9 +1264,14 @@
     document.getElementById('post-media-label').addEventListener('click', (e) => {
       if (!hasGivenAuthorisation) {
         e.preventDefault();
+        document.getElementById('authorisation-popup').style.display = 'flex';
         return;
       }
       // If the flag is true, the default behavior (opening the file dialog) will proceed
+    });
+
+    document.getElementById('close-authorisation-popup').addEventListener('click', () => {
+      document.getElementById('authorisation-popup').style.display = 'none';
     });
 
     // Global variables for the dropdown
