@@ -1268,15 +1268,19 @@
 
     function updatePhotoVideoButtonHandler() {
       const mediaLabel = document.getElementById('post-media-label');
-      mediaLabel.disabled = !hasGivenAuthorisation;
+      // Remove any existing click handler
+      mediaLabel.onclick = null;
+      // Update visual state
       mediaLabel.style.cursor = hasGivenAuthorisation ? 'pointer' : 'not-allowed';
       mediaLabel.style.opacity = hasGivenAuthorisation ? '1' : '0.5';
+      // Reattach the click handler
       mediaLabel.onclick = (e) => {
         if (!hasGivenAuthorisation) {
           e.preventDefault();
           document.getElementById('authorisation-popup').style.display = 'flex';
           return;
         }
+        // If the flag is true, the default behavior (opening the file dialog) will proceed
       };
     }
 
