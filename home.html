@@ -1221,7 +1221,6 @@
         if (userDoc.exists) {
           const userData = userDoc.data();
           hasGivenAuthorisation = userData.HasGivenAuthorisation || false;
-          document.getElementById('authorisation-button').textContent = hasGivenAuthorisation.toString();
         }
       } catch (error) {
         console.error("Error fetching authorisation status:", error);
