@@ -570,9 +570,13 @@
             db.collection('friendRequests').where('to', '==', userId).get()
                 .then(snapshot => {
                     pendingFriendRequestsDiv.innerHTML = '';
+                    const renderedRequests = new Set(); // Track rendered requests
                     const promises = [];
                     snapshot.forEach(doc => {
                         const request = doc.data();
+                        if (renderedRequests.has(request.from)) return; // Skip if already rendered
+                        renderedRequests.add(request.from); // Mark as rendered
+        
                         const promise = db.collection('users').doc(request.from).get()
                             .then(userDoc => {
                                 const fromName = userDoc.data().name;
