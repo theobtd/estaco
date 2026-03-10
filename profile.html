@@ -915,34 +915,34 @@
         }
 
         /**
-         * Populates the feeds of two users with all existing posts from each other.
+         * Populates the feeds of two users with all existing posts from each other's OwnPosts.
          * @param {string} userIdA - The UID of the first user.
          * @param {string} userIdB - The UID of the second user.
          */
         async function populateFeedsWithExistingPosts(userIdA, userIdB) {
-            try {
-                // Fetch all posts by userIdA
-                const postsSnapshotA = await db.collection('posts').where('authorId', '==', userIdA).get();
-                const postsA = postsSnapshotA.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          try {
+            // Get all posts from userIdA's OwnPosts
+            const ownPostsSnapshotA = await db.collection(`users/${userIdA}/OwnPosts`).get();
+            const postsA = ownPostsSnapshotA.docs.map(doc => doc.data());
         
-                // Add each post to userIdB's feed
-                for (const post of postsA) {
-                    await addPostToUserFeed(userIdB, post.id, post.timestamp);
-                }
-        
-                // Fetch all posts by userIdB
-                const postsSnapshotB = await db.collection('posts').where('authorId', '==', userIdB).get();
-                const postsB = postsSnapshotB.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-                // Add each post to userIdA's feed
-                for (const post of postsB) {
-                    await addPostToUserFeed(userIdA, post.id, post.timestamp);
-                }
-        
-                console.log('Feeds populated with existing posts.');
-            } catch (error) {
-                console.error('Error populating feeds:', error);
+            // Add each post to userIdB's feed
+            for (const post of postsA) {
+              await addPostToUserFeed(userIdB, post.postId, post.postTimestamp);
             }
+        
+            // Get all posts from userIdB's OwnPosts
+            const ownPostsSnapshotB = await db.collection(`users/${userIdB}/OwnPosts`).get();
+            const postsB = ownPostsSnapshotB.docs.map(doc => doc.data());
+        
+            // Add each post to userIdA's feed
+            for (const post of postsB) {
+              await addPostToUserFeed(userIdA, post.postId, post.postTimestamp);
+            }
+        
+            console.log('Feeds populated with existing posts from OwnPosts.');
+          } catch (error) {
+            console.error('Error populating feeds:', error);
+          }
         }
 
         // Accept friend request
@@ -987,10 +987,10 @@
         
                                             // Populate feeds with existing posts in both directions
                                             populateFeedsWithExistingPosts(fromId, toId).catch(error => {
-                                                console.error('Error populating feeds (fromId to toId):', error);
+                                              console.error('Error populating feeds (fromId to toId):', error);
                                             });
                                             populateFeedsWithExistingPosts(toId, fromId).catch(error => {
-                                                console.error('Error populating feeds (toId to fromId):', error);
+                                              console.error('Error populating feeds (toId to fromId):', error);
                                             });
                                         });
                                 });
