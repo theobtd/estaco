@@ -875,20 +875,17 @@
          */
         async function removePostsFromUserFeed(userId, authorId) {
             try {
-                // Get all posts in the user's feed
-                const feedSnapshot = await db.collection(`users/${userId}/feed`).get();
+                // Get all posts from the author's OwnPosts
+                const ownPostsSnapshot = await db.collection(`users/${authorId}/OwnPosts`).get();
                 const batch = db.batch();
         
-                // For each post in the feed, check if it was authored by authorId
-                const promises = feedSnapshot.docs.map(async (doc) => {
-                    const postId = doc.data().postId;
-                    const postDoc = await db.collection('posts').doc(postId).get();
-                    if (postDoc.exists && postDoc.data().authorId === authorId) {
-                        batch.delete(doc.ref);
-                    }
+                // For each post, delete it from the user's feed
+                ownPostsSnapshot.docs.forEach((doc) => {
+                    const postId = doc.id;
+                    const feedRef = db.collection(`users/${userId}/feed`).doc(postId);
+                    batch.delete(feedRef);
                 });
         
-                await Promise.all(promises);
                 await batch.commit();
                 console.log(`Removed all posts from ${authorId} from ${userId}'s feed.`);
             } catch (error) {
