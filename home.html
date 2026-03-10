@@ -3171,32 +3171,29 @@
       }
     }
 
-      /**
-    * Removes all posts from a user's feed sub-collection that were authored by a specific user.
-    * @param {string} userId - The user's UID.
-    * @param {string} authorId - The UID of the author whose posts should be removed.
-    */
+    /**
+     * Removes all posts from a user's feed sub-collection that were authored by a specific user.
+     * @param {string} userId - The user's UID.
+     * @param {string} authorId - The UID of the author whose posts should be removed.
+     */
     async function removePostsFromUserFeed(userId, authorId) {
-            try {
-                // Get all posts in the user's feed
-                const feedSnapshot = await db.collection(`users/${userId}/feed`).get();
-                const batch = db.batch();
-        
-                // For each post in the feed, check if it was authored by authorId
-                const promises = feedSnapshot.docs.map(async (doc) => {
-                    const postId = doc.data().postId;
-                    const postDoc = await db.collection('posts').doc(postId).get();
-                    if (postDoc.exists && postDoc.data().authorId === authorId) {
-                        batch.delete(doc.ref);
-                    }
-                });
-        
-                await Promise.all(promises);
-                await batch.commit();
-                console.log(`Removed all posts from ${authorId} from ${userId}'s feed.`);
-            } catch (error) {
-                console.error('Error removing posts from feed:', error);
-            }
+        try {
+            // Get all posts from the author's OwnPosts
+            const ownPostsSnapshot = await db.collection(`users/${authorId}/OwnPosts`).get();
+            const batch = db.batch();
+    
+            // For each post, delete it from the user's feed
+            ownPostsSnapshot.docs.forEach((doc) => {
+                const postId = doc.id;
+                const feedRef = db.collection(`users/${userId}/feed`).doc(postId);
+                batch.delete(feedRef);
+            });
+    
+            await batch.commit();
+            console.log(`Removed all posts from ${authorId} from ${userId}'s feed.`);
+        } catch (error) {
+            console.error('Error removing posts from feed:', error);
+        }
     }
 
     // Set default visibility button text
