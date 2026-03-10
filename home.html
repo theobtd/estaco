@@ -1517,6 +1517,7 @@
     
             db.collection('posts').add(post)
               .then(async (docRef) => {
+                await addPostToOwnPosts(user.uid, docRef.id, new Date());
                 const uploadPromises = [];
                 if (mediaFile) {
                   const storageRef = storage.ref();
@@ -1637,6 +1638,7 @@
     
           db.collection('posts').add(post)
             .then(async (docRef) => {
+              await addPostToOwnPosts(user.uid, docRef.id, new Date());
               const uploadPromises = [];
               if (mediaFile) {
                 const storageRef = storage.ref();
@@ -2828,6 +2830,12 @@
           const videoRef = storage.refFromURL(postData.videoURL);
           await videoRef.delete();
         }
+
+        const user = auth.currentUser;
+        if (user) {
+          const ownPostsRef = db.collection(`users/${user.uid}/OwnPosts`).doc(postId);
+          await ownPostsRef.delete();
+        }
     
         // Delete the post document
         await postRef.delete();
@@ -3105,6 +3113,24 @@
             });
         }
     });
+
+    /**
+     * Adds a post to the user's OwnPosts sub-collection.
+     * @param {string} userId - The user's UID.
+     * @param {string} postId - The post's ID.
+     * @param {Date} timestamp - The post's timestamp.
+     */
+    async function addPostToOwnPosts(userId, postId, timestamp) {
+      try {
+        const ownPostsRef = db.collection(`users/${userId}/OwnPosts`).doc(postId);
+        await ownPostsRef.set({
+          postId: postId,
+          postTimestamp: timestamp,
+        });
+      } catch (error) {
+        console.error('Error adding post to OwnPosts:', error);
+      }
+    }
 
     /**
      * Adds a record to the global BlockedUsers collection.
