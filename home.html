@@ -945,6 +945,7 @@
     const auth = firebase.auth();
     // Set persistence as early as possible
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    restoreSession();
       .then(() => {
         // Now you can safely use auth operations
         console.log("Persistence set to LOCAL");
