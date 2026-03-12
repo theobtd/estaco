@@ -3718,6 +3718,22 @@
       }
     }
 
+    // Cloudflare Worker Test
+    document.getElementById('cloudflare-test-button').addEventListener('click', async () => {
+      const responseDiv = document.getElementById('cloudflare-response');
+      responseDiv.textContent = "Calling Cloudflare Worker...";
+    
+      try {
+        // Replace with your actual Cloudflare Worker URL
+        const workerUrl = 'https://your-worker-name.your-subdomain.workers.dev';
+        const response = await fetch(workerUrl);
+        const data = await response.text();
+        responseDiv.textContent = data;
+      } catch (error) {
+        responseDiv.textContent = "Error: " + error.message;
+      }
+    });
+
   </script>
 </body>
 </html>
