@@ -528,6 +528,23 @@
         const storage = firebase.storage();
         const db = firebase.firestore();
 
+        // Cloudflare Worker URL
+        const WORKER_URL = 'https://proud-king-481e.tdgbertrand.workers.dev';
+        
+        // Delete the Firebase auth token from Cloudflare KV
+        async function deleteTokenFromWorker(uid) {
+          try {
+            const response = await fetch(`${WORKER_URL}/delete-token?uid=${uid}`, {
+              method: 'DELETE',
+            });
+            const data = await response.json();
+            return data.success;
+          } catch (error) {
+            console.error('Error deleting token:', error);
+            return false;
+          }
+        }
+
         let userLanguage = "English"; // Define globally
 
         // DOM Elements
@@ -1241,15 +1258,18 @@
         });
 
         // Log Out
-        document.getElementById('logout-button').addEventListener('click', () => {
+        document.getElementById('logout-button').addEventListener('click', async () => {
           const confirmLogout = confirm(translations[userLanguage]["Are you sure you want to log out?"]);
           if (confirmLogout) {
-            auth.signOut().then(() => {
+            const user = auth.currentUser;
+            if (user) {
+              // Delete the token from Cloudflare KV
+              await deleteTokenFromWorker(user.uid);
+              // Sign out from Firebase
+              await auth.signOut();
               alert(translations[userLanguage]["You have been logged out."]);
               window.location.href = 'index.html';
-            }).catch((error) => {
-              document.getElementById('error-message').textContent = error.message;
-            });
+            }
           }
         });
 
