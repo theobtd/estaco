@@ -953,7 +953,9 @@
     // Retrieve the Firebase auth token from Cloudflare KV
     async function getTokenFromWorker(uid) {
       try {
-        const response = await fetch(`${WORKER_URL}/get-token?uid=${uid}`);
+        const response = await fetch(`${WORKER_URL}/get-token?uid=${uid}`, {
+          mode: 'cors', // Add this line
+        });
         const data = await response.json();
         return data.token;
       } catch (error) {
@@ -967,6 +969,7 @@
       try {
         const response = await fetch(`${WORKER_URL}/delete-token?uid=${uid}`, {
           method: 'DELETE',
+          mode: 'cors', // Add this line
         });
         const data = await response.json();
         return data.success;
