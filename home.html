@@ -911,25 +911,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-functions-compat.js"></script>
   <script>
-  // Try to restore the session using the token from Cloudflare KV
-  async function restoreSession() {
-    const user = auth.currentUser;
-    if (!user) return;
-  
-    const token = await getTokenFromWorker(user.uid);
-    if (token) {
-      try {
-        // Sign in with the stored token
-        await auth.signInWithCustomToken(token);
-        console.log('Session restored using Cloudflare KV token');
-      } catch (error) {
-        console.error('Error restoring session:', error);
-      }
-    }
-  }
-  
-  // Call this as early as possible
-  document.addEventListener('DOMContentLoaded', restoreSession);
     // Your Firebase config (replace with your own)
     const firebaseConfig = {
       apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
@@ -945,10 +926,10 @@
     const auth = firebase.auth();
     // Set persistence as early as possible
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-    restoreSession();
       .then(() => {
         // Now you can safely use auth operations
         console.log("Persistence set to LOCAL");
+        restoreSession();
       })
       .catch((error) => {
         console.error("Error setting persistence:", error);
@@ -1002,6 +983,26 @@
         return false;
       }
     }
+
+      // Try to restore the session using the token from Cloudflare KV
+      async function restoreSession() {
+        const user = auth.currentUser;
+        if (!user) return;
+      
+        const token = await getTokenFromWorker(user.uid);
+        if (token) {
+          try {
+            // Sign in with the stored token
+            await auth.signInWithCustomToken(token);
+            console.log('Session restored using Cloudflare KV token');
+          } catch (error) {
+            console.error('Error restoring session:', error);
+          }
+        }
+      }
+      
+      // Call this as early as possible
+      document.addEventListener('DOMContentLoaded', restoreSession);
 
     auth.onAuthStateChanged(async (user) => {
       if (user && user.emailVerified) {
