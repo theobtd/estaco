@@ -938,6 +938,7 @@
       try {
         const response = await fetch(`${WORKER_URL}/store-token`, {
           method: 'POST',
+          mode: 'cors', // Add this line
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid, token }),
         });
