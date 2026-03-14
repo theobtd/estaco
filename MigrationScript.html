@@ -134,7 +134,7 @@
         if (commentsSnapshot.empty) {
           return false;
         }
-    
+
         // Check if any commenter is a friend
         for (const commentDoc of commentsSnapshot.docs) {
           const comment = commentDoc.data();
@@ -142,12 +142,21 @@
             return true;
           }
         }
-    
+
         return false;
       } catch (error) {
         console.error(`Error checking comments for post ${postId}:`, error);
         return false;
       }
+    }
+
+    // Helper function to chunk array into groups of 10
+    function chunkArray(array, chunkSize = 10) {
+      const chunks = [];
+      for (let i = 0; i < array.length; i += chunkSize) {
+        chunks.push(array.slice(i, i + chunkSize));
+      }
+      return chunks;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -180,41 +189,42 @@
           const friendIds = friends.map(friend => friend.uid);
           friendIds.push(userUid); // Include the user's own posts
 
-          // 2. Fetch all posts from friends (and user)
-          const postsQuery = db.collection('posts')
-            .where('authorId', 'in', friendIds)
-            .orderBy('timestamp', 'desc');
-          const postsSnapshot = await postsQuery.get();
-
-          if (postsSnapshot.empty) {
-            statusMessage.textContent = 'No posts found for this user or their friends.';
-            statusMessage.className = 'error';
-            return;
-          }
-
-          // 3. Create/update the feed sub-collection
+          // 2. Split friendIds into chunks of 10
+          const friendIdChunks = chunkArray(friendIds);
           const batch = db.batch();
           const feedRef = db.collection(`users/${userUid}/feed`);
-          
-          // Process each post
-          for (const postDoc of postsSnapshot.docs) {
-            const post = postDoc.data();
-            const feedDocRef = feedRef.doc(postDoc.id); // Use post ID as document ID
-          
-            // Check if the post has comments from friends
-            const hasFriendComments = await postHasFriendComments(postDoc.id, friendIds);
-          
-            // Set the feed document with the CommentsVisible flag
-            batch.set(feedDocRef, {
-              postId: postDoc.id,
-              postTimestamp: post.timestamp,
-              CommentsVisible: hasFriendComments,
-            });
+          let totalPostsMigrated = 0;
+
+          // Process each chunk
+          for (const chunk of friendIdChunks) {
+            const postsQuery = db.collection('posts')
+              .where('authorId', 'in', chunk)
+              .orderBy('timestamp', 'desc');
+            const postsSnapshot = await postsQuery.get();
+
+            if (!postsSnapshot.empty) {
+              // Process each post in the chunk
+              for (const postDoc of postsSnapshot.docs) {
+                const post = postDoc.data();
+                const feedDocRef = feedRef.doc(postDoc.id);
+
+                // Check if the post has comments from friends
+                const hasFriendComments = await postHasFriendComments(postDoc.id, friendIds);
+
+                // Set the feed document with the CommentsVisible flag
+                batch.set(feedDocRef, {
+                  postId: postDoc.id,
+                  postTimestamp: post.timestamp,
+                  CommentsVisible: hasFriendComments,
+                });
+                totalPostsMigrated++;
+              }
+            }
           }
-          
+
           await batch.commit();
 
-          statusMessage.textContent = `Successfully migrated ${postsSnapshot.size} posts to the user's feed!`;
+          statusMessage.textContent = `Successfully migrated ${totalPostsMigrated} posts to the user's feed!`;
           statusMessage.className = 'success';
           console.log('Migration completed for user:', userUid);
         } catch (error) {
