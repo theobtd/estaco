@@ -436,7 +436,6 @@
               <p id="user-email">user@example.com</p>
             </div>
             <div class="profile-actions">
-              <button id="update-profile-pic-button" class="button" data-i18n="Update Profile Picture">Update Profile Picture</button>
               <button id="change-password-button" class="button" data-i18n="Change Password">Change Password</button>
               <button id="delete-account-button" class="button remove" data-i18n="Delete Account">Delete Account</button>
               <button id="logout-button" class="button" data-i18n="Log Out">Log Out</button>
@@ -1120,12 +1119,6 @@
             loadCurrentFriends(user.uid);
             loadBlockedUsers(user.uid);
           }
-        });
-        
-        // Upload profile picture
-        document.getElementById('update-profile-pic-button').addEventListener('click', () => {
-          const fileInput = document.getElementById('update-profile-pic');
-          fileInput.click();
         });
 
         // Add event listener for the "+" button
