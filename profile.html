@@ -1127,6 +1127,12 @@
           const fileInput = document.getElementById('update-profile-pic');
           fileInput.click();
         });
+
+        // Add event listener for the "+" button
+        document.querySelector('.profile-picture-add-button').addEventListener('click', () => {
+          const fileInput = document.getElementById('update-profile-pic');
+          fileInput.click();
+        });
         
         let cropper;
         document.getElementById('update-profile-pic').addEventListener('change', (event) => {
