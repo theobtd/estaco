@@ -1609,25 +1609,69 @@
                   const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
                   const uploadTask = mediaRef.put(mediaFile);
     
-                  uploadPromises.push(
-                    new Promise((resolve, reject) => {
-                      uploadTask.on('state_changed',
-                        null,
-                        (error) => {
-                          console.error('Upload error:', error);
-                          reject(error);
-                        },
-                        () => {
-                          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                            const updateData = mediaType === 'image'
-                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                              : { videoURL: downloadURL, mediaOrientation: 'vertical' };
-                            docRef.update(updateData).then(resolve);
-                          });
-                        }
-                      );
-                    })
-                  );
+                  if (mediaFile.type.startsWith('video/')) {
+                    // Extract the first frame
+                    extractFirstFrame(mediaFile)
+                      .then((firstFrameBlob) => {
+                        const firstFrameRef = storageRef.child(`thumbnails/${docRef.id}`);
+                        const firstFrameUploadTask = firstFrameRef.put(firstFrameBlob);
+    
+                        return Promise.all([
+                          new Promise((resolve, reject) => {
+                            uploadTask.on('state_changed',
+                              null,
+                              (error) => reject(error),
+                              () => {
+                                uploadTask.snapshot.ref.getDownloadURL().then((videoURL) => {
+                                  resolve({ videoURL });
+                                });
+                              }
+                            );
+                          }),
+                          new Promise((resolve, reject) => {
+                            firstFrameUploadTask.on('state_changed',
+                              null,
+                              (error) => reject(error),
+                              () => {
+                                firstFrameUploadTask.snapshot.ref.getDownloadURL().then((photoURL) => {
+                                  resolve({ photoURL });
+                                });
+                              }
+                            );
+                          })
+                        ]);
+                      })
+                      .then(([videoResult, photoResult]) => {
+                        return docRef.update({
+                          videoURL: videoResult.videoURL,
+                          photoURL: photoResult.photoURL,
+                          mediaOrientation: 'vertical'
+                        });
+                      })
+                      .catch((error) => {
+                        console.error('Error uploading video or thumbnail:', error);
+                        throw error;
+                      });
+                  } else {
+                    // Handle image upload
+                    uploadPromises.push(
+                      new Promise((resolve, reject) => {
+                        uploadTask.on('state_changed',
+                          null,
+                          (error) => {
+                            console.error('Upload error:', error);
+                            reject(error);
+                          },
+                          () => {
+                            uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                              const updateData = { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                              docRef.update(updateData).then(resolve);
+                            });
+                          }
+                        );
+                      })
+                    );
+                  }
                 }
     
                 Promise.all(uploadPromises)
@@ -1730,25 +1774,69 @@
                 const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
                 const uploadTask = mediaRef.put(mediaFile);
     
-                uploadPromises.push(
-                  new Promise((resolve, reject) => {
-                    uploadTask.on('state_changed',
-                      null,
-                      (error) => {
-                        console.error('Upload error:', error);
-                        reject(error);
-                      },
-                      () => {
-                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                          const updateData = mediaType === 'image'
-                            ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                            : { videoURL: downloadURL, mediaOrientation: 'vertical' };
-                          docRef.update(updateData).then(resolve);
-                        });
-                      }
-                    );
-                  })
-                );
+                if (mediaFile.type.startsWith('video/')) {
+                  // Extract the first frame
+                  extractFirstFrame(mediaFile)
+                    .then((firstFrameBlob) => {
+                      const firstFrameRef = storageRef.child(`thumbnails/${docRef.id}`);
+                      const firstFrameUploadTask = firstFrameRef.put(firstFrameBlob);
+    
+                      return Promise.all([
+                        new Promise((resolve, reject) => {
+                          uploadTask.on('state_changed',
+                            null,
+                            (error) => reject(error),
+                            () => {
+                              uploadTask.snapshot.ref.getDownloadURL().then((videoURL) => {
+                                resolve({ videoURL });
+                              });
+                            }
+                          );
+                        }),
+                        new Promise((resolve, reject) => {
+                          firstFrameUploadTask.on('state_changed',
+                            null,
+                            (error) => reject(error),
+                            () => {
+                              firstFrameUploadTask.snapshot.ref.getDownloadURL().then((photoURL) => {
+                                resolve({ photoURL });
+                              });
+                            }
+                          );
+                        })
+                      ]);
+                    })
+                    .then(([videoResult, photoResult]) => {
+                      return docRef.update({
+                        videoURL: videoResult.videoURL,
+                        photoURL: photoResult.photoURL,
+                        mediaOrientation: 'vertical'
+                      });
+                    })
+                    .catch((error) => {
+                      console.error('Error uploading video or thumbnail:', error);
+                      throw error;
+                    });
+                } else {
+                  // Handle image upload
+                  uploadPromises.push(
+                    new Promise((resolve, reject) => {
+                      uploadTask.on('state_changed',
+                        null,
+                        (error) => {
+                          console.error('Upload error:', error);
+                          reject(error);
+                        },
+                        () => {
+                          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                            const updateData = { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                            docRef.update(updateData).then(resolve);
+                          });
+                        }
+                      );
+                    })
+                  );
+                }
               }
     
               Promise.all(uploadPromises)
