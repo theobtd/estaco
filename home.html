@@ -1237,8 +1237,9 @@
         const orientation = post.mediaOrientation || 'horizontal';
         mediaHTML = `
           <div class="media-container media-${orientation}">
-            <video controls class="post-media" playsinline webkit-playsinline>
+            <video controls class="post-media" playsinline webkit-playsinline poster="${post.photoURL}">
               <source src="${post.videoURL}" type="video/mp4">
+              Your browser does not support the video tag.
             </video>
           </div>
         `;
@@ -2087,8 +2088,9 @@
           const orientation = post.mediaOrientation || 'horizontal';
           mediaHTML = `
             <div class="media-container media-${orientation}">
-              <video controls class="post-media" playsinline webkit-playsinline>
+              <video controls class="post-media" playsinline webkit-playsinline poster="${post.photoURL}">
                 <source src="${post.videoURL}" type="video/mp4">
+                Your browser does not support the video tag.
               </video>
             </div>
           `;
