@@ -394,6 +394,25 @@
           transition: all 0.2s ease;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
+        .profile-picture-add-button {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          background-color: var(--estaco-primary);
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          font-weight: bold;
+          cursor: pointer;
+          border: 2px solid white;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+          z-index: 10;
+        }
         
     </style>
 
@@ -410,6 +429,7 @@
             <div class="profile-picture-container">
               <div id="profile-picture-placeholder" class="profile-picture-placeholder"></div>
               <img id="profile-picture" src="" alt="Profile Picture" class="profile-picture">
+              <div class="profile-picture-add-button">+</div>
             </div>
             <div class="profile-details">
               <h2 id="user-name">User Name</h2>
