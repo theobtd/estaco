@@ -481,6 +481,16 @@
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
           z-index: 10;
         }
+        .menu-actions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          margin-top: 20px;
+          width: 100%;
+          box-sizing: border-box;
+        }
         
     </style>
 
@@ -597,7 +607,12 @@
     <div id="menu-page" class="menu-page">
       <div class="menu-content">
         <button id="menu-close-button" class="menu-close-button">×</button>
-        <!-- Empty for now -->
+        <div class="menu-actions">
+          <button id="menu-change-password-button" class="button" data-i18n="Change Password">Change Password</button>
+          <button id="menu-delete-account-button" class="button remove" data-i18n="Delete Account">Delete Account</button>
+          <button id="menu-logout-button" class="button" data-i18n="Log Out">Log Out</button>
+          <a href="PrivacyPolicy.html" class="button" data-i18n="Privacy Policy">Privacy Policy</a>
+        </div>
       </div>
     </div>
 
@@ -1456,6 +1471,99 @@
             document.getElementById('deletion-modal').style.display = 'none';
         });
         
+        document.getElementById('menu-close-button').addEventListener('click', () => {
+          const menuPage = document.getElementById('menu-page');
+          menuPage.classList.remove('open');
+        });
+
+        // Menu Change Password
+        document.getElementById('menu-change-password-button').addEventListener('click', () => {
+          const currentPassword = prompt(translations[userLanguage]["Enter your current password:"]);
+          if (currentPassword) {
+            const user = auth.currentUser;
+            const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+            user.reauthenticateWithCredential(credential).then(() => {
+              const newPassword = prompt(translations[userLanguage]["Enter your new password (at least 6 characters):"]);
+              const confirmPassword = prompt(translations[userLanguage]["Confirm your new password:"]);
+        
+              if (newPassword && confirmPassword && newPassword === confirmPassword && newPassword.length >= 6) {
+                user.updatePassword(newPassword).then(() => {
+                  document.getElementById('success-message').textContent = translations[userLanguage]["Password updated successfully!"];
+                  document.getElementById('error-message').textContent = '';
+                }).catch((error) => {
+                  document.getElementById('error-message').textContent = error.message;
+                  document.getElementById('success-message').textContent = '';
+                });
+              } else {
+                alert('Passwords do not match or are too short. Please try again.');
+              }
+            }).catch((error) => {
+              document.getElementById('error-message').textContent = 'Current password is incorrect.';
+              document.getElementById('success-message').textContent = '';
+            });
+          }
+        });
+        
+        // Menu Delete Account
+        document.getElementById('menu-delete-account-button').addEventListener('click', () => {
+          const confirmDeletion = confirm(translations[userLanguage]["Do you confirm that you want to initiate account deletion?"]);
+          if (confirmDeletion) {
+            const user = auth.currentUser;
+            if (user) {
+              // Show loader
+              document.getElementById('loader-modal').style.display = 'flex';
+        
+              // Add user UID to RequestedAccountDeletion collection
+              db.collection('RequestedAccountDeletion').doc(user.uid).set({
+                uid: user.uid,
+                email: user.email,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              })
+              .then(() => {
+                // Hide loader
+                document.getElementById('loader-modal').style.display = 'none';
+                // Show success modal
+                document.getElementById('deletion-modal-title').textContent = translations[userLanguage]["Account Deletion Initiated"];
+                document.getElementById('deletion-modal-message').textContent =
+                  translations[userLanguage]["Thank you - your account deletion has been initiated and should be completed within the next 96 hours. We will send you a confirmation email once this is done."];
+                document.getElementById('deletion-modal').style.display = 'flex';
+              })
+              .catch((error) => {
+                // Hide loader
+                document.getElementById('loader-modal').style.display = 'none';
+                // Show error modal
+                document.getElementById('deletion-modal-title').textContent = translations[userLanguage]["Error"];
+                document.getElementById('deletion-modal-message').textContent =
+                  translations[userLanguage]["Failed to initiate account deletion. Please try again later."];
+                document.getElementById('deletion-modal').style.display = 'flex';
+                console.error("Error initiating account deletion:", error);
+              });
+            } else {
+              document.getElementById('deletion-modal-title').textContent = translations[userLanguage]["Error"];
+              document.getElementById('deletion-modal-message').textContent =
+                translations[userLanguage]["You must be logged in to delete your account."];
+              document.getElementById('deletion-modal').style.display = 'flex';
+            }
+          }
+        });
+        
+        // Menu Log Out
+        document.getElementById('menu-logout-button').addEventListener('click', async () => {
+          const confirmLogout = confirm(translations[userLanguage]["Are you sure you want to log out?"]);
+          if (confirmLogout) {
+            const user = auth.currentUser;
+            if (user) {
+              // Delete the token from Cloudflare KV
+              await deleteTokenFromWorker(user.uid);
+              // Sign out from Firebase
+              await auth.signOut();
+              alert(translations[userLanguage]["You have been logged out."]);
+              window.location.href = 'index.html';
+            }
+          }
+        });
+        
+        // Menu Close Button
         document.getElementById('menu-close-button').addEventListener('click', () => {
           const menuPage = document.getElementById('menu-page');
           menuPage.classList.remove('open');
