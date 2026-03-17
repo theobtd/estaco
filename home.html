@@ -1237,9 +1237,8 @@
         const orientation = post.mediaOrientation || 'horizontal';
         mediaHTML = `
           <div class="media-container media-${orientation}">
-            <video controls class="post-media" playsinline webkit-playsinline poster="${post.photoURL}">
+            <video controls class="post-media" playsinline webkit-playsinline>
               <source src="${post.videoURL}" type="video/mp4">
-              Your browser does not support the video tag.
             </video>
           </div>
         `;
@@ -1610,69 +1609,25 @@
                   const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
                   const uploadTask = mediaRef.put(mediaFile);
     
-                  if (mediaFile.type.startsWith('video/')) {
-                    // Extract the first frame
-                    extractFirstFrame(mediaFile)
-                      .then((firstFrameBlob) => {
-                        const firstFrameRef = storageRef.child(`thumbnails/${docRef.id}`);
-                        const firstFrameUploadTask = firstFrameRef.put(firstFrameBlob);
-    
-                        return Promise.all([
-                          new Promise((resolve, reject) => {
-                            uploadTask.on('state_changed',
-                              null,
-                              (error) => reject(error),
-                              () => {
-                                uploadTask.snapshot.ref.getDownloadURL().then((videoURL) => {
-                                  resolve({ videoURL });
-                                });
-                              }
-                            );
-                          }),
-                          new Promise((resolve, reject) => {
-                            firstFrameUploadTask.on('state_changed',
-                              null,
-                              (error) => reject(error),
-                              () => {
-                                firstFrameUploadTask.snapshot.ref.getDownloadURL().then((photoURL) => {
-                                  resolve({ photoURL });
-                                });
-                              }
-                            );
-                          })
-                        ]);
-                      })
-                      .then(([videoResult, photoResult]) => {
-                        return docRef.update({
-                          videoURL: videoResult.videoURL,
-                          photoURL: photoResult.photoURL,
-                          mediaOrientation: 'vertical'
-                        });
-                      })
-                      .catch((error) => {
-                        console.error('Error uploading video or thumbnail:', error);
-                        throw error;
-                      });
-                  } else {
-                    // Handle image upload
-                    uploadPromises.push(
-                      new Promise((resolve, reject) => {
-                        uploadTask.on('state_changed',
-                          null,
-                          (error) => {
-                            console.error('Upload error:', error);
-                            reject(error);
-                          },
-                          () => {
-                            uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                              const updateData = { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
-                              docRef.update(updateData).then(resolve);
-                            });
-                          }
-                        );
-                      })
-                    );
-                  }
+                  uploadPromises.push(
+                    new Promise((resolve, reject) => {
+                      uploadTask.on('state_changed',
+                        null,
+                        (error) => {
+                          console.error('Upload error:', error);
+                          reject(error);
+                        },
+                        () => {
+                          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                            const updateData = mediaType === 'image'
+                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                              : { videoURL: downloadURL, mediaOrientation: 'vertical' };
+                            docRef.update(updateData).then(resolve);
+                          });
+                        }
+                      );
+                    })
+                  );
                 }
     
                 Promise.all(uploadPromises)
@@ -1775,69 +1730,25 @@
                 const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
                 const uploadTask = mediaRef.put(mediaFile);
     
-                if (mediaFile.type.startsWith('video/')) {
-                  // Extract the first frame
-                  extractFirstFrame(mediaFile)
-                    .then((firstFrameBlob) => {
-                      const firstFrameRef = storageRef.child(`thumbnails/${docRef.id}`);
-                      const firstFrameUploadTask = firstFrameRef.put(firstFrameBlob);
-    
-                      return Promise.all([
-                        new Promise((resolve, reject) => {
-                          uploadTask.on('state_changed',
-                            null,
-                            (error) => reject(error),
-                            () => {
-                              uploadTask.snapshot.ref.getDownloadURL().then((videoURL) => {
-                                resolve({ videoURL });
-                              });
-                            }
-                          );
-                        }),
-                        new Promise((resolve, reject) => {
-                          firstFrameUploadTask.on('state_changed',
-                            null,
-                            (error) => reject(error),
-                            () => {
-                              firstFrameUploadTask.snapshot.ref.getDownloadURL().then((photoURL) => {
-                                resolve({ photoURL });
-                              });
-                            }
-                          );
-                        })
-                      ]);
-                    })
-                    .then(([videoResult, photoResult]) => {
-                      return docRef.update({
-                        videoURL: videoResult.videoURL,
-                        photoURL: photoResult.photoURL,
-                        mediaOrientation: 'vertical'
-                      });
-                    })
-                    .catch((error) => {
-                      console.error('Error uploading video or thumbnail:', error);
-                      throw error;
-                    });
-                } else {
-                  // Handle image upload
-                  uploadPromises.push(
-                    new Promise((resolve, reject) => {
-                      uploadTask.on('state_changed',
-                        null,
-                        (error) => {
-                          console.error('Upload error:', error);
-                          reject(error);
-                        },
-                        () => {
-                          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                            const updateData = { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
-                            docRef.update(updateData).then(resolve);
-                          });
-                        }
-                      );
-                    })
-                  );
-                }
+                uploadPromises.push(
+                  new Promise((resolve, reject) => {
+                    uploadTask.on('state_changed',
+                      null,
+                      (error) => {
+                        console.error('Upload error:', error);
+                        reject(error);
+                      },
+                      () => {
+                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                          const updateData = mediaType === 'image'
+                            ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                            : { videoURL: downloadURL, mediaOrientation: 'vertical' };
+                          docRef.update(updateData).then(resolve);
+                        });
+                      }
+                    );
+                  })
+                );
               }
     
               Promise.all(uploadPromises)
@@ -2088,9 +1999,8 @@
           const orientation = post.mediaOrientation || 'horizontal';
           mediaHTML = `
             <div class="media-container media-${orientation}">
-              <video controls class="post-media" playsinline webkit-playsinline poster="${post.photoURL}">
+              <video controls class="post-media" playsinline webkit-playsinline>
                 <source src="${post.videoURL}" type="video/mp4">
-                Your browser does not support the video tag.
               </video>
             </div>
           `;
@@ -3287,44 +3197,6 @@
             });
         }
     });
-    
-    /**
-     * Extracts the 10th frame from a video file and returns it as a Blob.
-     * @param {File} videoFile - The video file.
-     * @returns {Promise<Blob>} - A promise that resolves to the 10th frame as a Blob.
-     */
-    function extractFirstFrame(videoFile) {
-      return new Promise((resolve, reject) => {
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        video.muted = true;
-        video.playsInline = true;
-    
-        video.onloadedmetadata = () => {
-          // Assume 30 FPS: 10th frame is at 10/30 = 0.333 seconds
-          const tenthFrameTime = 0.333;
-          video.currentTime = tenthFrameTime;
-        };
-    
-        video.onseeked = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-          canvas.toBlob((blob) => {
-            resolve(blob);
-          }, 'image/jpeg', 0.92);
-        };
-    
-        video.onerror = (e) => {
-          reject(new Error('Error extracting 10th frame'));
-        };
-    
-        video.src = URL.createObjectURL(videoFile);
-      });
-    }
 
     /**
      * Adds a post to the user's OwnPosts sub-collection.
