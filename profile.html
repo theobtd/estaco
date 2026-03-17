@@ -84,6 +84,7 @@
           border: 1px solid var(--estaco-border);
           width: 100%;
           box-sizing: border-box;
+          position: relative;
         }
     
         .profile-picture-container {
@@ -415,8 +416,8 @@
         }
         .profile-menu-button {
           position: absolute;
-          top: 5px;
-          right: 5px;
+          top: 10px;
+          right: 10px;
           width: 25px;
           height: 20px;
           background: none;
@@ -447,28 +448,28 @@
 
     <div class="profile-container">
           <!-- Profile Header -->
-          <div class="profile-header">
-            <div class="profile-picture-container">
-              <div id="profile-picture-placeholder" class="profile-picture-placeholder"></div>
-              <img id="profile-picture" src="" alt="Profile Picture" class="profile-picture">
-              <div class="profile-picture-add-button">+</div>
+            <div class="profile-header">
+              <div class="profile-picture-container">
+                <div id="profile-picture-placeholder" class="profile-picture-placeholder"></div>
+                <img id="profile-picture" src="" alt="Profile Picture" class="profile-picture">
+                <div class="profile-picture-add-button">+</div>
+              </div>
+              <div class="profile-details">
+                <h2 id="user-name">User Name</h2>
+                <p id="user-email">user@example.com</p>
+              </div>
+              <div class="profile-actions">
+                <button id="change-password-button" class="button" data-i18n="Change Password">Change Password</button>
+                <button id="delete-account-button" class="button remove" data-i18n="Delete Account">Delete Account</button>
+                <button id="logout-button" class="button" data-i18n="Log Out">Log Out</button>
+                <a href="PrivacyPolicy.html" class="button" data-i18n="Privacy Policy">Privacy Policy</a>
+              </div>
               <button class="profile-menu-button">
                 <span></span>
                 <span></span>
                 <span></span>
               </button>
             </div>
-            <div class="profile-details">
-              <h2 id="user-name">User Name</h2>
-              <p id="user-email">user@example.com</p>
-            </div>
-            <div class="profile-actions">
-              <button id="change-password-button" class="button" data-i18n="Change Password">Change Password</button>
-              <button id="delete-account-button" class="button remove" data-i18n="Delete Account">Delete Account</button>
-              <button id="logout-button" class="button" data-i18n="Log Out">Log Out</button>
-              <a href="PrivacyPolicy.html" class="button" data-i18n="Privacy Policy">Privacy Policy</a>
-            </div>
-          </div>
     
         <div class="section">
           <h3 data-i18n="Platform Rules">Platform Rules</h3>
