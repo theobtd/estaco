@@ -365,9 +365,13 @@
       const signinErrorMessage = document.querySelector('#signin-form #error-message');
 
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-        .then(() => auth.signInWithEmailAndPassword(email, password))
+        .then(() => {
+          console.log('[Auth] Persistence set to LOCAL, signing in...');
+          return auth.signInWithEmailAndPassword(email, password);
+        })
         .then((userCredential) => {
           const user = userCredential.user;
+          console.log('[Auth] Sign-in successful, emailVerified:', user.emailVerified);
           if (user.emailVerified) {
             window.location.href = 'home.html';
           } else {
