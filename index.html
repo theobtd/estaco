@@ -117,6 +117,23 @@
       font-family: inherit;
       background-color: var(--estaco-surface);
     }
+    #language-select {
+      width: auto;
+      padding: 6px 10px;
+      border: 1px solid var(--estaco-border);
+      border-radius: 6px;
+      background-color: var(--estaco-surface);
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--estaco-text);
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%23666666" height="12" viewBox="0 0 24 24" width="12" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 12px;
+    }
   </style>
 </head>
 <body>
@@ -194,22 +211,7 @@
     right: 10px;
     z-index: 1000;
   ">
-    <select id="language-select" style="
-      padding: 6px 10px;
-      border: 1px solid var(--estaco-border);
-      border-radius: 6px;
-      background-color: var(--estaco-surface);
-      font-family: inherit;
-      font-size: 14px;
-      color: var(--estaco-text);
-      cursor: pointer;
-      outline: none;
-      appearance: none;
-      background-image: url('data:image/svg+xml;utf8,<svg fill=\"%23666666\" height=\"12\" viewBox=\"0 0 24 24\" width=\"12\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>');
-      background-repeat: no-repeat;
-      background-position: right 8px center;
-      background-size: 12px;
-    ">
+    <select id="language-select">
       <option value="English" selected>EN</option>
       <option value="French">FR</option>
       <option value="Korean">KR</option>
@@ -361,12 +363,12 @@
       const email = document.getElementById('signin-email').value;
       const password = document.getElementById('signin-password').value;
       const signinErrorMessage = document.querySelector('#signin-form #error-message');
-    
-      auth.signInWithEmailAndPassword(email, password)
+
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => auth.signInWithEmailAndPassword(email, password))
         .then((userCredential) => {
           const user = userCredential.user;
           if (user.emailVerified) {
-            alert(translations[userLanguage]["Signed in successfully!"]);
             window.location.href = 'home.html';
           } else {
             alert(translations[userLanguage]["Please verify your email before signing in. A verification link has been sent to your email address."]);
