@@ -1158,9 +1158,15 @@
           const orientation = post.mediaOrientation || 'horizontal';
           mediaHTML = `
               <div class="media-container media-${orientation}">
-                  <video controls class="post-media" playsinline webkit-playsinline>
-                      <source src="${post.videoURL}" type="video/mp4">
-                  </video>
+                <video
+                  controls
+                  class="post-media"
+                  playsinline
+                  webkit-playsinline
+                  poster="${post.videoThumbnail || ''}"  // <-- Set thumbnail as poster
+                >
+                  <source src="${post.videoURL}" type="video/mp4">
+                </video>
               </div>
           `;
       }
@@ -1920,9 +1926,15 @@
             const orientation = post.mediaOrientation || 'horizontal';
             mediaHTML = `
                 <div class="media-container media-${orientation}">
-                    <video controls class="post-media" playsinline webkit-playsinline>
-                        <source src="${post.videoURL}" type="video/mp4">
-                    </video>
+                  <video
+                    controls
+                    class="post-media"
+                    playsinline
+                    webkit-playsinline
+                    poster="${post.videoThumbnail || ''}"  // <-- Set thumbnail as poster
+                  >
+                    <source src="${post.videoURL}" type="video/mp4">
+                  </video>
                 </div>
             `;
         }
