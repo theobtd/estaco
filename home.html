@@ -829,12 +829,7 @@
       <img id="image-preview" style="max-width: 100%; max-height: 200px; border-radius: 4px;">
     </div>
     <div id="video-preview-container" style="display: none; margin: 10px 0;">
-      <video
-        id="video-preview"
-        style="max-width: 100%; max-height: 200px; border-radius: 4px;"
-        controls
-        poster=""
-      ></video>
+      <video id="video-preview" style="max-width: 100%; max-height: 200px; border-radius: 4px;" controls></video>
     </div>
     <div id="post-loading" style="display: none; text-align: center; margin: 10px 0;">
       <div class="spinner"></div>
@@ -1160,20 +1155,14 @@
               </div>
           `;
       } else if (post.videoURL) {
-        const orientation = post.mediaOrientation || 'horizontal';
-        mediaHTML = `
-          <div class="media-container media-${orientation}">
-            <video
-              controls
-              class="post-media"
-              playsinline
-              webkit-playsinline
-              poster="${post.videoThumbnail || ''}"
-            >
-              <source src="${post.videoURL}" type="video/mp4">
-            </video>
-          </div>
-        `;
+          const orientation = post.mediaOrientation || 'horizontal';
+          mediaHTML = `
+              <div class="media-container media-${orientation}">
+                  <video controls class="post-media" playsinline webkit-playsinline>
+                      <source src="${post.videoURL}" type="video/mp4">
+                  </video>
+              </div>
+          `;
       }
     
       const postHTML = `
@@ -1528,8 +1517,7 @@
               authorName: authorName,
               content: content,
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              reactions: {},
-              videoThumbnail: '',
+              reactions: {}
             };
     
             db.collection('posts').add(post)
@@ -1561,26 +1549,6 @@
                       );
                     })
                   );
-                }
-                // Generate and upload thumbnail for video
-                if (mediaFile && mediaFile.type.startsWith('video/')) {
-                  generateVideoThumbnail(mediaFile, (thumbnailDataUrl) => {
-                    const thumbnailBlob = dataURLtoBlob(thumbnailDataUrl);
-                    const thumbnailRef = storage.ref().child(`thumbnails/${docRef.id}.jpg`);
-                    const thumbnailUploadTask = thumbnailRef.put(thumbnailBlob);
-                
-                    thumbnailUploadTask.on('state_changed',
-                      null,
-                      (error) => {
-                        console.error('Thumbnail upload error:', error);
-                      },
-                      () => {
-                        thumbnailUploadTask.snapshot.ref.getDownloadURL().then((thumbnailURL) => {
-                          docRef.update({ videoThumbnail: thumbnailURL });
-                        });
-                      }
-                    );
-                  });
                 }
     
                 Promise.all(uploadPromises)
@@ -1670,8 +1638,7 @@
             authorName: authorName,
             content: content,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            reactions: {},
-            videoThumbnail: '',
+            reactions: {}
           };
     
           db.collection('posts').add(post)
@@ -1703,26 +1670,6 @@
                     );
                   })
                 );
-              }
-              // Generate and upload thumbnail for video
-              if (mediaFile && mediaFile.type.startsWith('video/')) {
-                generateVideoThumbnail(mediaFile, (thumbnailDataUrl) => {
-                  const thumbnailBlob = dataURLtoBlob(thumbnailDataUrl);
-                  const thumbnailRef = storage.ref().child(`thumbnails/${docRef.id}.jpg`);
-                  const thumbnailUploadTask = thumbnailRef.put(thumbnailBlob);
-              
-                  thumbnailUploadTask.on('state_changed',
-                    null,
-                    (error) => {
-                      console.error('Thumbnail upload error:', error);
-                    },
-                    () => {
-                      thumbnailUploadTask.snapshot.ref.getDownloadURL().then((thumbnailURL) => {
-                        docRef.update({ videoThumbnail: thumbnailURL });
-                      });
-                    }
-                  );
-                });
               }
     
               Promise.all(uploadPromises)
@@ -1970,20 +1917,14 @@
                 </div>
             `;
         } else if (post.videoURL) {
-          const orientation = post.mediaOrientation || 'horizontal';
-          mediaHTML = `
-            <div class="media-container media-${orientation}">
-              <video
-                controls
-                class="post-media"
-                playsinline
-                webkit-playsinline
-                poster="${post.videoThumbnail || ''}"
-              >
-                <source src="${post.videoURL}" type="video/mp4">
-              </video>
-            </div>
-          `;
+            const orientation = post.mediaOrientation || 'horizontal';
+            mediaHTML = `
+                <div class="media-container media-${orientation}">
+                    <video controls class="post-media" playsinline webkit-playsinline>
+                        <source src="${post.videoURL}" type="video/mp4">
+                    </video>
+                </div>
+            `;
         }
     
         // Only show the "See comments" button if CommentsVisible is true
@@ -2042,46 +1983,6 @@
     
     // Call loadPosts initially to load the first batch
     loadPosts();
-
-    function generateVideoThumbnail(videoFile, callback) {
-      const video = document.createElement('video');
-      video.preload = 'metadata';
-      video.src = URL.createObjectURL(videoFile);
-    
-      video.onloadedmetadata = () => {
-        // Set the current time to a specific frame (e.g., 1 second in)
-        video.currentTime = 1;
-    
-        // Wait for the seeked event to ensure the frame is ready
-        video.onseeked = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-          // Convert the canvas to a data URL (thumbnail)
-          const thumbnailDataUrl = canvas.toDataURL('image/jpeg');
-          callback(thumbnailDataUrl);
-    
-          // Clean up
-          URL.revokeObjectURL(video.src);
-        };
-      };
-    }
-
-    // Add this near your other helper functions, outside of any event listener
-    function dataURLtoBlob(dataurl) {
-      const arr = dataurl.split(',');
-      const mime = arr[0].match(/:(.*?);/)[1];
-      const bstr = atob(arr[1]);
-      let n = bstr.length;
-      const u8arr = new Uint8Array(n);
-      while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-      }
-      return new Blob([u8arr], { type: mime });
-    }
 
     function getInitialsFallback(name) {
       const firstLetter = name.charAt(0).toUpperCase();
@@ -3203,20 +3104,14 @@
             // Handle video preview
             checkVideoDuration(file, (isValid) => {
                 if (!isValid) {
-                  errorMessage.textContent = translations[userLanguage]["Video must be 10 seconds or shorter."];
-                  postMedia.value = '';
-                  return;
-                }
-
-                // Generate thumbnail
-                generateVideoThumbnail(file, (thumbnailDataUrl) => {
-                  const videoPreviewContainer = document.getElementById('video-preview-container');
-                  const videoPreview = document.getElementById('video-preview');
-          
-                  // Set the thumbnail as the poster for the video
-                  videoPreview.poster = thumbnailDataUrl;
-                  videoPreview.src = URL.createObjectURL(file);
-                  videoPreviewContainer.style.display = 'block';
+                    errorMessage.textContent = translations[userLanguage]["Video must be 10 seconds or shorter."];
+                    postMedia.value = '';
+                    document.getElementById('video-preview-container').style.display = 'none';
+                } else {
+                    const videoPreview = document.getElementById('video-preview');
+                    const videoPreviewContainer = document.getElementById('video-preview-container');
+                    videoPreview.src = URL.createObjectURL(file);
+                    videoPreviewContainer.style.display = 'block';
         
                     // Detect video orientation
                     videoPreview.onloadedmetadata = () => {
