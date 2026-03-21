@@ -790,36 +790,6 @@
         margin-left: 8px;
         vertical-align: middle;
     }
-    .media-container {
-      position: relative;
-      margin-top: 10px;
-      overflow: hidden;
-      background-color: var(--estaco-surface);
-    }
-    
-    .custom-play-button {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      font-size: 20px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .video-thumbnail {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
 
   </style>
 </head>
@@ -1188,8 +1158,9 @@
           const orientation = post.mediaOrientation || 'horizontal';
           mediaHTML = `
               <div class="media-container media-${orientation}">
-                  <img src="${post.thumbnailURL}" class="post-media video-thumbnail" data-video-url="${post.videoURL}" style="cursor: pointer;">
-                  <div class="custom-play-button">▶</div>
+                  <video controls class="post-media" playsinline webkit-playsinline>
+                      <source src="${post.videoURL}" type="video/mp4">
+                  </video>
               </div>
           `;
       }
@@ -1558,32 +1529,22 @@
                   const mediaType = postMedia.getAttribute('data-type');
                   const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
                   const uploadTask = mediaRef.put(mediaFile);
-                
+    
                   uploadPromises.push(
-                    new Promise(async (resolve, reject) => {
+                    new Promise((resolve, reject) => {
                       uploadTask.on('state_changed',
                         null,
                         (error) => {
                           console.error('Upload error:', error);
                           reject(error);
                         },
-                        async () => {
-                          const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                          if (mediaType === 'image') {
-                            await docRef.update({
-                              photoURL: downloadURL,
-                              mediaOrientation: postMedia.getAttribute('data-orientation')
-                            });
-                            resolve();
-                          } else if (mediaType === 'video') {
-                            const thumbnailURL = await generateAndUploadVideoThumbnail(mediaFile, docRef.id);
-                            await docRef.update({
-                              videoURL: downloadURL,
-                              thumbnailURL: thumbnailURL,
-                              mediaOrientation: postMedia.getAttribute('data-orientation')
-                            });
-                            resolve();
-                          }
+                        () => {
+                          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                            const updateData = mediaType === 'image'
+                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                              : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                            docRef.update(updateData).then(resolve);
+                          });
                         }
                       );
                     })
@@ -1689,32 +1650,22 @@
                 const mediaType = postMedia.getAttribute('data-type');
                 const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
                 const uploadTask = mediaRef.put(mediaFile);
-              
+    
                 uploadPromises.push(
-                  new Promise(async (resolve, reject) => {
+                  new Promise((resolve, reject) => {
                     uploadTask.on('state_changed',
                       null,
                       (error) => {
                         console.error('Upload error:', error);
                         reject(error);
                       },
-                      async () => {
-                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                        if (mediaType === 'image') {
-                          await docRef.update({
-                            photoURL: downloadURL,
-                            mediaOrientation: postMedia.getAttribute('data-orientation')
-                          });
-                          resolve();
-                        } else if (mediaType === 'video') {
-                          const thumbnailURL = await generateAndUploadVideoThumbnail(mediaFile, docRef.id);
-                          await docRef.update({
-                            videoURL: downloadURL,
-                            thumbnailURL: thumbnailURL,
-                            mediaOrientation: postMedia.getAttribute('data-orientation')
-                          });
-                          resolve();
-                        }
+                      () => {
+                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                          const updateData = mediaType === 'image'
+                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                              : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                          docRef.update(updateData).then(resolve);
+                        });
                       }
                     );
                   })
@@ -1969,8 +1920,9 @@
             const orientation = post.mediaOrientation || 'horizontal';
             mediaHTML = `
                 <div class="media-container media-${orientation}">
-                    <img src="${post.thumbnailURL}" class="post-media video-thumbnail" data-video-url="${post.videoURL}" style="cursor: pointer;">
-                    <div class="custom-play-button">▶</div>
+                    <video controls class="post-media" playsinline webkit-playsinline>
+                        <source src="${post.videoURL}" type="video/mp4">
+                    </video>
                 </div>
             `;
         }
@@ -2055,23 +2007,6 @@
         </div>
       `;
     }
-
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('video-thumbnail') || e.target.classList.contains('custom-play-button')) {
-        const mediaContainer = e.target.closest('.media-container');
-        const thumbnail = mediaContainer.querySelector('.video-thumbnail');
-        const videoURL = thumbnail.getAttribute('data-video-url');
-        const playButton = mediaContainer.querySelector('.custom-play-button');
-    
-        // Replace the thumbnail with a video element
-        const videoHTML = `
-          <video controls class="post-media" playsinline webkit-playsinline>
-            <source src="${videoURL}" type="video/mp4">
-          </video>
-        `;
-        mediaContainer.innerHTML = videoHTML;
-      }
-    });
 
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('reaction-button')) {
@@ -3689,37 +3624,6 @@
     async function postHasComments(postId) {
       const commentsSnapshot = await db.collection('posts').doc(postId).collection('comments').get();
       return !commentsSnapshot.empty;
-    }
-
-    async function generateAndUploadVideoThumbnail(videoFile, postId) {
-      return new Promise((resolve, reject) => {
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        video.src = URL.createObjectURL(videoFile);
-    
-        video.onloadedmetadata = () => {
-          video.currentTime = 1; // Seek to 1 second
-        };
-    
-        video.onseeked = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-          canvas.toBlob(async (blob) => {
-            const thumbnailRef = storage.ref().child(`thumbnails/${postId}.jpg`);
-            await thumbnailRef.put(blob);
-            const thumbnailURL = await thumbnailRef.getDownloadURL();
-            resolve(thumbnailURL);
-          }, 'image/jpeg', 0.8);
-        };
-    
-        video.onerror = (e) => {
-          reject(new Error("Failed to generate thumbnail"));
-        };
-      });
     }
 
     // Handle "Select All" and individual friend toggle clicks
