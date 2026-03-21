@@ -1148,21 +1148,21 @@
       // Construct the post HTML
       let mediaHTML = '';
       if (post.photoURL) {
-        const orientation = post.mediaOrientation || 'horizontal';
-        mediaHTML = `
-          <div class="media-container media-${orientation}">
-            <img src="${post.photoURL}" class="post-media">
-          </div>
-        `;
+          const orientation = post.mediaOrientation || 'horizontal';
+          mediaHTML = `
+              <div class="media-container media-${orientation}">
+                  <img src="${post.photoURL}" class="post-media">
+              </div>
+          `;
       } else if (post.videoURL) {
-        const orientation = post.mediaOrientation || 'horizontal';
-        mediaHTML = `
-          <div class="media-container media-${orientation}">
-            <video controls class="post-media" playsinline webkit-playsinline>
-              <source src="${post.videoURL}" type="video/mp4">
-            </video>
-          </div>
-        `;
+          const orientation = post.mediaOrientation || 'horizontal';
+          mediaHTML = `
+              <div class="media-container media-${orientation}">
+                  <video controls class="post-media" playsinline webkit-playsinline>
+                      <source src="${post.videoURL}" type="video/mp4">
+                  </video>
+              </div>
+          `;
       }
     
       const postHTML = `
@@ -1542,7 +1542,7 @@
                           uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
                             const updateData = mediaType === 'image'
                               ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                              : { videoURL: downloadURL, mediaOrientation: 'vertical' };
+                              : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
                             docRef.update(updateData).then(resolve);
                           });
                         }
@@ -1662,8 +1662,8 @@
                       () => {
                         uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
                           const updateData = mediaType === 'image'
-                            ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                            : { videoURL: downloadURL, mediaOrientation: 'vertical' };
+                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                              : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
                           docRef.update(updateData).then(resolve);
                         });
                       }
@@ -1910,21 +1910,21 @@
         const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
         let mediaHTML = '';
         if (post.photoURL) {
-          const orientation = post.mediaOrientation || 'horizontal';
-          mediaHTML = `
-            <div class="media-container media-${orientation}">
-              <img src="${post.photoURL}" class="post-media">
-            </div>
-          `;
+            const orientation = post.mediaOrientation || 'horizontal';
+            mediaHTML = `
+                <div class="media-container media-${orientation}">
+                    <img src="${post.photoURL}" class="post-media">
+                </div>
+            `;
         } else if (post.videoURL) {
-          const orientation = post.mediaOrientation || 'horizontal';
-          mediaHTML = `
-            <div class="media-container media-${orientation}">
-              <video controls class="post-media" playsinline webkit-playsinline>
-                <source src="${post.videoURL}" type="video/mp4">
-              </video>
-            </div>
-          `;
+            const orientation = post.mediaOrientation || 'horizontal';
+            mediaHTML = `
+                <div class="media-container media-${orientation}">
+                    <video controls class="post-media" playsinline webkit-playsinline>
+                        <source src="${post.videoURL}" type="video/mp4">
+                    </video>
+                </div>
+            `;
         }
     
         // Only show the "See comments" button if CommentsVisible is true
@@ -3112,8 +3112,14 @@
                     const videoPreviewContainer = document.getElementById('video-preview-container');
                     videoPreview.src = URL.createObjectURL(file);
                     videoPreviewContainer.style.display = 'block';
+        
+                    // Detect video orientation
+                    videoPreview.onloadedmetadata = () => {
+                        const isHorizontal = videoPreview.videoWidth > videoPreview.videoHeight;
+                        postMedia.setAttribute('data-orientation', isHorizontal ? 'horizontal' : 'vertical');
+                    };
+        
                     postMedia.setAttribute('data-type', 'video');
-                    postMedia.setAttribute('data-orientation', 'vertical');
                 }
             });
         }
