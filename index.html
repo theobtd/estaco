@@ -218,6 +218,25 @@
     </select>
   </div>
 
+  <script>
+    // Fix: Force Firebase Auth to use localStorage instead of IndexedDB.
+    // Median.co (WKWebView) loses the IndexedDB connection, causing
+    // "Connection to Indexed Database server lost" errors and sign-outs.
+    // Firebase Auth compat falls back to browserLocalStoragePersistence
+    // when indexedDB is unavailable, which persists reliably in WebViews.
+    (function () {
+      try {
+        Object.defineProperty(window, 'indexedDB', {
+          value: undefined,
+          configurable: true,
+          writable: true
+        });
+      } catch (e) {
+        try { window.indexedDB = undefined; } catch (e2) { /* no-op */ }
+      }
+    })();
+  </script>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
