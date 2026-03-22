@@ -907,14 +907,6 @@
   </div>
 
   <script>
-    // Restore Firebase auth backup in case IDB wiped it (WKWebView fix)
-    (function() {
-      var fbKey = 'firebase:authUser:AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0:[DEFAULT]';
-      if (!localStorage.getItem(fbKey)) {
-        var backup = localStorage.getItem('fbAuthBackup');
-        if (backup) localStorage.setItem(fbKey, backup);
-      }
-    })();
     // Disable IndexedDB so Firebase Auth falls back to localStorage (fixes WKWebView/Median.co persistence)
     (function() {
       var noop = function() { return undefined; };
@@ -923,6 +915,20 @@
       try { Object.defineProperty(window, 'indexedDB', { get: noop, configurable: true }); } catch(e) {}
       try { if (window.indexedDB) window.indexedDB.open = fail; } catch(e) {}
       try { IDBFactory.prototype.open = fail; } catch(e) {}
+    })();
+    // Restore Firebase auth token before Firebase initializes.
+    // Uses Median native storage (iOS Keychain) which survives WKWebView localStorage wipes.
+    window._authRestoreReady = (function() {
+      var FB_KEY = 'firebase:authUser:AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0:[DEFAULT]';
+      if (localStorage.getItem(FB_KEY)) return Promise.resolve();
+      var localBackup = localStorage.getItem('fbAuthBackup');
+      if (localBackup) { localStorage.setItem(FB_KEY, localBackup); return Promise.resolve(); }
+      if (window.median) {
+        return median.storage.cloud.get({ key: 'fbAuthBackup' }).then(function(result) {
+          if (result && result.data) localStorage.setItem(FB_KEY, result.data);
+        }).catch(function() {});
+      }
+      return Promise.resolve();
     })();
   </script>
 
@@ -933,6 +939,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-functions-compat.js"></script>
   <script>
+  window._authRestoreReady.then(function() {
     const firebaseConfig = {
       apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
       authDomain: "estaco-add3c.firebaseapp.com",
@@ -3749,6 +3756,7 @@
       }
     }
 
+  }); // end _authRestoreReady.then
   </script>
 </body>
 </html>
