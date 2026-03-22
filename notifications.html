@@ -178,6 +178,9 @@
   </div>
 
   <script>
+    // Disable IndexedDB so Firebase Auth uses localStorage (fixes WKWebView persistence)
+    try { Object.defineProperty(window, 'indexedDB', { get: function() { return undefined; }, configurable: true }); } catch(e) {}
+    try { if (window.indexedDB) window.indexedDB.open = function() { throw new DOMException('', 'UnknownError'); }; } catch(e) {}
     try { IDBFactory.prototype.open = function() { throw new DOMException('', 'UnknownError'); }; } catch(e) {}
   </script>
 

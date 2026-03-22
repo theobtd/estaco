@@ -222,6 +222,9 @@
     // Force Firebase Auth to use localStorage by making IDB fail immediately.
     // In Median.co WKWebView, IDB opens but loses connection later, causing sign-outs.
     // Firebase Auth catches this throw and falls back to localStorage.
+    // Disable IndexedDB so Firebase Auth uses localStorage (fixes WKWebView persistence)
+    try { Object.defineProperty(window, 'indexedDB', { get: function() { return undefined; }, configurable: true }); } catch(e) {}
+    try { if (window.indexedDB) window.indexedDB.open = function() { throw new DOMException('', 'UnknownError'); }; } catch(e) {}
     try { IDBFactory.prototype.open = function() { throw new DOMException('', 'UnknownError'); }; } catch(e) {}
   </script>
 
