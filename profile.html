@@ -620,32 +620,15 @@
         <div class="loader"></div>
     </div>
 
-    <script>
-      // Fix: Force Firebase Auth to use localStorage instead of IndexedDB.
-      // Median.co (WKWebView) loses the IndexedDB connection, causing
-      // "Connection to Indexed Database server lost" errors and sign-outs.
-      // Firebase Auth compat falls back to browserLocalStoragePersistence
-      // when indexedDB is unavailable, which persists reliably in WebViews.
-      (function () {
-        try {
-          Object.defineProperty(window, 'indexedDB', {
-            value: undefined,
-            configurable: true,
-            writable: true
-          });
-        } catch (e) {
-          try { window.indexedDB = undefined; } catch (e2) { /* no-op */ }
-        }
-      })();
-    </script>
-
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK (modular auth with browserLocalPersistence for WebView compatibility) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-    <script>
-        // Your Firebase config (replace with your own)
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js';
+        import { initializeAuth, browserLocalPersistence, onAuthStateChanged,
+                 signOut, EmailAuthProvider } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js';
+
         const firebaseConfig = {
             apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
             authDomain: "estaco-add3c.firebaseapp.com",
@@ -655,11 +638,10 @@
             appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const storage = firebase.storage();
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const auth = initializeAuth(app, { persistence: browserLocalPersistence });
+        const storage = firebase.storage(app);
+        const db = firebase.firestore(app);
 
         // Cloudflare Worker URL
         const WORKER_URL = 'https://proud-king-481e.tdgbertrand.workers.dev';
@@ -687,7 +669,7 @@
         const currentFriendsDiv = document.getElementById('current-friends');
 
         // Load friends and requests on page load
-        auth.onAuthStateChanged(user => {
+        onAuthStateChanged(auth, user => {
             if (user) {
                 loadPendingRequests(user.uid);
                 loadCurrentFriends(user.uid);
@@ -1198,7 +1180,7 @@
         }
 
         // Display user information
-        auth.onAuthStateChanged((user) => {
+        onAuthStateChanged(auth, (user) => {
           if (user) {
             document.getElementById('user-name').textContent = user.displayName || "No name set";
             document.getElementById('user-email').textContent = user.email;
@@ -1367,7 +1349,7 @@
             const currentPassword = prompt(translations[userLanguage]["Enter your current password:"]);
             if (currentPassword) {
                 const user = auth.currentUser;
-                const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+                const credential = EmailAuthProvider.credential(user.email, currentPassword);
                 user.reauthenticateWithCredential(credential).then(() => {
                     const newPassword = prompt(translations[userLanguage]["Enter your new password (at least 6 characters):"]);
                     const confirmPassword = prompt(translations[userLanguage]["Confirm your new password:"]);
@@ -1399,7 +1381,7 @@
               // Delete the token from Cloudflare KV
               await deleteTokenFromWorker(user.uid);
               // Sign out from Firebase
-              await auth.signOut();
+              await signOut(auth);
               alert(translations[userLanguage]["You have been logged out."]);
               window.location.href = 'index.html';
             }
@@ -1500,7 +1482,7 @@
           const currentPassword = prompt(translations[userLanguage]["Enter your current password:"]);
           if (currentPassword) {
             const user = auth.currentUser;
-            const credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+            const credential = EmailAuthProvider.credential(user.email, currentPassword);
             user.reauthenticateWithCredential(credential).then(() => {
               const newPassword = prompt(translations[userLanguage]["Enter your new password (at least 6 characters):"]);
               const confirmPassword = prompt(translations[userLanguage]["Confirm your new password:"]);
@@ -1575,7 +1557,7 @@
               // Delete the token from Cloudflare KV
               await deleteTokenFromWorker(user.uid);
               // Sign out from Firebase
-              await auth.signOut();
+              await signOut(auth);
               alert(translations[userLanguage]["You have been logged out."]);
               window.location.href = 'index.html';
             }

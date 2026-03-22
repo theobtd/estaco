@@ -906,33 +906,15 @@
     <div class="spinner"></div>
   </div>
 
-  <script>
-    // Fix: Force Firebase Auth to use localStorage instead of IndexedDB.
-    // Median.co (WKWebView) loses the IndexedDB connection, causing
-    // "Connection to Indexed Database server lost" errors and sign-outs.
-    // Firebase Auth compat falls back to browserLocalStoragePersistence
-    // when indexedDB is unavailable, which persists reliably in WebViews.
-    (function () {
-      try {
-        Object.defineProperty(window, 'indexedDB', {
-          value: undefined,
-          configurable: true,
-          writable: true
-        });
-      } catch (e) {
-        try { window.indexedDB = undefined; } catch (e2) { /* no-op */ }
-      }
-    })();
-  </script>
-
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK (modular auth with browserLocalPersistence for WebView compatibility) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-functions-compat.js"></script>
-  <script>
-    // Your Firebase config (replace with your own)
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js';
+    import { initializeAuth, browserLocalPersistence, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js';
+
     const firebaseConfig = {
       apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
       authDomain: "estaco-add3c.firebaseapp.com",
@@ -942,13 +924,10 @@
       appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
     };
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    // Set persistence as early as possible
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    const app = initializeApp(firebaseConfig);
+    const auth = initializeAuth(app, { persistence: browserLocalPersistence });
 
-    auth.onAuthStateChanged(async (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (user && user.emailVerified) {
         document.getElementById('loading-overlay').style.display = 'none';
         logUserFriendsWithPosts(user.uid);
@@ -972,9 +951,9 @@
       }
     });
 
-    const db = firebase.firestore();
-    const storage = firebase.storage();
-    const functions = firebase.functions();
+    const db = firebase.firestore(app);
+    const storage = firebase.storage(app);
+    const functions = firebase.functions(app);
 
     // DOM elements
     const postContent = document.getElementById('post-content');
@@ -1222,7 +1201,7 @@
     }
 
     // Check if user is signed in and verified
-    auth.onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (!user || !user.emailVerified) {
         alert('Please sign in and verify your email to access the home feed.');
         window.location.href = 'index.html';

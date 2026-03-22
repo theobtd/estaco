@@ -218,32 +218,16 @@
     </select>
   </div>
 
-  <script>
-    // Fix: Force Firebase Auth to use localStorage instead of IndexedDB.
-    // Median.co (WKWebView) loses the IndexedDB connection, causing
-    // "Connection to Indexed Database server lost" errors and sign-outs.
-    // Firebase Auth compat falls back to browserLocalStoragePersistence
-    // when indexedDB is unavailable, which persists reliably in WebViews.
-    (function () {
-      try {
-        Object.defineProperty(window, 'indexedDB', {
-          value: undefined,
-          configurable: true,
-          writable: true
-        });
-      } catch (e) {
-        try { window.indexedDB = undefined; } catch (e2) { /* no-op */ }
-      }
-    })();
-  </script>
-
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK (modular auth with browserLocalPersistence for WebView compatibility) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-functions-compat.js"></script>
-  <script>
-    // Your Firebase config and JavaScript logic remain exactly the same
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js';
+    import { initializeAuth, browserLocalPersistence, onAuthStateChanged,
+             createUserWithEmailAndPassword, signInWithEmailAndPassword,
+             signOut, updateProfile, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js';
+
     const firebaseConfig = {
       apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
       authDomain: "estaco-add3c.firebaseapp.com",
@@ -252,19 +236,10 @@
       messagingSenderId: "876337002297",
       appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
     };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    // Set persistence as early as possible
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      .then(() => {
-        // Now you can safely use auth operations
-        console.log("Persistence set to LOCAL");
-      })
-      .catch((error) => {
-        console.error("Error setting persistence:", error);
-      });
+    const app = initializeApp(firebaseConfig);
+    const auth = initializeAuth(app, { persistence: browserLocalPersistence });
 
-    auth.onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user && user.emailVerified) {
         // User is logged in and verified, redirect to feed
         if (window.location.pathname.endsWith('index.html')) {
@@ -278,8 +253,8 @@
       }
     });
     
-    const db = firebase.firestore();
-    const functions = firebase.functions();
+    const db = firebase.firestore(app);
+    const functions = firebase.functions(app);
 
     // Rest of your JavaScript logic remains unchanged
     const showSignup = document.getElementById('show-signup');
@@ -338,10 +313,10 @@
         }
     
         // If username is unique, proceed with sign-up
-        auth.createUserWithEmailAndPassword(email, password)
+        createUserWithEmailAndPassword(auth, email, password)
           .then((userCredential) => {
             const user = userCredential.user;
-            return user.updateProfile({ displayName: name });
+            return updateProfile(user, { displayName: name });
           })
           .then(() => {
             const user = auth.currentUser;
@@ -359,7 +334,7 @@
           })
           .then(() => {
             const user = auth.currentUser;
-            return user.sendEmailVerification();
+            return sendEmailVerification(user);
           })
           .then(() => {
             alert(translations[userLanguage]["Account created! Please check your email for a verification link. If you don't see it, check your spam folder."]);
@@ -383,19 +358,14 @@
       const password = document.getElementById('signin-password').value;
       const signinErrorMessage = document.querySelector('#signin-form #error-message');
 
-      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-        .then(() => {
-          console.log('[Auth] Persistence set to LOCAL, signing in...');
-          return auth.signInWithEmailAndPassword(email, password);
-        })
+      signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
           const user = userCredential.user;
-          console.log('[Auth] Sign-in successful, emailVerified:', user.emailVerified);
           if (user.emailVerified) {
             window.location.href = 'home.html';
           } else {
             alert(translations[userLanguage]["Please verify your email before signing in. A verification link has been sent to your email address."]);
-            auth.signOut();
+            signOut(auth);
           }
         })
         .catch((error) => {
