@@ -631,13 +631,20 @@
         try { IDBFactory.prototype.open = fail; } catch(e) {}
       })();
       // Restore Firebase auth token before Firebase initializes.
-      // Uses Median native storage (iOS Keychain) which survives WKWebView localStorage wipes.
+      // Priority: localStorage → cookie → Median native storage (if plugin enabled)
       window._authRestoreReady = (function() {
         var FB_KEY = 'firebase:authUser:AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0:[DEFAULT]';
         if (localStorage.getItem(FB_KEY)) return Promise.resolve();
-        var localBackup = localStorage.getItem('fbAuthBackup');
-        if (localBackup) { localStorage.setItem(FB_KEY, localBackup); return Promise.resolve(); }
-        if (window.median) {
+        // Try cookie backup (more persistent than localStorage in WKWebView)
+        try {
+          var m = document.cookie.match(/(?:^|;\s*)fbAuthBackup=([^;]*)/);
+          if (m) { localStorage.setItem(FB_KEY, decodeURIComponent(m[1])); return Promise.resolve(); }
+        } catch(e) {}
+        // Try localStorage backup
+        var lsBackup = localStorage.getItem('fbAuthBackup');
+        if (lsBackup) { localStorage.setItem(FB_KEY, lsBackup); return Promise.resolve(); }
+        // Try Median native storage if plugin is available
+        if (window.median && window.median.storage && window.median.storage.cloud) {
           return median.storage.cloud.get({ key: 'fbAuthBackup' }).then(function(result) {
             if (result && result.data) localStorage.setItem(FB_KEY, result.data);
           }).catch(function() {});

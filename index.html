@@ -287,25 +287,32 @@
     const db = firebase.firestore();
     const functions = firebase.functions();
 
-    window.dbg('window.median: ' + (window.median ? 'YES' : 'NO'));
-    window.dbg('FB key in LS: ' + (localStorage.getItem('firebase:authUser:AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0:[DEFAULT]') ? 'YES' : 'NO'));
-    window.dbg('fbAuthBackup in LS: ' + (localStorage.getItem('fbAuthBackup') ? 'YES' : 'NO'));
-    if (window.median) {
-      median.storage.cloud.get({ key: 'fbAuthBackup' }).then(function(r) {
-        window.dbg('Keychain fbAuthBackup: ' + (r && r.data ? 'YES (' + r.data.substring(0,20) + '...)' : 'NO'));
-      }).catch(function(e) { window.dbg('Keychain get error: ' + e); });
+    // Helper: save auth token to cookie + native storage (if available)
+    function saveAuthBackup(token) {
+      try {
+        var exp = new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+        document.cookie = 'fbAuthBackup=' + encodeURIComponent(token) + '; expires=' + exp + '; path=/; SameSite=Lax';
+      } catch(e) {}
+      try { localStorage.setItem('fbAuthBackup', token); } catch(e) {}
+      if (window.median && window.median.storage && window.median.storage.cloud) {
+        try { median.storage.cloud.set({ key: 'fbAuthBackup', value: token }); } catch(e) {}
+      }
     }
+
+    var _fbKey = 'firebase:authUser:AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0:[DEFAULT]';
+    var _cookieMatch = document.cookie.match(/(?:^|;\s*)fbAuthBackup=([^;]*)/);
+    window.dbg('window.median: ' + (window.median ? 'YES' : 'NO'));
+    window.dbg('median.storage: ' + (window.median && window.median.storage ? 'YES' : 'NO'));
+    window.dbg('FB key in LS: ' + (localStorage.getItem(_fbKey) ? 'YES' : 'NO'));
+    window.dbg('fbAuthBackup cookie: ' + (_cookieMatch ? 'YES' : 'NO'));
+    window.dbg('fbAuthBackup LS: ' + (localStorage.getItem('fbAuthBackup') ? 'YES' : 'NO'));
 
     auth.onAuthStateChanged((user) => {
       window.dbg('onAuthStateChanged: user=' + (user ? user.email : 'null') + ' verified=' + (user ? user.emailVerified : '-'));
       if (user && user.emailVerified) {
-        // Back up auth token to Median native storage (iOS Keychain) - survives WKWebView localStorage wipes
-        if (window.median) {
-          var fbKey = 'firebase:authUser:AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0:[DEFAULT]';
-          var stored = localStorage.getItem(fbKey);
-          window.dbg('Saving to Keychain: ' + (stored ? 'YES' : 'NO token in LS'));
-          if (stored) median.storage.cloud.set({ key: 'fbAuthBackup', value: stored });
-        }
+        var stored = localStorage.getItem(_fbKey);
+        window.dbg('Saving backup: ' + (stored ? 'YES' : 'NO token in LS'));
+        if (stored) saveAuthBackup(stored);
         // User is logged in and verified, redirect to feed
         if (window.location.pathname.endsWith('index.html')) {
           window.location.href = 'home.html';
@@ -426,10 +433,9 @@
         .then((userCredential) => {
           const user = userCredential.user;
           if (user.emailVerified) {
-            // Back up the Firebase auth data so WKWebView can restore it
             var fbKey = 'firebase:authUser:' + firebaseConfig.apiKey + ':[DEFAULT]';
             var stored = localStorage.getItem(fbKey);
-            if (stored) localStorage.setItem('fbAuthBackup', stored);
+            if (stored) saveAuthBackup(stored);
             window.location.href = 'home.html';
           } else {
             alert(translations[userLanguage]["Please verify your email before signing in. A verification link has been sent to your email address."]);
