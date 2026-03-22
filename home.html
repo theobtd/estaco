@@ -906,15 +906,17 @@
     <div class="spinner"></div>
   </div>
 
-  <!-- Firebase SDK (modular auth with browserLocalPersistence for WebView compatibility) -->
+  <script>
+    try { IDBFactory.prototype.open = function() { throw new DOMException('', 'UnknownError'); }; } catch(e) {}
+  </script>
+
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-functions-compat.js"></script>
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js';
-    import { initializeAuth, browserLocalPersistence, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js';
-
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
       authDomain: "estaco-add3c.firebaseapp.com",
@@ -924,10 +926,10 @@
       appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = initializeAuth(app, { persistence: browserLocalPersistence });
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
-    onAuthStateChanged(auth, async (user) => {
+    auth.onAuthStateChanged(async (user) => {
       if (user && user.emailVerified) {
         document.getElementById('loading-overlay').style.display = 'none';
         logUserFriendsWithPosts(user.uid);
@@ -951,9 +953,9 @@
       }
     });
 
-    const db = firebase.firestore(app);
-    const storage = firebase.storage(app);
-    const functions = firebase.functions(app);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    const functions = firebase.functions();
 
     // DOM elements
     const postContent = document.getElementById('post-content');
@@ -1201,7 +1203,7 @@
     }
 
     // Check if user is signed in and verified
-    onAuthStateChanged(auth, (user) => {
+    auth.onAuthStateChanged((user) => {
       if (!user || !user.emailVerified) {
         alert('Please sign in and verify your email to access the home feed.');
         window.location.href = 'index.html';

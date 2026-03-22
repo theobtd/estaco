@@ -218,16 +218,19 @@
     </select>
   </div>
 
-  <!-- Firebase SDK (modular auth with browserLocalPersistence for WebView compatibility) -->
+  <script>
+    // Force Firebase Auth to use localStorage by making IDB fail immediately.
+    // In Median.co WKWebView, IDB opens but loses connection later, causing sign-outs.
+    // Firebase Auth catches this throw and falls back to localStorage.
+    try { IDBFactory.prototype.open = function() { throw new DOMException('', 'UnknownError'); }; } catch(e) {}
+  </script>
+
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-functions-compat.js"></script>
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js';
-    import { initializeAuth, browserLocalPersistence, onAuthStateChanged,
-             createUserWithEmailAndPassword, signInWithEmailAndPassword,
-             signOut, updateProfile, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js';
-
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0",
       authDomain: "estaco-add3c.firebaseapp.com",
@@ -236,10 +239,12 @@
       messagingSenderId: "876337002297",
       appId: "1:876337002297:web:b410c373bd857bc7cd1ae8"
     };
-    const app = initializeApp(firebaseConfig);
-    const auth = initializeAuth(app, { persistence: browserLocalPersistence });
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const functions = firebase.functions();
 
-    onAuthStateChanged(auth, (user) => {
+    auth.onAuthStateChanged((user) => {
       if (user && user.emailVerified) {
         // User is logged in and verified, redirect to feed
         if (window.location.pathname.endsWith('index.html')) {
@@ -253,9 +258,6 @@
       }
     });
     
-    const db = firebase.firestore(app);
-    const functions = firebase.functions(app);
-
     // Rest of your JavaScript logic remains unchanged
     const showSignup = document.getElementById('show-signup');
     const showSignin = document.getElementById('show-signin');
@@ -313,10 +315,10 @@
         }
     
         // If username is unique, proceed with sign-up
-        createUserWithEmailAndPassword(auth, email, password)
+        auth.createUserWithEmailAndPassword(email, password)
           .then((userCredential) => {
             const user = userCredential.user;
-            return updateProfile(user, { displayName: name });
+            return user.updateProfile({ displayName: name });
           })
           .then(() => {
             const user = auth.currentUser;
@@ -334,7 +336,7 @@
           })
           .then(() => {
             const user = auth.currentUser;
-            return sendEmailVerification(user);
+            return user.sendEmailVerification();
           })
           .then(() => {
             alert(translations[userLanguage]["Account created! Please check your email for a verification link. If you don't see it, check your spam folder."]);
@@ -354,18 +356,19 @@
     });
 
     signinButton.addEventListener('click', () => {
+      console.log("here")
       const email = document.getElementById('signin-email').value;
       const password = document.getElementById('signin-password').value;
       const signinErrorMessage = document.querySelector('#signin-form #error-message');
 
-      signInWithEmailAndPassword(auth, email, password)
+      auth.signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
           const user = userCredential.user;
           if (user.emailVerified) {
             window.location.href = 'home.html';
           } else {
             alert(translations[userLanguage]["Please verify your email before signing in. A verification link has been sent to your email address."]);
-            signOut(auth);
+            auth.signOut();
           }
         })
         .catch((error) => {
