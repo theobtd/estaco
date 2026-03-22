@@ -138,7 +138,7 @@
 </head>
 <body>
   <h1>Estaco</h1>
-  <p style="font-size: 11px; color: var(--estaco-text-light); margin-top: -20px; margin-bottom: 20px;">v.1</p>
+  <p style="font-size: 11px; color: var(--estaco-text-light); margin-top: -20px; margin-bottom: 20px;">v.2</p>
 
   <!-- DEBUG CONSOLE - remove after debugging -->
   <div id="debug-panel" style="text-align:left; background:#111; color:#0f0; font-family:monospace; font-size:11px; padding:8px; border-radius:6px; margin-bottom:16px; max-height:200px; overflow-y:auto; display:block;">
@@ -314,7 +314,10 @@
         window.dbg('Saving backup: ' + (stored ? 'YES' : 'NO token in LS'));
         if (stored) saveAuthBackup(stored);
         // User is logged in and verified, redirect to feed
-        if (window.location.pathname.endsWith('index.html')) {
+        // Also handle root path '/' — Median app opens at estaco.org/ not estaco.org/index.html
+        var _path = window.location.pathname;
+        window.dbg('pathname: ' + _path);
+        if (_path === '/' || _path === '' || _path.endsWith('index.html')) {
           window.location.href = 'home.html';
         }
       } else {
