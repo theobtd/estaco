@@ -373,7 +373,8 @@
       const password = document.getElementById('signin-password').value;
       const signinErrorMessage = document.querySelector('#signin-form #error-message');
 
-      auth.signInWithEmailAndPassword(email, password)
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => auth.signInWithEmailAndPassword(email, password))
         .then((userCredential) => {
           const user = userCredential.user;
           if (user.emailVerified) {
