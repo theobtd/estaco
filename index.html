@@ -145,37 +145,6 @@
   <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
   <h1>Estaco</h1>
-  <p style="font-size: 11px; color: var(--estaco-text-light); margin-top: -20px; margin-bottom: 20px;">v.2</p>
-
-  <!-- DEBUG CONSOLE - remove after debugging -->
-  <div id="debug-panel" style="text-align:left; background:#111; color:#0f0; font-family:monospace; font-size:11px; padding:8px; border-radius:6px; margin-bottom:16px; max-height:200px; overflow-y:auto; display:block;">
-    <div style="color:#ff0; margin-bottom:4px;">[ DEBUG LOG ]</div>
-  </div>
-  <script>
-    (function() {
-      var panel = document.getElementById('debug-panel');
-      function log(color, prefix, args) {
-        var msg = Array.from(args).map(function(a) {
-          try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(e) { return String(a); }
-        }).join(' ');
-        var line = document.createElement('div');
-        line.style.color = color;
-        line.style.borderTop = '1px solid #222';
-        line.style.paddingTop = '2px';
-        line.textContent = prefix + ' ' + msg;
-        panel.appendChild(line);
-        panel.scrollTop = panel.scrollHeight;
-      }
-      var _log = console.log.bind(console);
-      var _warn = console.warn.bind(console);
-      var _error = console.error.bind(console);
-      console.log   = function() { _log.apply(console, arguments);   log('#0f0', '[LOG]',   arguments); };
-      console.warn  = function() { _warn.apply(console, arguments);  log('#ff0', '[WARN]',  arguments); };
-      console.error = function() { _error.apply(console, arguments); log('#f55', '[ERR]',   arguments); };
-      window.onerror = function(msg, src, line) { log('#f55', '[ERR]', [msg + ' (' + src + ':' + line + ')']); };
-      window.dbg = function(msg) { log('#0ff', '[DBG]', [msg]); };
-    })();
-  </script>
   <button id="show-signup" data-i18n="Create Account">Create Account</button>
   <button id="show-signin" data-i18n="Sign In">Sign In</button>
 
@@ -307,23 +276,13 @@
     }
 
     var _fbKey = 'firebase:authUser:AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0:[DEFAULT]';
-    var _cookieMatch = document.cookie.match(/(?:^|;\s*)fbAuthBackup=([^;]*)/);
-    window.dbg('window.median: ' + (window.median ? 'YES' : 'NO'));
-    window.dbg('median.storage: ' + (window.median && window.median.storage ? 'YES' : 'NO'));
-    window.dbg('FB key in LS: ' + (localStorage.getItem(_fbKey) ? 'YES' : 'NO'));
-    window.dbg('fbAuthBackup cookie: ' + (_cookieMatch ? 'YES' : 'NO'));
-    window.dbg('fbAuthBackup LS: ' + (localStorage.getItem('fbAuthBackup') ? 'YES' : 'NO'));
 
     auth.onAuthStateChanged((user) => {
-      window.dbg('onAuthStateChanged: user=' + (user ? user.email : 'null') + ' verified=' + (user ? user.emailVerified : '-'));
       if (user && user.emailVerified) {
         var stored = localStorage.getItem(_fbKey);
-        window.dbg('Saving backup: ' + (stored ? 'YES' : 'NO token in LS'));
         if (stored) saveAuthBackup(stored);
-        // User is logged in and verified, redirect to feed
         // Also handle root path '/' — Median app opens at estaco.org/ not estaco.org/index.html
         var _path = window.location.pathname;
-        window.dbg('pathname: ' + _path);
         if (_path === '/' || _path === '' || _path.endsWith('index.html')) {
           window.location.href = 'home.html';
         }
