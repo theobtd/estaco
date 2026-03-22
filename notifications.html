@@ -178,10 +178,15 @@
   </div>
 
   <script>
-    // Disable IndexedDB so Firebase Auth uses localStorage (fixes WKWebView persistence)
-    try { Object.defineProperty(window, 'indexedDB', { get: function() { return undefined; }, configurable: true }); } catch(e) {}
-    try { if (window.indexedDB) window.indexedDB.open = function() { throw new DOMException('', 'UnknownError'); }; } catch(e) {}
-    try { IDBFactory.prototype.open = function() { throw new DOMException('', 'UnknownError'); }; } catch(e) {}
+    // Disable IndexedDB so Firebase Auth falls back to localStorage (fixes WKWebView/Median.co persistence)
+    (function() {
+      var noop = function() { return undefined; };
+      var fail = function() { throw new DOMException('', 'UnknownError'); };
+      try { Object.defineProperty(Window.prototype, 'indexedDB', { get: noop, configurable: true }); } catch(e) {}
+      try { Object.defineProperty(window, 'indexedDB', { get: noop, configurable: true }); } catch(e) {}
+      try { if (window.indexedDB) window.indexedDB.open = fail; } catch(e) {}
+      try { IDBFactory.prototype.open = fail; } catch(e) {}
+    })();
   </script>
 
   <!-- Firebase SDK -->
