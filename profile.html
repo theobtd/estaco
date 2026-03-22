@@ -621,6 +621,14 @@
     </div>
 
     <script>
+      // Restore Firebase auth backup in case IDB wiped it (WKWebView fix)
+      (function() {
+        var fbKey = 'firebase:authUser:AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0:[DEFAULT]';
+        if (!localStorage.getItem(fbKey)) {
+          var backup = localStorage.getItem('fbAuthBackup');
+          if (backup) localStorage.setItem(fbKey, backup);
+        }
+      })();
       // Disable IndexedDB so Firebase Auth falls back to localStorage (fixes WKWebView/Median.co persistence)
       (function() {
         var noop = function() { return undefined; };

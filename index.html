@@ -373,10 +373,15 @@
       const password = document.getElementById('signin-password').value;
       const signinErrorMessage = document.querySelector('#signin-form #error-message');
 
-      auth.signInWithEmailAndPassword(email, password)
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => auth.signInWithEmailAndPassword(email, password))
         .then((userCredential) => {
           const user = userCredential.user;
           if (user.emailVerified) {
+            // Back up the Firebase auth data so WKWebView can restore it
+            var fbKey = 'firebase:authUser:' + firebaseConfig.apiKey + ':[DEFAULT]';
+            var stored = localStorage.getItem(fbKey);
+            if (stored) localStorage.setItem('fbAuthBackup', stored);
             window.location.href = 'home.html';
           } else {
             alert(translations[userLanguage]["Please verify your email before signing in. A verification link has been sent to your email address."]);
