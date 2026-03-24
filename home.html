@@ -7,6 +7,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
   <style>
     :root {
@@ -785,7 +786,7 @@
         display: inline-block;
         width: 8px;
         height: 8px;
-        background-color: red;
+        background-color: blue;
         border-radius: 50%;
         margin-left: 8px;
         vertical-align: middle;
@@ -3154,6 +3155,13 @@
             });
         }
     });
+
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        mediumZoom('.media-container img');
+      });
+    </script>
 
     /**
      * Adds a post to the user's OwnPosts sub-collection.
