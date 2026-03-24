@@ -7,6 +7,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
   <style>
     :root {
@@ -2271,6 +2272,13 @@
         e.currentTarget.style.display = 'none';
       }
     });
+
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.8/dist/medium-zoom.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        mediumZoom('.media-container img');
+      });
+    </script>
 
     // Add event listener for comment buttons
     document.addEventListener('click', (e) => {
