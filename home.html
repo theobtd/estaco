@@ -790,6 +790,24 @@
         margin-left: 8px;
         vertical-align: middle;
     }
+    .zoom-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .zoom-modal img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
 
   </style>
 </head>
@@ -3282,6 +3300,34 @@
         console.error("Error adding/updating comment tag notification:", error);
       }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.media-container img').forEach(img => {
+        img.addEventListener('click', function(e) {
+          e.preventDefault(); // Prevent any default behavior
+    
+          // Create modal
+          const modal = document.createElement('div');
+          modal.className = 'zoom-modal';
+    
+          // Create zoomed image
+          const zoomedImg = document.createElement('img');
+          zoomedImg.src = this.src;
+          zoomedImg.alt = this.alt;
+    
+          // Add image to modal
+          modal.appendChild(zoomedImg);
+    
+          // Add modal to body
+          document.body.appendChild(modal);
+    
+          // Close modal when tapped anywhere
+          modal.addEventListener('click', function() {
+            document.body.removeChild(modal);
+          });
+        });
+      });
+    });
     
     /**
      * Adds a tag notification to a user's notifications sub-collection.
