@@ -260,14 +260,24 @@
     }
     
     /* Media inside the container */
-    .media-container img,
+    .media-container img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* Change from 'cover' to 'contain' */
+        max-width: none; /* Allow images to scale beyond container */
+        max-height: none; /* Allow images to scale beyond container */
+    }
+    
     .media-container video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover; /* Use cover to fill the container */
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Keep videos as is */
     }
     .orientation-button {
       padding: 8px 12px;
