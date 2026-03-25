@@ -786,7 +786,7 @@
         display: inline-block;
         width: 8px;
         height: 8px;
-        background-color: green;
+        background-color: red;
         border-radius: 50%;
         margin-left: 8px;
         vertical-align: middle;
@@ -800,18 +800,27 @@
       width: 100%;
       height: 100%;
       background-color: rgba(0, 0, 0, 0.9);
-      overflow: auto;
-      justify-content: center;
-      align-items: center;
-      touch-action: auto;
+      overflow: hidden;
+      touch-action: none; /* Disable default touch actions */
+      user-select: none; /* Prevent text selection */
     }
     
     .fullscreen-photo {
-      max-width: 100%;
-      max-height: 100%;
-      display: block;
-      margin: auto;
-      object-fit: contain;
+      max-width: none;
+      max-height: none;
+      width: auto;
+      height: auto;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(1);
+      transform-origin: 0 0; /* Default to top-left */
+      will-change: transform; /* Optimize for animations */
+      cursor: grab;
+    }
+
+    .fullscreen-photo:active {
+      cursor: grabbing;
     }
     
     .close-fullscreen {
@@ -2674,27 +2683,90 @@
       const modal = document.getElementById('fullscreen-photo-modal');
       const fullscreenPhoto = document.getElementById('fullscreen-photo');
     
-      // Initialize Hammer.js for pinch-to-zoom
+      // Variables for zoom and pan
+      let scale = 1;
+      let posX = 0;
+      let posY = 0;
+      let startX = 0;
+      let startY = 0;
+      let isDragging = false;
+    
+      // Initialize Hammer.js for the modal
       const hammer = new Hammer(modal);
       hammer.get('pinch').set({ enable: true });
+      hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
     
-      let scale = 1;
-    
-      hammer.on('pinchstart pinchmove', (e) => {
-        if (e.type === 'pinchstart') {
+      // Reset position and scale when opening a new image
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
           scale = 1;
-        }
-    
-        if (e.type === 'pinchmove') {
-          scale = Math.max(1, Math.min(e.scale, 4)); // Limit zoom to 1x-4x
-          fullscreenPhoto.style.transform = `scale(${scale})`;
-          fullscreenPhoto.style.transformOrigin = 'center center';
+          posX = 0;
+          posY = 0;
+          fullscreenPhoto.style.transform = `translate(-50%, -50%) scale(${scale})`;
         }
       });
     
-      // Reset zoom when the modal is closed
+      // Pinch to zoom
+      hammer.on('pinchstart pinchmove', (e) => {
+        if (e.type === 'pinchstart') {
+          startX = posX;
+          startY = posY;
+        }
+    
+        if (e.type === 'pinchmove') {
+          scale = Math.max(1, Math.min(e.scale, 4));
+          fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+        }
+      });
+    
+      // Pan to move around
+      hammer.on('panstart panmove', (e) => {
+        if (e.type === 'panstart') {
+          isDragging = true;
+          startX = e.center.x - posX;
+          startY = e.center.y - posY;
+        }
+    
+        if (e.type === 'panmove' && isDragging) {
+          posX = e.center.x - startX;
+          posY = e.center.y - startY;
+          fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+        }
+      });
+    
+      hammer.on('panend', () => {
+        isDragging = false;
+      });
+    
+      // Double-tap to zoom in/out
+      hammer.on('doubletap', (e) => {
+        const rect = fullscreenPhoto.getBoundingClientRect();
+        const offsetX = e.center.x - rect.left;
+        const offsetY = e.center.y - rect.top;
+        const originX = (offsetX / rect.width) * 100;
+        const originY = (offsetY / rect.height) * 100;
+    
+        if (scale > 1) {
+          scale = 1;
+          posX = 0;
+          posY = 0;
+        } else {
+          scale = 2;
+          posX = e.center.x - startX;
+          posY = e.center.y - startY;
+        }
+    
+        fullscreenPhoto.style.transformOrigin = `${originX}% ${originY}%`;
+        fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+      });
+    
+      // Reset zoom and position when closing the modal
       document.querySelector('.close-fullscreen').addEventListener('click', () => {
-        fullscreenPhoto.style.transform = 'scale(1)';
+        scale = 1;
+        posX = 0;
+        posY = 0;
+        fullscreenPhoto.style.transform = 'translate(-50%, -50%) scale(1)';
+        fullscreenPhoto.style.transformOrigin = '0 0';
       });
     });
 
