@@ -270,6 +270,11 @@
       height: 100%;
       object-fit: cover; /* Use cover to fill the container */
     }
+    /* Allow zooming on feed images */
+    .media-container img {
+      touch-action: auto;
+      transform-origin: center center;
+    }
     .orientation-button {
       padding: 8px 12px;
       margin-right: 5px;
@@ -2695,6 +2700,37 @@
       // Reset zoom when the modal is closed
       document.querySelector('.close-fullscreen').addEventListener('click', () => {
         fullscreenPhoto.style.transform = 'scale(1)';
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize Hammer.js for all images in the feed
+      const feedImages = document.querySelectorAll('.media-container img');
+    
+      feedImages.forEach(img => {
+        const hammer = new Hammer(img);
+        hammer.get('pinch').set({ enable: true });
+    
+        let scale = 1;
+    
+        hammer.on('pinchstart pinchmove', (e) => {
+          if (e.type === 'pinchstart') {
+            scale = 1;
+          }
+    
+          if (e.type === 'pinchmove') {
+            scale = Math.max(1, Math.min(e.scale, 4)); // Limit zoom to 1x-4x
+            img.style.transform = `scale(${scale})`;
+            img.style.transformOrigin = 'center center';
+          }
+        });
+    
+        // Reset zoom when the image is double-tapped
+        hammer.on('doubletap', () => {
+          scale = scale === 1 ? 2 : 1;
+          img.style.transform = `scale(${scale})`;
+          img.style.transformOrigin = 'center center';
+        });
       });
     });
 
