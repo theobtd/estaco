@@ -790,6 +790,36 @@
         margin-left: 8px;
         vertical-align: middle;
     }
+    .fullscreen-modal {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      overflow: auto;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .fullscreen-photo {
+      max-width: 90%;
+      max-height: 90%;
+      display: block;
+      margin: auto;
+    }
+    
+    .close-fullscreen {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 35px;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
   </style>
 </head>
@@ -896,6 +926,11 @@
       <ul id="friends-list" style="list-style: none; padding: 0;"></ul>
       <button id="close-visibility-modal" data-i18n="Close">×</button>
     </div>
+  </div>
+
+  <div id="fullscreen-photo-modal" class="fullscreen-modal">
+    <span class="close-fullscreen">&times;</span>
+    <img class="fullscreen-photo" id="fullscreen-photo">
   </div>
 
   <div id="loader-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); z-index: 2000; justify-content: center; align-items: center;">
@@ -2932,6 +2967,28 @@
             }
           }, { once: true });
         }, 0);
+      }
+    });
+
+    // Open fullscreen photo modal
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('post-media') && e.target.tagName === 'IMG') {
+        const modal = document.getElementById('fullscreen-photo-modal');
+        const fullscreenPhoto = document.getElementById('fullscreen-photo');
+        fullscreenPhoto.src = e.target.src;
+        modal.style.display = 'flex';
+      }
+    });
+    
+    // Close fullscreen photo modal
+    document.querySelector('.close-fullscreen').addEventListener('click', () => {
+      document.getElementById('fullscreen-photo-modal').style.display = 'none';
+    });
+    
+    // Close modal when clicking outside the image
+    document.getElementById('fullscreen-photo-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        e.currentTarget.style.display = 'none';
       }
     });
 
