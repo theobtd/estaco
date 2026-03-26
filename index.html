@@ -225,6 +225,12 @@
     </select>
   </div>
 
+  <div id="signup-loading" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;display:none;">
+    <h1 style="color:var(--estaco-primary);font-weight:600;margin-bottom:16px;">Estaco</h1>
+    <div style="width:36px;height:36px;border:3px solid var(--estaco-border);border-top-color:var(--estaco-primary);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+    <p style="margin-top:16px;color:var(--estaco-text-light);" data-i18n="Creating your account...">Creating your account...</p>
+  </div>
+
   <script>
     // Force Firebase Auth to use localStorage by making IDB fail immediately.
     // In Median.co WKWebView, IDB opens but loses connection later, causing sign-outs.
@@ -323,6 +329,7 @@
       const password = document.getElementById('signup-password').value;
       const passwordConfirm = document.getElementById('signup-password-confirm').value;
       const acceptTerms = document.getElementById('accept-terms');
+      const signupLoading = document.getElementById('signup-loading');
     
       // Validate inputs
       if (email !== emailConfirm) {
@@ -342,55 +349,62 @@
         return;
       }
     
-    // Check if the username already exists in the usernames collection
-    db.collection('usernames')
-      .where('name', '==', name)
-      .get()
-      .then((querySnapshot) => {
-        if (!querySnapshot.empty) {
-          errorMessage.textContent = translations[userLanguage]["Username is already taken."];
-          return;
-        }
+      // Show loader
+      signupLoading.style.display = 'flex';
     
-        // If username is unique, proceed with sign-up
-        auth.createUserWithEmailAndPassword(email, password)
-          .then((userCredential) => {
-            const user = userCredential.user;
-            return user.updateProfile({ displayName: name });
-          })
-          .then(() => {
-            const user = auth.currentUser;
-            // Write to both users and usernames collections
-            const userData = {
-              name: name,
-              language: language,
-              email: email,
-              profilePictureURL: null
-            };
-            return Promise.all([
-              db.collection('users').doc(user.uid).set(userData),
-              db.collection('usernames').doc(user.uid).set({ name: name })
-            ]);
-          })
-          .then(() => {
-            const user = auth.currentUser;
-            return user.sendEmailVerification();
-          })
-          .then(() => {
-            alert(translations[userLanguage]["Account created! Please check your email for a verification link. If you don't see it, check your spam folder."]);
-            document.getElementById('signup-name').value = '';
-            document.getElementById('signup-email').value = '';
-            document.getElementById('signup-email-confirm').value = '';
-            document.getElementById('signup-password').value = '';
-            signupForm.style.display = 'none';
-          })
-          .catch((error) => {
-            errorMessage.textContent = error.message;
-          });
-      })
-      .catch((error) => {
-        errorMessage.textContent = 'Error checking username: ' + error.message;
-      });
+      // Check if the username already exists in the usernames collection
+      db.collection('usernames')
+        .where('name', '==', name)
+        .get()
+        .then((querySnapshot) => {
+          if (!querySnapshot.empty) {
+            signupLoading.style.display = 'none';
+            errorMessage.textContent = translations[userLanguage]["Username is already taken."];
+            return;
+          }
+    
+          // If username is unique, proceed with sign-up
+          auth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+              const user = userCredential.user;
+              return user.updateProfile({ displayName: name });
+            })
+            .then(() => {
+              const user = auth.currentUser;
+              // Write to both users and usernames collections
+              const userData = {
+                name: name,
+                language: language,
+                email: email,
+                profilePictureURL: null
+              };
+              return Promise.all([
+                db.collection('users').doc(user.uid).set(userData),
+                db.collection('usernames').doc(user.uid).set({ name: name })
+              ]);
+            })
+            .then(() => {
+              const user = auth.currentUser;
+              return user.sendEmailVerification();
+            })
+            .then(() => {
+              alert(translations[userLanguage]["Account created! Please check your email for a verification link. If you don't see it, check your spam folder."]);
+              document.getElementById('signup-name').value = '';
+              document.getElementById('signup-email').value = '';
+              document.getElementById('signup-email-confirm').value = '';
+              document.getElementById('signup-password').value = '';
+              signupForm.style.display = 'none';
+              signupLoading.style.display = 'none';
+            })
+            .catch((error) => {
+              signupLoading.style.display = 'none';
+              errorMessage.textContent = error.message;
+            });
+        })
+        .catch((error) => {
+          signupLoading.style.display = 'none';
+          errorMessage.textContent = 'Error checking username: ' + error.message;
+        });
     });
 
     signinButton.addEventListener('click', () => {
@@ -482,6 +496,7 @@
         "Please verify your email before signing in. A verification link has been sent to your email address.": "Please verify your email before signing in. A verification link has been sent to your email address.",
         "Error checking username: ": "Error checking username: ",
         "You must accept the terms of use to proceed.": "You must accept the terms of use to proceed.",
+        "Creating your account...": "Creating your account...",
       },
       French: {
         "Create Account": "Créer un compte",
@@ -513,6 +528,7 @@
         "Please verify your email before signing in. A verification link has been sent to your email address.": "Veuillez vérifier votre email avant de vous connecter. Un lien de vérification a été envoyé à votre adresse email.",
         "Error checking username: ": "Erreur lors de la vérification du nom d'utilisateur : ",
         "Vous devez accepter les conditions d'utilisation pour continuer.": "Vous devez accepter les conditions d'utilisation pour continuer.",
+        "Creating your account...": "Création de votre compte...",
       },
       Korean: {
         "Create Account": "계정 만들기",
@@ -544,6 +560,7 @@
         "Please verify your email before signing in. A verification link has been sent to your email address.": "로그인 전에 이메일을 확인하세요. 확인 링크가 이메일 주소로 전송되었습니다.",
         "Error checking username: ": "사용자 이름 확인 중 오류: ",
         "이용 약관에 동의해야 진행할 수 있습니다.": "이용 약관에 동의해야 진행할 수 있습니다.",
+        "Creating your account...": "계정을 생성하는 중입니다...",
       }
     };
     
