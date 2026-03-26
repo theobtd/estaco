@@ -426,12 +426,12 @@
             if (stored) saveAuthBackup(stored);
             window.location.href = 'home.html';
           } else {
-            alert(translations[userLanguage]["Please verify your email before signing in. A verification link has been sent to your email address. If you don't see it, <u><strong>please check your spam folder</strong></u>."]);
+            alert(translations[userLanguage]["Please verify your email before signing in. A verification link has been sent to your email address."]);
             auth.signOut();
           }
         })
         .catch((error) => {
-          signinErrorMessage.innerHTML = error.message;
+          signinErrorMessage.textContent = error.message;
         });
     });
 
@@ -496,7 +496,8 @@
         "Username is already taken.": "Username is already taken.",
         "Account created! Please check your email for a verification link. If you don't see it, check your spam folder.": "Account created! Please check your email for a verification link. If you don't see it, check your spam folder.",
         "Signed in successfully!": "Signed in successfully!",
-        "Please verify your email before signing in. A verification link has been sent to your email address. If you don't see it, <u><strong>please check your spam folder</strong></u>.": "Please verify your email before signing in. A verification link has been sent to your email address. If you don't see it, <u><strong>please check your spam folder</strong></u>.",        "Error checking username: ": "Error checking username: ",
+        "Please verify your email before signing in. A verification link has been sent to your email address.": "Please verify your email before signing in. A verification link has been sent to your email address.",
+        "Error checking username: ": "Error checking username: ",
         "You must accept the terms of use to proceed.": "You must accept the terms of use to proceed.",
         "Creating your account...": "Creating your account...",
         "Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>.": "Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>.",
@@ -528,7 +529,7 @@
         "Username is already taken.": "Ce nom d'utilisateur est déjà pris.",
         "Account created! Please check your email for a verification link. If you don't see it, check your spam folder.": "Compte créé ! Veuillez vérifier votre email pour le lien de vérification. Veuillez aussi verifier vos spams",
         "Signed in successfully!": "Connexion réussie !",
-        "Please verify your email before signing in. A verification link has been sent to your email address. If you don't see it, <u><strong>please check your spam folder</strong></u>.": "Veuillez vérifier votre email avant de vous connecter. Un lien de vérification a été envoyé à votre adresse email. Si vous ne le voyez pas, <u><strong>veuillez vérifier votre dossier spam</strong></u>.",
+        "Please verify your email before signing in. A verification link has been sent to your email address.": "Veuillez vérifier votre email avant de vous connecter. Un lien de vérification a été envoyé à votre adresse email.",
         "Error checking username: ": "Erreur lors de la vérification du nom d'utilisateur : ",
         "Vous devez accepter les conditions d'utilisation pour continuer.": "Vous devez accepter les conditions d'utilisation pour continuer.",
         "Creating your account...": "Création de votre compte...",
@@ -561,7 +562,7 @@
         "Username is already taken.": "이 사용자 이름은 이미 사용 중입니다.",
         "Account created! Please check your email for a verification link. If you don't see it, check your spam folder.": "계정이 생성되었습니다! 이메일에서 확인 링크를 확인하세요. 만약 메일을 찾을 수 없다면 스팸 폴더를 확인해 보세요.",
         "Signed in successfully!": "로그인 성공!",
-        "Please verify your email before signing in. A verification link has been sent to your email address. If you don't see it, <u><strong>please check your spam folder</strong></u>.": "로그인 전에 이메일을 확인하세요. 확인 링크가 이메일 주소로 전송되었습니다. 만약 메일을 찾을 수 없다면 <u><strong>스팸 폴더를 확인해 주세요</strong></u>.",
+        "Please verify your email before signing in. A verification link has been sent to your email address.": "로그인 전에 이메일을 확인하세요. 확인 링크가 이메일 주소로 전송되었습니다.",
         "Error checking username: ": "사용자 이름 확인 중 오류: ",
         "이용 약관에 동의해야 진행할 수 있습니다.": "이용 약관에 동의해야 진행할 수 있습니다.",
         "Creating your account...": "계정을 생성하는 중입니다...",
