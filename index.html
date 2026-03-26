@@ -431,7 +431,7 @@
           }
         })
         .catch((error) => {
-          signinErrorMessage.textContent = error.message;
+          signinErrorMessage.innerHTML = error.message;
         });
     });
 
