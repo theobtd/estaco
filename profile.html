@@ -1087,12 +1087,17 @@
 
         // Accept friend request
         function acceptFriendRequest(fromId, toId) {
+            // Show loader
+            document.getElementById('loader-modal').style.display = 'flex';
+        
             // Check if the user already has 15 friends
             db.collection('friends').doc(toId).get()
                 .then((doc) => {
                     const friends = doc.data()?.friends || [];
                     if (friends.length >= 15) {
                         alert('You have reached the maximum number of friends (15).');
+                        // Hide loader
+                        document.getElementById('loader-modal').style.display = 'none';
                         return;
                     }
         
@@ -1132,9 +1137,31 @@
                                             populateFeedsWithExistingPosts(toId, fromId).catch(error => {
                                               console.error('Error populating feeds (toId to fromId):', error);
                                             });
+                                            // Hide loader
+                                            document.getElementById('loader-modal').style.display = 'none';
+                                        })
+                                        .catch(error => {
+                                            console.error('Error accepting friend request:', error);
+                                            // Hide loader
+                                            document.getElementById('loader-modal').style.display = 'none';
                                         });
+                                })
+                                .catch(error => {
+                                    console.error('Error accepting friend request:', error);
+                                    // Hide loader
+                                    document.getElementById('loader-modal').style.display = 'none';
                                 });
+                        })
+                        .catch(error => {
+                            console.error('Error accepting friend request:', error);
+                            // Hide loader
+                            document.getElementById('loader-modal').style.display = 'none';
                         });
+                })
+                .catch(error => {
+                    console.error('Error accepting friend request:', error);
+                    // Hide loader
+                    document.getElementById('loader-modal').style.display = 'none';
                 });
         }
 
