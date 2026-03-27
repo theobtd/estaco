@@ -1256,7 +1256,9 @@
               <button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>
             </div>
           </div>
-          <p>${processedContent}</p>
+          <p class="post-caption">${processedContent}</p>
+          <button class="translate-button" data-post-id="${post.id}">Translate</button>
+          <div class="translated-text" style="display: none;"></div>
           ${mediaHTML}
           <div class="reactions">
             <button class="reaction-button" data-post-id="${post.id}" data-reaction="like">👍</button>
@@ -2024,7 +2026,9 @@
               ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
             </div>
           </div>
-          <p>${processedContent}</p>
+          <p class="post-caption">${processedContent}</p>
+          <button class="translate-button" data-post-id="${post.id}">Translate</button>
+          <div class="translated-text" style="display: none;"></div>
           ${mediaHTML}
           <div class="reactions">
             <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
@@ -2391,6 +2395,46 @@
         selection.addRange(range);
       }
     });
+
+    document.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('translate-button')) {
+        const postId = e.target.getAttribute('data-post-id');
+        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+        const caption = postElement.querySelector('.post-caption').textContent;
+        const translatedTextElement = postElement.querySelector('.translated-text');
+    
+        // Get user's language from localStorage or Firestore
+        const userLanguage = localStorage.getItem('userLanguage') || 'en';
+    
+        // Show loading state
+        e.target.textContent = 'Translating...';
+        e.target.disabled = true;
+    
+        try {
+          const translatedText = await translateText(caption, userLanguage);
+          translatedTextElement.textContent = translatedText;
+          translatedTextElement.style.display = 'block';
+        } catch (error) {
+          console.error('Translation failed:', error);
+          translatedTextElement.textContent = 'Translation failed. Please try again.';
+          translatedTextElement.style.display = 'block';
+        } finally {
+          e.target.textContent = 'Translate';
+          e.target.disabled = false;
+        }
+      }
+    });
+
+    async function translateText(text, targetLanguage) {
+      const workerUrl = 'https://your-worker-subdomain.workers.dev';
+      const response = await fetch(workerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, targetLanguage }),
+      });
+      const data = await response.json();
+      return data.data.translations[0].translatedText;
+    }
     
     // Function to add a comment to Firestore
     async function addComment(postId, content) {
