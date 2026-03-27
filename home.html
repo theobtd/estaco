@@ -2433,7 +2433,6 @@
         body: JSON.stringify({ text, targetLanguage }),
       });
       const data = await response.json();
-      // Access the translated text from the nested response
       return data.data.translations[0].translatedText;
     }
     
