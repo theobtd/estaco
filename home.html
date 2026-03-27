@@ -2426,17 +2426,6 @@
     });
 
     async function translateText(text, targetLanguage) {
-      const workerUrl = 'https://broad-glade-a9bd.tdgbertrand.workers.dev';
-      const response = await fetch(workerUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, targetLanguage }),
-      });
-      const data = await response.json();
-      return data.data.translations[0].translatedText;
-    }
-
-    async function translateText(text, targetLanguage) {
       const workerUrl = 'https://translate-proxy.broad-glade-a9bd.tdgbertrand.workers.dev';
       const response = await fetch(workerUrl, {
         method: 'POST',
