@@ -2435,6 +2435,18 @@
       const data = await response.json();
       return data.data.translations[0].translatedText;
     }
+
+    async function translateText(text, targetLanguage) {
+      const workerUrl = 'https://translate-proxy.broad-glade-a9bd.tdgbertrand.workers.dev';
+      const response = await fetch(workerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, targetLanguage }),
+      });
+      const data = await response.json();
+      // Access the translated text from the nested response
+      return data.data.translations[0].translatedText;
+    }
     
     // Function to add a comment to Firestore
     async function addComment(postId, content) {
