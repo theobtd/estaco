@@ -885,6 +885,9 @@
         outline: none;
       "
     ></div>
+    <div id="char-counter" style="text-align: right; font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 10px;">
+      0 / 500
+    </div>
     <div class="post-form-actions">
       <label for="post-media" id="post-media-label">
         <span data-i18n="Photo/Video">📷 Photo/Video</span>
@@ -1066,6 +1069,8 @@
     const postButton = document.getElementById('post-button');
     const feed = document.getElementById('feed');
     const errorMessage = document.getElementById('error-message');
+    const charCounter = document.getElementById('char-counter');
+    const maxCaptionLength = 500;
 
     let isLoading = false; // Flag to prevent multiple simultaneous loads
     let selectedFriendUids = new Set(); // Track selected friends
@@ -1240,6 +1245,17 @@
     
     document.getElementById('home-button').addEventListener('click', () => {
       window.location.href = 'home.html'; // or reload the current page
+    });
+
+    postContent.addEventListener('input', () => {
+      const content = postContent.textContent.trim();
+      const currentLength = content.length;
+      charCounter.textContent = `${currentLength} / ${maxCaptionLength}`;
+      if (currentLength > maxCaptionLength) {
+        charCounter.style.color = 'red';
+      } else {
+        charCounter.style.color = '#666';
+      }
     });
 
     async function renderNewPost(post) {
@@ -1758,10 +1774,16 @@
     postButton.addEventListener('click', () => {
       errorMessage.textContent = ''; // Clear any previous error message
       const content = postContent.innerHTML;
+      const content = postContent.textContent.trim();
       const mediaFile = postMedia.files[0];
     
       if (!content) {
         alert(translations[userLanguage]["Post content cannot be empty."]);
+        return;
+      }
+
+      if (content.length > maxCaptionLength) {
+        alert(`Caption must be ${maxCaptionLength} characters or less.`);
         return;
       }
     
