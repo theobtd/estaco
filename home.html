@@ -1067,6 +1067,9 @@
     let isVisibilityAll = true; // Track if all friends are selected
     let userLanguage = "English";
 
+    // Translation cache: { postId: { language: translatedText } }
+    const translationCache = {};
+
     // Try to load the language from localStorage first
     const savedLanguage = localStorage.getItem('userLanguage');
     if (savedLanguage) {
@@ -1622,6 +1625,17 @@
     
             const targetLangCode = languageMap[targetLanguage] || 'en';
     
+            // Check if the translation is already cached
+            if (translationCache[postId] && translationCache[postId][targetLangCode]) {
+              const decodedText = decodeHtmlEntities(translationCache[postId][targetLangCode]);
+              postContentElement.textContent = decodedText;
+              e.target.textContent = 'Show Original';
+              e.target.dataset.originalContent = originalContent;
+              e.target.dataset.translatedContent = decodedText;
+              e.target.disabled = false;
+              return;
+            }
+    
             // Call your Cloudflare Worker to translate the content
             const response = await fetch('https://estaco-translation.tdgbertrand.workers.dev', {
               method: 'POST',
@@ -1638,6 +1652,12 @@
     
             // Decode HTML entities before displaying
             const decodedText = decodeHtmlEntities(translatedText);
+    
+            // Cache the translation
+            if (!translationCache[postId]) {
+              translationCache[postId] = {};
+            }
+            translationCache[postId][targetLangCode] = decodedText;
     
             postContentElement.textContent = decodedText;
             e.target.textContent = 'Show Original';
