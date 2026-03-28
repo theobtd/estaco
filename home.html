@@ -1627,6 +1627,7 @@
     
             // Check if the translation is already cached
             if (translationCache[postId] && translationCache[postId][targetLangCode]) {
+              console.log(`[Translation] Using cached translation for post ${postId} in ${targetLanguage}`);
               const decodedText = decodeHtmlEntities(translationCache[postId][targetLangCode]);
               postContentElement.textContent = decodedText;
               e.target.textContent = 'Show Original';
@@ -1635,6 +1636,8 @@
               e.target.disabled = false;
               return;
             }
+    
+            console.log(`[Translation] No cached translation for post ${postId} in ${targetLanguage}, calling API...`);
     
             // Call your Cloudflare Worker to translate the content
             const response = await fetch('https://estaco-translation.tdgbertrand.workers.dev', {
@@ -1658,6 +1661,8 @@
               translationCache[postId] = {};
             }
             translationCache[postId][targetLangCode] = decodedText;
+    
+            console.log(`[Translation] Cached new translation for post ${postId} in ${targetLanguage}`);
     
             postContentElement.textContent = decodedText;
             e.target.textContent = 'Show Original';
