@@ -1577,6 +1577,12 @@
       }
     });
 
+    function decodeHtmlEntities(text) {
+      const textArea = document.createElement('textarea');
+      textArea.innerHTML = text;
+      return textArea.value;
+    }
+
     document.addEventListener('click', async (e) => {
       if (e.target.classList.contains('translate-button')) {
         const postId = e.target.getAttribute('data-post-id');
@@ -1630,10 +1636,13 @@
             const result = await response.text();
             const translatedText = result.split('Translated: ')[1];
     
-            postContentElement.textContent = translatedText;
+            // Decode HTML entities before displaying
+            const decodedText = decodeHtmlEntities(translatedText);
+    
+            postContentElement.textContent = decodedText;
             e.target.textContent = 'Show Original';
             e.target.dataset.originalContent = originalContent;
-            e.target.dataset.translatedContent = translatedText;
+            e.target.dataset.translatedContent = decodedText;
           } catch (error) {
             console.error('Translation error:', error);
             alert('Error translating post. Please try again.');
