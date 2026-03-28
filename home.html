@@ -837,8 +837,11 @@
   </style>
 </head>
 <body>
- <div id="top-nav-bar">
-    <h1>Estaco</h1>
+  <div id="top-nav-bar">
+    <h1>
+      Estaco
+      <span id="connected-message" style="display: none; margin-left: 8px; color: green; font-size: 14px;">Connected!</span>
+    </h1>
   </div>
 
   <div id="post-form">
@@ -1505,6 +1508,11 @@
           hideUserTagDropdown();
         }
       }
+    });
+
+    document.querySelector('#top-nav-bar h1').addEventListener('click', function() {
+      const connectedMessage = document.getElementById('connected-message');
+      connectedMessage.style.display = connectedMessage.style.display === 'none' ? 'inline' : 'none';
     });
     
     // Listen for clicks inside all comment inputs (event delegation)
