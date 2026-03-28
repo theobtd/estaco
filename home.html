@@ -834,6 +834,23 @@
       cursor: pointer;
     }
 
+    .translate-button {
+      background: none;
+      border: 1px solid var(--estaco-border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 5px;
+      margin-bottom: 5px;
+      color: var(--estaco-secondary);
+      transition: background-color 0.2s;
+    }
+    
+    .translate-button:hover {
+      background-color: var(--estaco-surface);
+    }
+
   </style>
 </head>
 <body>
@@ -1260,6 +1277,8 @@
             </div>
           </div>
           <p>${processedContent}</p>
+          <button class="translate-button" data-post-id="${post.id}" data-i18n="Translate">Translate</button>
+          ${mediaHTML}
           ${mediaHTML}
           <div class="reactions">
             <button class="reaction-button" data-post-id="${post.id}" data-reaction="like">👍</button>
@@ -1555,6 +1574,49 @@
     document.addEventListener('click', (e) => {
       if (!e.target.matches('#post-content, .comment-input, .user-tag-item')) {
         hideUserTagDropdown();
+      }
+    });
+
+    document.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('translate-button')) {
+        const postId = e.target.getAttribute('data-post-id');
+        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+        const postContentElement = postElement.querySelector('p');
+        const originalContent = e.target.dataset.originalContent || postContentElement.textContent;
+    
+        if (e.target.dataset.translatedContent) {
+          // Toggle back to original
+          postContentElement.textContent = originalContent;
+          e.target.textContent = 'Translate';
+          delete e.target.dataset.translatedContent;
+        } else {
+          // Translate
+          e.target.textContent = 'Translating...';
+          e.target.disabled = true;
+    
+          try {
+            const response = await fetch('https://estaco-translation.tdgbertrand.workers.dev', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ message: originalContent }),
+            });
+            const result = await response.text();
+            const translatedText = result.split('Translated: ')[1];
+    
+            postContentElement.textContent = translatedText;
+            e.target.textContent = 'Show Original';
+            e.target.dataset.originalContent = originalContent;
+            e.target.dataset.translatedContent = translatedText;
+          } catch (error) {
+            console.error('Translation error:', error);
+            alert('Error translating post. Please try again.');
+            e.target.textContent = 'Translate';
+          } finally {
+            e.target.disabled = false;
+          }
+        }
       }
     });
 
@@ -2049,6 +2111,8 @@
             </div>
           </div>
           <p>${processedContent}</p>
+          <button class="translate-button" data-post-id="${post.id}" data-i18n="Translate">Translate</button>
+          ${mediaHTML}
           ${mediaHTML}
           <div class="reactions">
             <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
