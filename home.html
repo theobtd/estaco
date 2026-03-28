@@ -862,11 +862,8 @@
   </style>
 </head>
 <body>
-  <div id="top-nav-bar">
-    <h1>
-      Estaco
-      <span id="connected-message" style="display: none; margin-left: 8px; color: green; font-size: 14px;">Connected!</span>
-    </h1>
+ <div id="top-nav-bar">
+    <h1>Estaco</h1>
   </div>
 
   <div id="post-form">
@@ -1537,27 +1534,6 @@
         } else {
           hideUserTagDropdown();
         }
-      }
-    });
-
-    document.querySelector('#top-nav-bar h1').addEventListener('click', async function() {
-      const connectedMessage = document.getElementById('connected-message');
-      connectedMessage.style.display = 'inline';
-    
-      try {
-        const response = await fetch('https://estaco-translation.tdgbertrand.workers.dev', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message: 'Hello world!' }),
-        });
-        const result = await response.text();
-        console.log('Worker response:', result);
-        alert(result); // Show the response in an alert
-      } catch (error) {
-        console.error('Error calling worker:', error);
-        alert('Error calling worker: ' + error.message);
       }
     });
     
