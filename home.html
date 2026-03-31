@@ -1763,6 +1763,12 @@
         alert(translations[userLanguage]["Post content cannot be empty."]);
         return;
       }
+
+      const textContent = postContent.textContent || postContent.innerText;
+      if (textContent.length > 500) {
+        errorMessage.textContent = "Caption must be 500 characters or less.";
+        return;
+      }
     
       // Show full-screen overlay
       document.getElementById('upload-overlay').style.display = 'flex';
