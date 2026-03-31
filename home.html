@@ -2619,6 +2619,12 @@
     async function addComment(postId, content) {
       const user = auth.currentUser;
       if (!user) return;
+
+      const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML tags for accurate length
+      if (textContent.length > 250) {
+        alert("Comment must be 250 characters or less.");
+        return;
+      }
     
       const taggedUserUids = extractTaggedUserUids(content);
     
@@ -3157,6 +3163,16 @@
     function isAtBottom() {
         return (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200;
     }
+
+    document.querySelectorAll('.comment-input').forEach(input => {
+      input.addEventListener('input', function() {
+        const text = this.textContent || this.innerText;
+        if (text.length > 250) {
+          this.textContent = text.substring(0, 250);
+          alert("Comment must be 250 characters or less.");
+        }
+      });
+    });
 
     // Replace your setupIntersectionObserver with this:
     function setupIntersectionObserver() {
