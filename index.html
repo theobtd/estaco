@@ -208,6 +208,9 @@
       <label for="signin-password" data-i18n="Password">Password</label>
       <input type="password" id="signin-password" placeholder="Password" required>
     </div>
+    <div style="text-align: right; margin-bottom: 15px;">
+      <a href="#" id="forgot-password-link" style="font-size: 14px; color: var(--estaco-secondary); text-decoration: none;" data-i18n="Forgot Password?">Forgot Password?</a>
+    </div>
     <button id="signin-button" style="width: 100%;" data-i18n="Sign In">Sign In</button>
     <p id="error-message"></p>
   </div>
@@ -223,6 +226,19 @@
       <option value="French">FR</option>
       <option value="Korean">KR</option>
     </select>
+  </div>
+
+  <div id="reset-password-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 20px; border-radius: 10px; max-width: 350px; margin: 0 auto; text-align: center;">
+      <h3 data-i18n="Reset Password">Reset Password</h3>
+      <div class="form-group">
+        <label for="reset-email" data-i18n="Email">Email</label>
+        <input type="email" id="reset-email" placeholder="Email" required>
+      </div>
+      <button id="send-reset-link" style="background-color: var(--estaco-accent); color: var(--estaco-text); border: none; border-radius: 8px; padding: 10px; font-weight: 500; cursor: pointer; width: 100%;" data-i18n="Send Reset Link">Send Reset Link</button>
+      <p id="reset-error-message" style="color: var(--estaco-error); font-size: 14px; margin-top: 10px;"></p>
+      <button id="close-reset-modal" style="background-color: var(--estaco-border); color: var(--estaco-text); border: none; border-radius: 8px; padding: 10px; font-weight: 500; cursor: pointer; margin-top: 10px;" data-i18n="Cancel">Cancel</button>
+    </div>
   </div>
 
   <div id="success-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 10000; align-items: center; justify-content: center;">
@@ -517,6 +533,11 @@
         "You must accept the terms of use to proceed.": "You must accept the terms of use to proceed.",
         "Creating your account...": "Creating your account...",
         "Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>.": "Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>.",
+        "Forgot Password?": "Forgot Password?",
+        "Reset Password": "Reset Password",
+        "Send Reset Link": "Send Reset Link",
+        "Password reset email sent! Check your inbox.": "Password reset email sent! Check your inbox.",
+        "Cancel": "Cancel",
       },
       French: {
         "Create Account": "Créer un compte",
@@ -550,6 +571,11 @@
         "Vous devez accepter les conditions d'utilisation pour continuer.": "Vous devez accepter les conditions d'utilisation pour continuer.",
         "Creating your account...": "Création de votre compte...",
         "Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>.": "Cet email est déjà utilisé. Si vous n'avez pas reçu d'email de vérification, veuillez <u><strong>vérifier votre dossier spam</strong></u>.",
+        "Forgot Password?": "Mot de passe oublié?",
+        "Reset Password": "Reinitialiser mot de passe",
+        "Send Reset Link": "Envoyer lien de reinitialisation",
+        "Password reset email sent! Check your inbox.": "lien de reinitialisation envoyé",
+        "Cancel": "Annuler",
       },
       Korean: {
         "Create Account": "계정 만들기",
@@ -583,6 +609,11 @@
         "이용 약관에 동의해야 진행할 수 있습니다.": "이용 약관에 동의해야 진행할 수 있습니다.",
         "Creating your account...": "계정을 생성하는 중입니다...",
         "Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>.": "이 이메일은 이미 사용 중입니다. 확인 이메일을 받지 못하셨다면 <u><strong>스팸 폴더를 확인해 주세요</strong></u>.",
+        "Forgot Password?": "Mot de passe oublié?",
+        "Reset Password": "Reinitialiser mot de passe",
+        "Send Reset Link": "Envoyer lien de reinitialisation",
+        "Password reset email sent! Check your inbox.": "lien de reinitialisation envoyé",
+        "Cancel": "Annuler",
       }
     };
     
@@ -596,6 +627,39 @@
         }
       });
     }
+
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    const resetPasswordModal = document.getElementById('reset-password-modal');
+    const sendResetLinkButton = document.getElementById('send-reset-link');
+    const closeResetModalButton = document.getElementById('close-reset-modal');
+    const resetErrorMessage = document.getElementById('reset-error-message');
+    
+    forgotPasswordLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      resetPasswordModal.style.display = 'flex';
+    });
+    
+    closeResetModalButton.addEventListener('click', () => {
+      resetPasswordModal.style.display = 'none';
+      resetErrorMessage.textContent = '';
+    });
+    
+    sendResetLinkButton.addEventListener('click', () => {
+      const email = document.getElementById('reset-email').value;
+      if (!email) {
+        resetErrorMessage.textContent = translations[userLanguage]["Please enter your email."];
+        return;
+      }
+      auth.sendPasswordResetEmail(email)
+        .then(() => {
+          resetErrorMessage.textContent = '';
+          alert(translations[userLanguage]["Password reset email sent! Check your inbox."]);
+          resetPasswordModal.style.display = 'none';
+        })
+        .catch((error) => {
+          resetErrorMessage.textContent = error.message;
+        });
+    });
 
     const languageSelect = document.getElementById('language-select');
     languageSelect.addEventListener('change', (event) => {
