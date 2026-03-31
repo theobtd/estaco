@@ -2539,18 +2539,24 @@
       if (e.target.classList.contains('comment-button')) {
         const postId = e.target.getAttribute('data-post-id');
         const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
-        const content = commentInput.innerHTML.trim(); // Use innerHTML instead of textContent
-        if (content && content !== '<br>') {
-          addComment(postId, content);
-          commentInput.innerHTML = ''; // Clear the contenteditable div
-          // Automatically show the comments section after posting
-          const commentsList = document.getElementById(`comments-${postId}`);
-          const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
-          if (seeCommentsButton) {
-            seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
-            commentsList.classList.add('visible');
-            loadComments(postId); // Load comments here
-          }
+        const content = commentInput.textContent.trim();
+        if (!content) {
+          alert("Comment cannot be empty.");
+          return;
+        }
+        if (content.length > 250) {
+          alert("Comment must be 250 characters or less.");
+          return;
+        }
+        addComment(postId, commentInput.innerHTML);
+        commentInput.innerHTML = ''; // Clear the contenteditable div
+        // Automatically show the comments section after posting
+        const commentsList = document.getElementById(`comments-${postId}`);
+        const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
+        if (seeCommentsButton) {
+          seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+          commentsList.classList.add('visible');
+          loadComments(postId); // Load comments here
         }
       }
     });
@@ -2619,6 +2625,12 @@
     async function addComment(postId, content) {
       const user = auth.currentUser;
       if (!user) return;
+
+      const textContent = content.textContent || content;
+      if (textContent.length > 250) {
+        alert("Comment must be 250 characters or less.");
+        return;
+      }
     
       const taggedUserUids = extractTaggedUserUids(content);
     
