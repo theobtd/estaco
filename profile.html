@@ -705,12 +705,16 @@
         function loadPendingRequests(userId) {
             db.collection('friendRequests').where('to', '==', userId).get()
                 .then(snapshot => {
+                    console.log('Pending requests snapshot:', snapshot.docs.map(d => d.data())); // Debug log
                     pendingFriendRequestsDiv.innerHTML = '';
-                    const renderedRequests = new Set(); // Track rendered requests
+                    const renderedRequests = new Set();
                     const promises = [];
                     snapshot.forEach(doc => {
                         const request = doc.data();
-                        if (renderedRequests.has(request.from)) return; // Skip if already rendered
+                        if (renderedRequests.has(request.from)) {
+                            console.warn('Duplicate request detected for:', request.from);
+                            return;
+                        }
                         renderedRequests.add(request.from);
         
                         const promise = db.collection('users').doc(request.from).get()
@@ -720,7 +724,16 @@
                                 requestDiv.className = 'pending-friend';
                                 requestDiv.innerText = fromName;
                                 requestDiv.setAttribute('data-from-id', request.from);
-                                // ... append buttons and add to DOM
+                                const acceptButton = document.createElement('button');
+                                acceptButton.className = 'friend-button';
+                                acceptButton.innerText = 'Accept';
+                                acceptButton.onclick = () => acceptFriendRequest(request.from, userId);
+                                requestDiv.appendChild(acceptButton);
+                                const rejectButton = document.createElement('button');
+                                rejectButton.className = 'friend-button remove';
+                                rejectButton.innerText = 'Reject';
+                                rejectButton.onclick = () => rejectFriendRequest(request.from, userId);
+                                requestDiv.appendChild(rejectButton);
                                 pendingFriendRequestsDiv.appendChild(requestDiv);
                             });
                         promises.push(promise);
