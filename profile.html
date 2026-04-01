@@ -702,10 +702,15 @@
         });
 
         // Load pending friend requests
+        let isLoadingPendingRequests = false;
+        
         function loadPendingRequests(userId) {
+            if (isLoadingPendingRequests) return;
+            isLoadingPendingRequests = true;
+        
             db.collection('friendRequests').where('to', '==', userId).get()
                 .then(snapshot => {
-                    console.log('Pending requests snapshot:', snapshot.docs.map(d => d.data())); // Debug log
+                    console.log('Pending requests snapshot:', snapshot.docs.map(d => d.data()));
                     pendingFriendRequestsDiv.innerHTML = '';
                     const renderedRequests = new Set();
                     const promises = [];
@@ -739,6 +744,9 @@
                         promises.push(promise);
                     });
                     return Promise.all(promises);
+                })
+                .finally(() => {
+                    isLoadingPendingRequests = false;
                 });
         }
 
