@@ -491,6 +491,30 @@
           width: 100%;
           box-sizing: border-box;
         }
+        .icon-container {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .notification-badge {
+          position: absolute;
+          top: -5px;
+          right: -5px;
+          background-color: var(--estaco-error);
+          color: white;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: bold;
+          border: 1.5px solid white;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
         
     </style>
 
@@ -588,9 +612,12 @@
             <span class="icon">🏠</span>
             <span class="label" data-i18n="Feed">Feed</span>
           </button>
-          <button class="nav-button" id="notifications-button">
-              <span class="icon">🔔</span>
-              <span class="label">Notifications</span>
+            <button class="nav-button" id="notifications-button">
+              <div class="icon-container">
+                <span class="icon">🔔</span>
+                <span id="notifications-badge" class="notification-badge" style="display: none;"></span>
+              </div>
+              <span class="label" data-i18n="Notifications">Notifications</span>
             </button>
           <button class="nav-button" id="profile-button">
             <span class="icon">👤</span>
@@ -1264,6 +1291,19 @@
                   const userData = doc.data();
                   userLanguage = userData.language || "English";
                   updatePageLanguage(userLanguage);
+
+                  // Get the NotificationsCounter value
+                  const notificationsCount = userData.NotificationsCounter || 0;
+                  const badge = document.getElementById('notifications-badge');
+        
+                  // Show the badge only if there are notifications
+                  if (notificationsCount > 0) {
+                    badge.textContent = notificationsCount;
+                    badge.style.display = 'flex';
+                  } else {
+                    badge.style.display = 'none';
+                  } 
+                    
                   if (userData.profilePictureURL) {
                     img.src = userData.profilePictureURL;
                     img.onload = () => {
