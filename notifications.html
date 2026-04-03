@@ -330,6 +330,13 @@
         alert(translations[userLanguage]["Please sign in and verify your email to access notifications."]);
         window.location.href = 'index.html';
       } else {
+        // Reset NotificationsCounter to 0 for the current user
+        db.collection('users').doc(user.uid).update({
+          NotificationsCounter: 0
+        }).catch((error) => {
+          console.error("Error resetting NotificationsCounter:", error);
+        });
+        
         // Load user data from Firestore to get the user's language
         db.collection('users').doc(user.uid).get()
           .then((doc) => {
