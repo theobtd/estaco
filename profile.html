@@ -1398,6 +1398,13 @@
               timestamp: timestamp,
               message: `${requesterName} sent you a friend request.`
             });
+            // Increment the NotificationsCounter for the target user
+            const userRef = db.collection('users').doc(targetUid);
+            await db.runTransaction(async (transaction) => {
+              const userDoc = await transaction.get(userRef);
+              const currentCount = userDoc.data()?.NotificationsCounter || 0;
+              transaction.update(userRef, { NotificationsCounter: currentCount + 1 });
+            });
           } catch (error) {
             console.error("Error adding friend request notification:", error);
           }
