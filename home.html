@@ -2628,6 +2628,9 @@
     
       const taggedUserUids = extractTaggedUserUids(content);
     
+      // Show the loader overlay
+      document.getElementById('upload-overlay').style.display = 'flex';
+    
       // --- STEP 1: SET COMMENTSVISIBLE FLAG FIRST ---
       try {
         if (taggedUserUids.length > 0) {
@@ -2642,6 +2645,7 @@
       } catch (error) {
         console.error("Error setting CommentsVisible flag:", error);
         alert("Failed to prepare comment visibility. Please try again.");
+        document.getElementById('upload-overlay').style.display = 'none';
         return;
       }
     
@@ -2725,12 +2729,16 @@
           }
           if (commentsList) {
             commentsList.classList.add('visible');
-            loadComments(postId); // Load comments here
+            // Load comments and hide the loader only after this completes
+            await loadComments(postId);
           }
         }
       } catch (error) {
         console.error("Error adding comment:", error);
         alert("Failed to add comment. Please try again.");
+      } finally {
+        // Hide the loader overlay
+        document.getElementById('upload-overlay').style.display = 'none';
       }
     }
 
