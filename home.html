@@ -858,6 +858,13 @@
       color: var(--estaco-secondary);
       transition: background-color 0.2s;
     }
+    .icon-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
     .notification-badge {
       position: absolute;
       top: -5px;
@@ -949,9 +956,11 @@
       <span class="label" data-i18n="Feed">Feed</span>
     </button>
     <button class="nav-button" id="notifications-button">
-      <span class="icon">🔔</span>
+      <div class="icon-container">
+        <span class="icon">🔔</span>
+        <span id="notifications-badge" class="notification-badge" style="display: none;"></span>
+      </div>
       <span class="label" data-i18n="Notifications">Notifications</span>
-      <span id="notifications-badge" class="notification-badge" style="display: none;"></span>
     </button>
     <button class="nav-button" id="profile-button">
       <span class="icon">👤</span>
