@@ -2619,7 +2619,7 @@
     async function addComment(postId, content) {
       const user = auth.currentUser;
       if (!user) return;
-
+    
       const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML tags for accurate length
       if (textContent.length > 250) {
         alert("Comment must be 250 characters or less.");
@@ -2628,20 +2628,34 @@
     
       const taggedUserUids = extractTaggedUserUids(content);
     
-      if (taggedUserUids.length > 0) {
-        // Get mutual friends for each tagged user
-        const mutualFriendUids = await getMutualFriendUidsForComment(user.uid, taggedUserUids);
+      // --- STEP 1: SET COMMENTSVISIBLE FLAG FIRST ---
+      try {
+        if (taggedUserUids.length > 0) {
+          // Get mutual friends for each tagged user
+          const mutualFriendUids = await getMutualFriendUidsForComment(user.uid, taggedUserUids);
+          // Update the CommentsVisible flag for mutual friends
+          await updateCommentsVisibleForComment(postId, user.uid, taggedUserUids, mutualFriendUids);
+        } else {
+          // No tagged users, update for all friends
+          await updateCommentsVisibleForPost(postId, user.uid);
+        }
+      } catch (error) {
+        console.error("Error setting CommentsVisible flag:", error);
+        alert("Failed to prepare comment visibility. Please try again.");
+        return;
+      }
     
-        // Add the comment to Firestore with taggedUserUids
-        const comment = {
-          authorId: user.uid,
-          authorName: user.displayName || "Unknown User",
-          content: content,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-          taggedUserUids: taggedUserUids,
-        };
-    
-        try {
+      // --- STEP 2: ADD THE COMMENT ---
+      try {
+        if (taggedUserUids.length > 0) {
+          // Add the comment to Firestore with taggedUserUids
+          const comment = {
+            authorId: user.uid,
+            authorName: user.displayName || "Unknown User",
+            content: content,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            taggedUserUids: taggedUserUids,
+          };
           const docRef = await db.collection('posts').doc(postId).collection('comments').add(comment);
     
           // Fetch the post to get the author's UID
@@ -2671,37 +2685,14 @@
               firebase.firestore.FieldValue.serverTimestamp()
             );
           }
-    
-          // Update the CommentsVisible flag for mutual friends
-          await updateCommentsVisibleForComment(postId, user.uid, taggedUserUids, mutualFriendUids);
-    
-          // Force the "See comments" button to appear and open the comments section
-          const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-          if (postElement) {
-            const seeCommentsButton = postElement.querySelector('.see-comments-button');
-            const commentsList = postElement.querySelector('.comments-list');
-            if (seeCommentsButton) {
-              seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
-              seeCommentsButton.style.display = 'block';
-            }
-            if (commentsList) {
-              commentsList.classList.add('visible');
-              loadComments(postId); // Load comments here
-            }
-          }
-        } catch (error) {
-          console.error("Error adding comment: ", error);
-        }
-      } else {
-        // No tagged users, add comment normally
-        const comment = {
-          authorId: user.uid,
-          authorName: user.displayName || "Unknown User",
-          content: content,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        };
-    
-        try {
+        } else {
+          // No tagged users, add comment normally
+          const comment = {
+            authorId: user.uid,
+            authorName: user.displayName || "Unknown User",
+            content: content,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          };
           const docRef = await db.collection('posts').doc(postId).collection('comments').add(comment);
     
           // Fetch the post to get the author's UID
@@ -2720,27 +2711,26 @@
               );
             }
           }
-    
-          // Update the CommentsVisible flag for all friends
-          await updateCommentsVisibleForPost(postId, user.uid);
-    
-          // Force the "See comments" button to appear and open the comments section
-          const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-          if (postElement) {
-            const seeCommentsButton = postElement.querySelector('.see-comments-button');
-            const commentsList = postElement.querySelector('.comments-list');
-            if (seeCommentsButton) {
-              seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
-              seeCommentsButton.style.display = 'block';
-            }
-            if (commentsList) {
-              commentsList.classList.add('visible');
-              loadComments(postId); // Load comments here
-            }
-          }
-        } catch (error) {
-          console.error("Error adding comment: ", error);
         }
+    
+        // --- STEP 3: UI UPDATES ---
+        // Force the "See comments" button to appear and open the comments section
+        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+        if (postElement) {
+          const seeCommentsButton = postElement.querySelector('.see-comments-button');
+          const commentsList = postElement.querySelector('.comments-list');
+          if (seeCommentsButton) {
+            seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+            seeCommentsButton.style.display = 'block';
+          }
+          if (commentsList) {
+            commentsList.classList.add('visible');
+            loadComments(postId); // Load comments here
+          }
+        }
+      } catch (error) {
+        console.error("Error adding comment:", error);
+        alert("Failed to add comment. Please try again.");
       }
     }
 
