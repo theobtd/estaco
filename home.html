@@ -858,6 +858,23 @@
       color: var(--estaco-secondary);
       transition: background-color 0.2s;
     }
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: var(--estaco-error);
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      border: 1.5px solid white;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
 
   </style>
 </head>
@@ -934,6 +951,7 @@
     <button class="nav-button" id="notifications-button">
       <span class="icon">🔔</span>
       <span class="label" data-i18n="Notifications">Notifications</span>
+      <span id="notifications-badge" class="notification-badge" style="display: none;"></span>
     </button>
     <button class="nav-button" id="profile-button">
       <span class="icon">👤</span>
@@ -1037,18 +1055,27 @@
         document.getElementById('loading-overlay').style.display = 'none';
         logUserFriendsWithPosts(user.uid);
         loadPosts();
-        db.collection('users').doc(user.uid).get()
-          .then((doc) => {
-            if (doc.exists) {
-              const userData = doc.data();
-              userLanguage = userData.language || "English";
-              localStorage.setItem('userLanguage', userLanguage);
-              updatePageLanguage(userLanguage);
-            }
-          })
-          .catch((error) => {
-            console.error("Error loading user data:", error);
-          });
+    
+        // Read the NotificationsCounter from Firestore
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          userLanguage = userData.language || "English";
+          localStorage.setItem('userLanguage', userLanguage);
+          updatePageLanguage(userLanguage);
+    
+          // Get the NotificationsCounter value
+          const notificationsCount = userData.NotificationsCounter || 0;
+          const badge = document.getElementById('notifications-badge');
+    
+          // Show the badge only if there are notifications
+          if (notificationsCount > 0) {
+            badge.textContent = notificationsCount;
+            badge.style.display = 'flex';
+          } else {
+            badge.style.display = 'none';
+          }
+        }
       } else {
         document.getElementById('loading-overlay').style.display = 'none';
         alert('Please sign in and verify your email to access the home feed.');
