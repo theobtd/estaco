@@ -3691,6 +3691,13 @@
             message: `${commenterName} tagged you in a comment.`
           });
         }
+        // Increment the NotificationsCounter for the tagged user
+        const userRef = db.collection('users').doc(taggedUid);
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          const currentCount = userDoc.data()?.NotificationsCounter || 0;
+          transaction.update(userRef, { NotificationsCounter: currentCount + 1 });
+        });
       } catch (error) {
         console.error("Error adding/updating comment tag notification:", error);
       }
@@ -3714,6 +3721,13 @@
           postId,
           timestamp,
           message: `${taggerName} tagged you in a post.`
+        });
+        // Increment the NotificationsCounter for the tagged user
+        const userRef = db.collection('users').doc(taggedUid);
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          const currentCount = userDoc.data()?.NotificationsCounter || 0;
+          transaction.update(userRef, { NotificationsCounter: currentCount + 1 });
         });
       } catch (error) {
         console.error("Error adding tag notification:", error);
@@ -3778,6 +3792,13 @@
           postId,
           timestamp: timestamp,
         });
+        // Increment the NotificationsCounter for the post author
+        const userRef = db.collection('users').doc(userId);
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          const currentCount = userDoc.data()?.NotificationsCounter || 0;
+          transaction.update(userRef, { NotificationsCounter: currentCount + 1 });
+        });
       } catch (error) {
         console.error('Error adding reaction notification:', error);
       }
@@ -3827,6 +3848,13 @@
           commentContent: commentContent,
           postId: postId,
           timestamp: timestamp,
+        });
+        // Increment the NotificationsCounter for the post author
+        const userRef = db.collection('users').doc(userId);
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          const currentCount = userDoc.data()?.NotificationsCounter || 0;
+          transaction.update(userRef, { NotificationsCounter: currentCount + 1 });
         });
       } catch (error) {
         console.error('Error adding comment notification:', error);
