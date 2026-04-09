@@ -2111,6 +2111,9 @@
             isLoading = false;
             return;
         }
+
+        // Log the feed load activity
+        await logFeedLoadActivity(user.uid);
     
         try {
             // 1. Get the user's feed sub-collection
@@ -3603,6 +3606,23 @@
             });
         }
     });
+
+    /**
+     * Logs a feed load activity to the user's ActivityLog subcollection.
+     * @param {string} userId - The user's UID.
+     */
+    async function logFeedLoadActivity(userId) {
+      try {
+        const activityLogRef = db.collection(`users/${userId}/ActivityLog`).doc();
+        await activityLogRef.set({
+          type: "feed_load",
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log("Feed load activity logged for user:", userId);
+      } catch (error) {
+        console.error("Error logging feed load activity:", error);
+      }
+    }
 
     /**
      * Adds a post to the user's OwnPosts sub-collection.
