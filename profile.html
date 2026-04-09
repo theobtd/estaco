@@ -1091,14 +1091,17 @@
         }
 
         /**
-         * Populates the feeds of two users with all existing posts from each other's OwnPosts.
+         * Populates the feeds of two users with the last 10 posts from each other's OwnPosts.
          * @param {string} userIdA - The UID of the first user.
          * @param {string} userIdB - The UID of the second user.
          */
         async function populateFeedsWithExistingPosts(userIdA, userIdB) {
           try {
-            // Get all posts from userIdA's OwnPosts
-            const ownPostsSnapshotA = await db.collection(`users/${userIdA}/OwnPosts`).get();
+            // Get the last 10 posts from userIdA's OwnPosts, sorted by timestamp (newest first)
+            const ownPostsSnapshotA = await db.collection(`users/${userIdA}/OwnPosts`)
+              .orderBy('postTimestamp', 'desc')
+              .limit(10)
+              .get();
             const postsA = ownPostsSnapshotA.docs.map(doc => doc.data());
         
             // Add each post to userIdB's feed
@@ -1106,8 +1109,11 @@
               await addPostToUserFeed(userIdB, post.postId, post.postTimestamp);
             }
         
-            // Get all posts from userIdB's OwnPosts
-            const ownPostsSnapshotB = await db.collection(`users/${userIdB}/OwnPosts`).get();
+            // Get the last 10 posts from userIdB's OwnPosts, sorted by timestamp (newest first)
+            const ownPostsSnapshotB = await db.collection(`users/${userIdB}/OwnPosts`)
+              .orderBy('postTimestamp', 'desc')
+              .limit(10)
+              .get();
             const postsB = ownPostsSnapshotB.docs.map(doc => doc.data());
         
             // Add each post to userIdA's feed
@@ -1115,7 +1121,7 @@
               await addPostToUserFeed(userIdA, post.postId, post.postTimestamp);
             }
         
-            console.log('Feeds populated with existing posts from OwnPosts.');
+            console.log('Feeds populated with the last 10 posts from OwnPosts.');
           } catch (error) {
             console.error('Error populating feeds:', error);
           }
