@@ -909,9 +909,6 @@
         outline: none;
       "
     ></div>
-    <div id="tag-alert" style="display: none; color: var(--estaco-error); font-size: 14px; margin-top: 5px;">
-      Attention: only friends in common will see this post.
-    </div>
     <div class="post-form-actions">
       <label for="post-media" id="post-media-label">
         <span data-i18n="Photo/Video">📷 Photo/Video</span>
@@ -1425,16 +1422,6 @@
     function hideUserTagDropdown() {
       document.getElementById('user-tag-dropdown').style.display = 'none';
     }
-
-    // Show the tag alert
-    function showTagAlert() {
-      document.getElementById('tag-alert').style.display = 'block';
-    }
-    
-    // Hide the tag alert
-    function hideTagAlert() {
-      document.getElementById('tag-alert').style.display = 'none';
-    }
     
     // Function to insert the selected user into the textarea
     function insertTaggedUser(inputElement, username, atPos, uid) {
@@ -1456,15 +1443,7 @@
       selection.addRange(range);
     
       inputElement.focus();
-
-      // Show the alert if a friend is tagged
-      showTagAlert();
     }
-
-    // Hide the alert when the post is submitted or cleared
-    postButton.addEventListener('click', () => {
-      hideTagAlert();
-    });
     
     // Listen for @ in the post-content div
     postContent.addEventListener('input', (e) => {
