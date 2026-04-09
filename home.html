@@ -1063,6 +1063,10 @@
       if (user && user.emailVerified) {
         document.getElementById('loading-overlay').style.display = 'none';
         logUserFriendsWithPosts(user.uid);
+
+        // Log the page load activity once
+        await logFeedLoadActivity(user.uid);
+        
         loadPosts();
     
         // Read the NotificationsCounter from Firestore
@@ -2111,9 +2115,6 @@
             isLoading = false;
             return;
         }
-
-        // Log the feed load activity
-        await logFeedLoadActivity(user.uid);
     
         try {
             // 1. Get the user's feed sub-collection
