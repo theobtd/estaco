@@ -399,14 +399,9 @@
           });
         }
     
-        // Fetch post content for each notification
+        // Use the stored postCaption from the notification
         for (const notification of notifications) {
-          const postDoc = await db.collection('posts').doc(notification.postId).get();
-          if (postDoc.exists) {
-            notification.postContent = postDoc.data().content;
-          } else {
-            notification.postContent = "[Post deleted]";
-          }
+          notification.postContent = notification.postCaption || "[Post deleted]";
         }
     
         // Render notifications
