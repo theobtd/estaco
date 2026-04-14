@@ -882,6 +882,15 @@
       border: 1.5px solid white;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
+    .delete-post-button {
+      background: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
 
   </style>
 </head>
@@ -1151,6 +1160,7 @@
         "Friend removed successfully.": "Friend removed successfully.",
         "Failed to remove friend.": "Failed to remove friend.",
         "No posts yet. Create one!": "No posts yet. Create one!",
+        "Delete": "Delete",
       },
       French: {
         "Create a Post": "Créer une publication",
@@ -1197,6 +1207,7 @@
         "Are you sure you want to block this friend? The blocked user will not receive a notification but will not see you as a friend, will not see your post(s), and will not be able to add you as a friend.": "Êtes-vous sûr de vouloir bloquer cet ami ?\nL'utilisateur bloqué ne recevra pas de notification mais ne vous verra plus comme ami, ne verra plus vos publications et ne pourra plus vous ajouter comme ami.",
         "Friend removed successfully.": "Ami supprimé avec succès.",
         "Failed to remove friend.": "Échec de la suppression de l'ami.",
+        "Delete": "Supprimer",
       },
       Korean: {
         "Create a Post": "게시물 작성",
@@ -1243,6 +1254,7 @@
         "Are you sure you want to block this friend? The blocked user will not receive a notification but will not see you as a friend, will not see your post(s), and will not be able to add you as a friend.": "이 친구를 차단하시겠습니까?\n차단된 사용자는 알림을 받지 않지만 당신을 친구로 보지 못하며, 당신의 게시물을 볼 수 없고, 당신을 친구로 추가할 수 없습니다.",
         "Friend removed successfully.": "친구가 성공적으로 삭제되었습니다.",
         "Failed to remove friend.": "친구 삭제에 실패했습니다.",
+        "Delete": "삭제",
       }
     };
 
@@ -2283,7 +2295,7 @@
             </div>
             <div style="display: flex; align-items: center;">
               <span style="font-size: 12px; color: #666; margin-right: 10px;">${formatTimestamp(post.timestamp)}</span>
-              ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" style="background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">Delete</button>` : ''}
+              ${isAuthor ? `<button class="delete-post-button" data-post-id="${post.id}" data-i18n="Delete"></button>` : ''}
             </div>
           </div>
           <p>${processedContent}</p>
