@@ -3720,8 +3720,11 @@
      */
     async function addCommentTagNotification(taggedUid, postId, commenterId, commenterName, timestamp) {
       try {
-        const notificationsRef = db.collection(`users/${taggedUid}/notifications`);
+        // Fetch the post to get its caption
+        const postDoc = await db.collection('posts').doc(postId).get();
+        const postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
     
+        const notificationsRef = db.collection(`users/${taggedUid}/notifications`);
         // Query for existing notifications
         const querySnapshot = await notificationsRef
           .where('type', '==', 'comment_tag')
@@ -3734,7 +3737,8 @@
           querySnapshot.forEach((doc) => {
             doc.ref.update({
               timestamp,
-              message: `${commenterName} tagged you again in a comment.`
+              message: `${commenterName} tagged you again in a comment.`,
+              postCaption: postCaption, // Add the post's caption here
             });
           });
         } else {
@@ -3744,6 +3748,7 @@
             commenterId,
             commenterName,
             postId,
+            postCaption: postCaption, // Add the post's caption here
             timestamp,
             message: `${commenterName} tagged you in a comment.`
           });
@@ -3770,12 +3775,17 @@
      */
     async function addTagNotification(taggedUid, postId, taggerId, taggerName, timestamp) {
       try {
+        // Fetch the post to get its caption
+        const postDoc = await db.collection('posts').doc(postId).get();
+        const postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
+    
         const notificationsRef = db.collection(`users/${taggedUid}/notifications`).doc();
         await notificationsRef.set({
           type: "tag",
           taggerId,
           taggerName,
           postId,
+          postCaption: postCaption, // Add the post's caption here
           timestamp,
           message: `${taggerName} tagged you in a post.`
         });
@@ -3897,6 +3907,10 @@
      */
     async function addCommentNotification(userId, postId, commenterId, commenterName, commentContent, timestamp) {
       try {
+        // Fetch the post to get its caption
+        const postDoc = await db.collection('posts').doc(postId).get();
+        const postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
+    
         const notificationsRef = db.collection(`users/${userId}/notifications`).doc();
         await notificationsRef.set({
           type: 'comment',
@@ -3904,6 +3918,7 @@
           reactorName: commenterName,
           commentContent: commentContent,
           postId: postId,
+          postCaption: postCaption, // Add the post's caption here
           timestamp: timestamp,
         });
         // Increment the NotificationsCounter for the post author
