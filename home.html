@@ -1360,6 +1360,8 @@
     
       // Prepend the new post to the feed
       feed.insertAdjacentHTML('afterbegin', postHTML);
+      // Translate the new post's elements
+      updatePageLanguage(userLanguage);
     }
 
     // Check if user is signed in and verified
