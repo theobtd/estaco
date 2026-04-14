@@ -3724,7 +3724,7 @@
         const postDoc = await db.collection('posts').doc(postId).get();
         let postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
         // Limit postCaption to 80 characters
-        postCaption = postCaption.substring(0, 80);
+        postCaption = postCaption.length > 80 ? postCaption.substring(0, 80) + "..." : postCaption;
     
         const notificationsRef = db.collection(`users/${taggedUid}/notifications`);
         // Query for existing notifications
@@ -3781,7 +3781,7 @@
         const postDoc = await db.collection('posts').doc(postId).get();
         let postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
         // Limit postCaption to 80 characters
-        postCaption = postCaption.substring(0, 80);
+        postCaption = postCaption.length > 80 ? postCaption.substring(0, 80) + "..." : postCaption;
     
         const notificationsRef = db.collection(`users/${taggedUid}/notifications`).doc();
         await notificationsRef.set({
@@ -3858,7 +3858,7 @@
         const postDoc = await db.collection('posts').doc(postId).get();
         let postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
         // Limit postCaption to 80 characters
-        postCaption = postCaption.substring(0, 80);
+        postCaption = postCaption.length > 80 ? postCaption.substring(0, 80) + "..." : postCaption;
     
         const notificationsRef = db.collection(`users/${userId}/notifications`).doc();
         await notificationsRef.set({
@@ -3922,7 +3922,7 @@
         const postDoc = await db.collection('posts').doc(postId).get();
         let postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
         // Limit postCaption to 80 characters
-        postCaption = postCaption.substring(0, 80);
+        postCaption = postCaption.length > 80 ? postCaption.substring(0, 80) + "..." : postCaption;
     
         const notificationsRef = db.collection(`users/${userId}/notifications`).doc();
         await notificationsRef.set({
