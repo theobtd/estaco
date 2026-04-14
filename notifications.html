@@ -400,9 +400,17 @@
           });
         }
     
-        // Use the stored postCaption from the notification
+        // Use the stored postCaption from the notification, or fetch from Firestore if missing
         for (const notification of notifications) {
-          notification.postContent = notification.postCaption || "[Post deleted]";
+          if (notification.postCaption) {
+            notification.postContent = notification.postCaption;
+          } else if (notification.postId) {
+            // Fallback: Fetch post content from Firestore
+            const postDoc = await db.collection('posts').doc(notification.postId).get();
+            notification.postContent = postDoc.exists ? postDoc.data().content : "[Post deleted]";
+          } else {
+            notification.postContent = "[Post deleted]";
+          }
         }
     
         // Render notifications
