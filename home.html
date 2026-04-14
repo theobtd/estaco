@@ -3854,6 +3854,12 @@
      */
     async function addReactionNotification(userId, postId, reactorId, reactorName, reaction, timestamp) {
       try {
+        // Fetch the post to get its caption
+        const postDoc = await db.collection('posts').doc(postId).get();
+        let postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
+        // Limit postCaption to 80 characters
+        postCaption = postCaption.substring(0, 80);
+    
         const notificationsRef = db.collection(`users/${userId}/notifications`).doc();
         await notificationsRef.set({
           type: 'reaction',
@@ -3861,6 +3867,7 @@
           reactorName,
           reaction,
           postId,
+          postCaption: postCaption, // Add the post's caption here (limited to 80 chars)
           timestamp: timestamp,
         });
         // Increment the NotificationsCounter for the post author
