@@ -3487,13 +3487,8 @@
     
     // Close the modal
     document.getElementById('close-visibility-modal').addEventListener('click', () => {
-      const visibilityButton = document.getElementById('visibility-button');
-      if (isVisibilityAll) {
-        visibilityButton.textContent = 'Visibility: all friends';
-      } else {
-        visibilityButton.textContent = 'Visibility: limited';
-      }
       document.getElementById('visibility-modal').style.display = 'none';
+      updatePageLanguage(userLanguage); // Update the button text with the correct translation
     });
 
     postMedia.addEventListener('change', (event) => {
@@ -4239,7 +4234,7 @@
         const allToggles = document.querySelectorAll('.friend-toggle:not(#select-all-toggle)');
         const allActive = Array.from(allToggles).every(toggle => toggle.classList.contains('active'));
         const selectAllToggle = document.getElementById('select-all-toggle');
-    
+        
         if (allActive) {
           selectAllToggle.classList.add('active');
           isVisibilityAll = true;
@@ -4247,6 +4242,7 @@
           selectAllToggle.classList.remove('active');
           isVisibilityAll = false;
         }
+        updatePageLanguage(userLanguage); // Update the button text with the correct translation
       }
     });
 
