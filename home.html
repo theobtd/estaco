@@ -2628,10 +2628,12 @@
         // Toggle visibility
         if (commentsList.classList.contains('visible')) {
           commentsList.classList.remove('visible');
-          button.textContent = 'See comments';
+          // Keep the chat bubble emoji
+          button.textContent = '💬';
         } else {
           commentsList.classList.add('visible');
-          button.textContent = 'Hide comments';
+          // Keep the chat bubble emoji
+          button.textContent = '💬';
     
           // Check if comments are already loaded
           const isLoaded = commentsList.getAttribute('data-loaded') === 'true';
@@ -2787,14 +2789,14 @@
           const seeCommentsButton = postElement.querySelector('.see-comments-button');
           const commentsList = postElement.querySelector('.comments-list');
           if (seeCommentsButton) {
-            seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+            seeCommentsButton.textContent = '💬';
             seeCommentsButton.style.display = 'block';
           }
           if (commentsList) {
             commentsList.classList.add('visible');
             const seeCommentsButton = postElement.querySelector('.see-comments-button');
             if (seeCommentsButton) {
-                seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+                seeCommentsButton.textContent = '💬';
             }
             // Load comments and hide the loader only after this completes
             await loadComments(postId);
