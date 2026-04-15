@@ -1184,6 +1184,8 @@
         "Write a comment...": "Écrivez un commentaire...",
         "Transaction failed: ": "Échec de la transaction : ",
         "Visibility": "Visibilité",
+        "Visibility: all friends": "Visibilité : tous vos amis",
+        "Visibility: limited": "Visibilité : limitée",
         "Who can see your post?": "Qui peut voir votre publication ?",
         "This post will be visible to:": "Cette publication sera visible pour :",
         "Select All Friends": "Sélectionner tous les amis",
@@ -1231,6 +1233,8 @@
         "Write a comment...": "댓글을 작성하세요...",
         "Transaction failed: ": "트랜잭션 실패: ",
         "Visibility": "공개 범위",
+        "Visibility: all friends": "공개 범위: 모든 친구",
+        "Visibility: limited": "공개 범위: 제한됨",
         "Who can see your post?": "누가 당신의 게시물을 볼 수 있나요?",
         "This post will be visible to:": "이 게시물은 다음에게 공개됩니다:",
         "Select All Friends": "모든 친구 선택",
@@ -1270,11 +1274,16 @@
           element.textContent = lang[key];
         }
       });
-      // Special case for the visibility button
-      document.getElementById('visibility-button').textContent = isVisibilityAll
-        ? "Visibility: all friends"
-        : "Visibility: limited";
-      // Update placeholders here
+    
+      // Update the visibility button text
+      const visibilityButton = document.getElementById('visibility-button');
+      if (isVisibilityAll) {
+        visibilityButton.textContent = lang["Visibility: all friends"] || "Visibility: all friends";
+      } else {
+        visibilityButton.textContent = lang["Visibility: limited"] || "Visibility: limited";
+      }
+    
+      // Update placeholders
       document.getElementById('post-content').setAttribute('data-placeholder', lang["How's life treating ya?"]);
       document.querySelectorAll('.comment-input').forEach(input => {
         input.setAttribute('data-placeholder', lang["Write a comment..."]);
