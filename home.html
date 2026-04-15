@@ -891,6 +891,25 @@
       cursor: pointer;
       font-size: 12px;
     }
+    .reactions {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .see-comments-button {
+      padding: 4px 8px;
+      background: var(--estaco-surface);
+      border: 1px solid var(--estaco-border);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      color: var(--estaco-text-light);
+      margin-top: 0;
+      margin-left: 5px;
+      transition: background-color 0.2s;
+    }
 
   </style>
 </head>
@@ -2313,6 +2332,7 @@
           <button class="translate-button" data-post-id="${post.id}" data-i18n="Translate">Translate</button>
           ${mediaHTML}
           <div class="reactions">
+            <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">💬</button>
             <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
             <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
             <button class="reaction-button ${laughClass}" data-post-id="${post.id}" data-reaction="laugh">😂${laughCountHTML}</button>
@@ -2789,18 +2809,14 @@
           const seeCommentsButton = postElement.querySelector('.see-comments-button');
           const commentsList = postElement.querySelector('.comments-list');
           if (seeCommentsButton) {
-            seeCommentsButton.textContent = '💬';
             seeCommentsButton.style.display = 'block';
           }
           if (commentsList) {
             commentsList.classList.add('visible');
-            const seeCommentsButton = postElement.querySelector('.see-comments-button');
-            if (seeCommentsButton) {
-                seeCommentsButton.textContent = '💬';
-            }
             // Load comments and hide the loader only after this completes
             await loadComments(postId);
           }
+        }
         }
       } catch (error) {
         console.error("Error adding comment:", error);
