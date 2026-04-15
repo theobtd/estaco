@@ -788,7 +788,7 @@
         display: inline-block;
         width: 8px;
         height: 8px;
-        background-color: green;
+        background-color: red;
         border-radius: 50%;
         margin-left: 8px;
         vertical-align: middle;
@@ -2628,10 +2628,10 @@
         // Toggle visibility
         if (commentsList.classList.contains('visible')) {
           commentsList.classList.remove('visible');
-          button.textContent = 'See comments';
+          button.textContent = translations[userLanguage]["See comments"];
         } else {
           commentsList.classList.add('visible');
-          button.textContent = 'Hide comments';
+          button.textContent = translations[userLanguage]["Hide comments"];
     
           // Check if comments are already loaded
           const isLoaded = commentsList.getAttribute('data-loaded') === 'true';
@@ -2794,6 +2794,10 @@
             commentsList.classList.add('visible');
             // Load comments and hide the loader only after this completes
             await loadComments(postId);
+            // After loading comments, ensure the button's text is updated
+            if (seeCommentsButton) {
+              seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+            }
           }
         }
       } catch (error) {
