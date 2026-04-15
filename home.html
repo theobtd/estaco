@@ -788,7 +788,7 @@
         display: inline-block;
         width: 8px;
         height: 8px;
-        background-color: red;
+        background-color: green;
         border-radius: 50%;
         margin-left: 8px;
         vertical-align: middle;
@@ -2628,10 +2628,10 @@
         // Toggle visibility
         if (commentsList.classList.contains('visible')) {
           commentsList.classList.remove('visible');
-          button.textContent = translations[userLanguage]["See comments"];
+          button.textContent = 'See comments';
         } else {
           commentsList.classList.add('visible');
-          button.textContent = translations[userLanguage]["Hide comments"];
+          button.textContent = 'Hide comments';
     
           // Check if comments are already loaded
           const isLoaded = commentsList.getAttribute('data-loaded') === 'true';
@@ -2794,10 +2794,6 @@
             commentsList.classList.add('visible');
             // Load comments and hide the loader only after this completes
             await loadComments(postId);
-            // After loading comments, ensure the button's text is updated
-            if (seeCommentsButton) {
-              seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
-            }
           }
         }
       } catch (error) {
@@ -2936,12 +2932,6 @@
               commentsLoading.style.display = 'none';
               const commentsList = document.getElementById(`comments-${postId}`);
               commentsList.setAttribute('data-loaded', 'true');
-              // Ensure the "See comments" button is visible and has the correct text
-              const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
-              if (seeCommentsButton) {
-                seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
-                seeCommentsButton.style.display = 'block';
-              }
             });
         })
         .catch((error) => {
