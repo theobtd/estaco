@@ -2932,6 +2932,12 @@
               commentsLoading.style.display = 'none';
               const commentsList = document.getElementById(`comments-${postId}`);
               commentsList.setAttribute('data-loaded', 'true');
+              // Ensure the "See comments" button is visible and has the correct text
+              const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
+              if (seeCommentsButton) {
+                seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+                seeCommentsButton.style.display = 'block';
+              }
             });
         })
         .catch((error) => {
