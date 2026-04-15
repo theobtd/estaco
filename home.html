@@ -788,7 +788,7 @@
         display: inline-block;
         width: 8px;
         height: 8px;
-        background-color: green;
+        background-color: red;
         border-radius: 50%;
         margin-left: 8px;
         vertical-align: middle;
@@ -2792,6 +2792,10 @@
           }
           if (commentsList) {
             commentsList.classList.add('visible');
+            const seeCommentsButton = postElement.querySelector('.see-comments-button');
+            if (seeCommentsButton) {
+                seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+            }
             // Load comments and hide the loader only after this completes
             await loadComments(postId);
           }
