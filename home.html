@@ -2632,6 +2632,12 @@
         } else {
           commentsList.classList.add('visible');
           button.setAttribute('data-i18n', 'Hide comments');
+          // Load comments if not already loaded
+          if (commentsList.getAttribute('data-loaded') !== 'true') {
+            const commentsLoading = document.getElementById(`comments-loading-${postId}`);
+            commentsLoading.style.display = 'block';
+            loadComments(postId);
+          }
         }
         // Update the button text using the translation system
         updatePageLanguage(userLanguage);
