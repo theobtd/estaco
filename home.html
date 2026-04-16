@@ -2628,9 +2628,11 @@
         // Toggle visibility
         if (commentsList.classList.contains('visible')) {
           commentsList.classList.remove('visible');
+          button.textContent = translations[userLanguage]["See comments"];
           button.setAttribute('data-i18n', 'See comments');
         } else {
           commentsList.classList.add('visible');
+          button.textContent = translations[userLanguage]["Hide comments"];
           button.setAttribute('data-i18n', 'Hide comments');
           // Load comments if not already loaded
           if (commentsList.getAttribute('data-loaded') !== 'true') {
@@ -2639,8 +2641,6 @@
             loadComments(postId);
           }
         }
-        // Update the button text using the translation system
-        updatePageLanguage(userLanguage);
       }
     });
 
