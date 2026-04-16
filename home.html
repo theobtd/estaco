@@ -1653,28 +1653,27 @@
         if (e.target.dataset.translatedContent) {
           // Toggle back to original
           postContentElement.textContent = originalContent;
-          e.target.setAttribute('data-i18n', 'Translate'); // Update the data-i18n attribute
+          e.target.setAttribute('data-i18n', 'Translate'); // Reset to "Translate"
           delete e.target.dataset.translatedContent;
+          delete e.target.dataset.originalContent; // Clean up
+          updatePageLanguage(userLanguage); // Update the button text
         } else {
           // Translate
-          e.target.setAttribute('data-i18n', 'Translating...'); // Set to "Translating..."
-          updatePageLanguage(userLanguage); // Update the button text
+          e.target.setAttribute('data-i18n', 'Translating...');
+          updatePageLanguage(userLanguage);
           e.target.disabled = true;
     
           try {
-            // Get the user's chosen language
             const user = auth.currentUser;
             if (!user) {
               alert('You must be logged in to translate posts.');
               return;
             }
     
-            // Fetch the user's language from Firestore
             const userDoc = await db.collection('users').doc(user.uid).get();
             const userData = userDoc.data();
             const targetLanguage = userData.language || 'English';
     
-            // Map the language to Google's language codes
             const languageMap = {
               English: 'en',
               French: 'fr',
@@ -1683,22 +1682,20 @@
     
             const targetLangCode = languageMap[targetLanguage] || 'en';
     
-            // Check if the translation is already cached
             if (translationCache[postId] && translationCache[postId][targetLangCode]) {
               console.log(`[Translation] Using cached translation for post ${postId} in ${targetLanguage}`);
               const decodedText = decodeHtmlEntities(translationCache[postId][targetLangCode]);
               postContentElement.textContent = decodedText;
-              e.target.setAttribute('data-i18n', 'Show Original'); // Update the data-i18n attribute
+              e.target.setAttribute('data-i18n', 'Show Original');
               e.target.dataset.originalContent = originalContent;
               e.target.dataset.translatedContent = decodedText;
-              updatePageLanguage(userLanguage); // Update the button text
+              updatePageLanguage(userLanguage);
               e.target.disabled = false;
               return;
             }
     
             console.log(`[Translation] No cached translation for post ${postId} in ${targetLanguage}, calling API...`);
     
-            // Call your Cloudflare Worker to translate the content
             const response = await fetch('https://estaco-translation.tdgbertrand.workers.dev', {
               method: 'POST',
               headers: {
@@ -1711,11 +1708,8 @@
             });
             const result = await response.text();
             const translatedText = result.split('Translated: ')[1];
-    
-            // Decode HTML entities before displaying
             const decodedText = decodeHtmlEntities(translatedText);
     
-            // Cache the translation
             if (!translationCache[postId]) {
               translationCache[postId] = {};
             }
@@ -1724,15 +1718,15 @@
             console.log(`[Translation] Cached new translation for post ${postId} in ${targetLanguage}`);
     
             postContentElement.textContent = decodedText;
-            e.target.setAttribute('data-i18n', 'Show Original'); // Update the data-i18n attribute
+            e.target.setAttribute('data-i18n', 'Show Original');
             e.target.dataset.originalContent = originalContent;
             e.target.dataset.translatedContent = decodedText;
           } catch (error) {
             console.error('Translation error:', error);
             alert('Error translating post. Please try again.');
-            e.target.setAttribute('data-i18n', 'Translate'); // Reset to "Translate"
+            e.target.setAttribute('data-i18n', 'Translate');
           } finally {
-            updatePageLanguage(userLanguage); // Update the button text
+            updatePageLanguage(userLanguage);
             e.target.disabled = false;
           }
         }
