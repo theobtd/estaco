@@ -2798,8 +2798,10 @@
           // Update the button text and language
           if (seeCommentsButton && commentsList) {
             if (commentsList.classList.contains('visible')) {
+              seeCommentsButton.setAttribute('data-i18n', 'Hide comments');
               seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
             } else {
+              seeCommentsButton.setAttribute('data-i18n', 'See comments');
               seeCommentsButton.textContent = translations[userLanguage]["See comments"];
             }
           }
