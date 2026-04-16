@@ -2622,6 +2622,7 @@
           const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
           if (seeCommentsButton) {
             seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+            updatePageLanguage(userLanguage);
             commentsList.classList.add('visible');
             loadComments(postId); // Load comments here
           }
@@ -2644,6 +2645,7 @@
         } else {
           commentsList.classList.add('visible');
           button.textContent = translations[userLanguage]["Hide comments"];
+          updatePageLanguage(userLanguage);
           button.setAttribute('data-i18n', 'Hide comments');
           // Load comments if not already loaded
           if (commentsList.getAttribute('data-loaded') !== 'true') {
@@ -2811,6 +2813,7 @@
             if (commentsList.classList.contains('visible')) {
               seeCommentsButton.setAttribute('data-i18n', 'Hide comments');
               seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+              updatePageLanguage(userLanguage);
             } else {
               seeCommentsButton.setAttribute('data-i18n', 'See comments');
               seeCommentsButton.textContent = translations[userLanguage]["See comments"];
@@ -2873,6 +2876,7 @@
                       </div>
                     `;
                     commentsList.innerHTML += commentHTML;
+                    updatePageLanguage(userLanguage);
                   });
                   commentPromises.push(promise);
                 }
@@ -2896,6 +2900,7 @@
                         </div>
                       `;
                       commentsList.innerHTML += commentHTML;
+                      updatePageLanguage(userLanguage);
                     });
                   } else {
                     // Otherwise, check if the current user is a mutual friend
@@ -2917,6 +2922,7 @@
                               </div>
                             `;
                             commentsList.innerHTML += commentHTML;
+                            updatePageLanguage(userLanguage);
                           });
                         }
                       });
@@ -2939,6 +2945,7 @@
                       </div>
                     `;
                     commentsList.innerHTML += commentHTML;
+                    updatePageLanguage(userLanguage);
                   });
                   commentPromises.push(promise);
                 }
