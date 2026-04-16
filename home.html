@@ -2787,7 +2787,6 @@
           const seeCommentsButton = postElement.querySelector('.see-comments-button');
           const commentsList = postElement.querySelector('.comments-list');
           if (seeCommentsButton) {
-            seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
             seeCommentsButton.style.display = 'block';
           }
           if (commentsList) {
@@ -2795,6 +2794,15 @@
             // Load comments and hide the loader only after this completes
             await loadComments(postId);
           }
+          // Update the button text and language
+          if (seeCommentsButton && commentsList) {
+            if (commentsList.classList.contains('visible')) {
+              seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+            } else {
+              seeCommentsButton.textContent = translations[userLanguage]["See comments"];
+            }
+          }
+          updatePageLanguage(userLanguage);
         }
       } catch (error) {
         console.error("Error adding comment:", error);
