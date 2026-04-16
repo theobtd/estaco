@@ -893,9 +893,16 @@
     }
     .post-actions {
       display: flex;
+      justify-content: space-between; /* Pushes children to opposite ends */
       align-items: center;
-      gap: 8px; /* Adds spacing between buttons */
       margin-top: 10px;
+      width: 100%; /* Ensure it takes full width */
+    }
+    
+    .reactions {
+      display: flex;
+      gap: 8px; /* Adds spacing between reaction buttons */
+      margin: 0; /* Remove any default margins */
     }
     
     .see-comments-button {
@@ -907,7 +914,7 @@
       font-size: 14px;
       color: var(--estaco-text-light);
       transition: background-color 0.2s;
-      margin-top: 0; /* Remove top margin to align with reactions */
+      margin: 0; /* Remove any margins */
     }
 
   </style>
