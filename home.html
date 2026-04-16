@@ -1744,12 +1744,14 @@
         if (e.target.dataset.translatedContent) {
           // Toggle back to original
           commentTextElement.textContent = originalContent;
-          e.target.setAttribute('data-i18n', 'Translate'); // Update the data-i18n attribute
+          e.target.setAttribute('data-i18n', 'Translate'); // Reset to "Translate"
           delete e.target.dataset.translatedContent;
+          delete e.target.dataset.originalContent; // Clean up
+          updatePageLanguage(userLanguage);
         } else {
           // Translate
-          e.target.setAttribute('data-i18n', 'Translating...'); // Set to "Translating..."
-          updatePageLanguage(userLanguage); // Update the button text
+          e.target.setAttribute('data-i18n', 'Translating...');
+          updatePageLanguage(userLanguage);
           e.target.disabled = true;
     
           try {
@@ -1771,15 +1773,14 @@
     
             const targetLangCode = languageMap[targetLanguage] || 'en';
     
-            // Check if the translation is already cached
             if (translationCache[commentId] && translationCache[commentId][targetLangCode]) {
               console.log(`[Translation] Using cached translation for comment ${commentId} in ${targetLanguage}`);
               const decodedText = decodeHtmlEntities(translationCache[commentId][targetLangCode]);
               commentTextElement.textContent = decodedText;
-              e.target.setAttribute('data-i18n', 'Show Original'); // Update the data-i18n attribute
+              e.target.setAttribute('data-i18n', 'Show Original');
               e.target.dataset.originalContent = originalContent;
               e.target.dataset.translatedContent = decodedText;
-              updatePageLanguage(userLanguage); // Update the button text
+              updatePageLanguage(userLanguage);
               e.target.disabled = false;
               return;
             }
@@ -1800,7 +1801,6 @@
             const translatedText = result.split('Translated: ')[1];
             const decodedText = decodeHtmlEntities(translatedText);
     
-            // Cache the translation
             if (!translationCache[commentId]) {
               translationCache[commentId] = {};
             }
@@ -1809,15 +1809,15 @@
             console.log(`[Translation] Cached new translation for comment ${commentId} in ${targetLanguage}`);
     
             commentTextElement.textContent = decodedText;
-            e.target.setAttribute('data-i18n', 'Show Original'); // Update the data-i18n attribute
+            e.target.setAttribute('data-i18n', 'Show Original');
             e.target.dataset.originalContent = originalContent;
             e.target.dataset.translatedContent = decodedText;
           } catch (error) {
             console.error('Translation error:', error);
             alert('Error translating comment. Please try again.');
-            e.target.setAttribute('data-i18n', 'Translate'); // Reset to "Translate"
+            e.target.setAttribute('data-i18n', 'Translate');
           } finally {
-            updatePageLanguage(userLanguage); // Update the button text
+            updatePageLanguage(userLanguage);
             e.target.disabled = false;
           }
         }
