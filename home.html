@@ -1948,8 +1948,6 @@
                 await addPostToOwnPosts(user.uid, docRef.id, new Date());
 
                 const uploadPromises = [];
-                const thumbnailBlob = pendingThumbnailBlob;
-                const thumbnailObjectURL = thumbnailBlob ? URL.createObjectURL(thumbnailBlob) : null;
 
                 if (mediaFile) {
                   const storageRef = storage.ref();
@@ -1970,9 +1968,11 @@
                           const updateData = mediaType === 'image'
                             ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
                             : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
-                          if (mediaType === 'video' && thumbnailBlob) {
+                          // Read pendingThumbnailBlob here — by the time the video upload
+                          // finishes (several seconds), thumbnail generation is guaranteed done.
+                          if (mediaType === 'video' && pendingThumbnailBlob) {
                             const thumbRef = storageRef.child(`thumbnails/${docRef.id}`);
-                            await thumbRef.put(thumbnailBlob, { contentType: 'image/jpeg' });
+                            await thumbRef.put(pendingThumbnailBlob, { contentType: 'image/jpeg' });
                             updateData.thumbnailURL = await thumbRef.getDownloadURL();
                           }
                           await docRef.update(updateData);
@@ -1988,6 +1988,9 @@
                     alert(translations[userLanguage]["Post created!"]);
                     const user = auth.currentUser;
                     const authorName = user.displayName || "Unknown User";
+                    // Read pendingThumbnailBlob here too so the immediate render
+                    // also gets the poster (generation is done by now).
+                    const thumbnailObjectURL = pendingThumbnailBlob ? URL.createObjectURL(pendingThumbnailBlob) : null;
                     const newPost = {
                       id: docRef.id,
                       authorId: user.uid,
@@ -2078,9 +2081,6 @@
             .then(async (docRef) => {
               await addPostToOwnPosts(user.uid, docRef.id, new Date());
 
-              const thumbnailBlob = pendingThumbnailBlob;
-              const thumbnailObjectURL = thumbnailBlob ? URL.createObjectURL(thumbnailBlob) : null;
-
               const uploadPromises = [];
               if (mediaFile) {
                 const storageRef = storage.ref();
@@ -2101,9 +2101,9 @@
                         const updateData = mediaType === 'image'
                           ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
                           : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
-                        if (mediaType === 'video' && thumbnailBlob) {
+                        if (mediaType === 'video' && pendingThumbnailBlob) {
                           const thumbRef = storageRef.child(`thumbnails/${docRef.id}`);
-                          await thumbRef.put(thumbnailBlob, { contentType: 'image/jpeg' });
+                          await thumbRef.put(pendingThumbnailBlob, { contentType: 'image/jpeg' });
                           updateData.thumbnailURL = await thumbRef.getDownloadURL();
                         }
                         await docRef.update(updateData);
@@ -2119,6 +2119,7 @@
                   alert(translations[userLanguage]["Post created!"]);
                   const user = auth.currentUser;
                   const authorName = user.displayName || "Unknown User";
+                  const thumbnailObjectURL = pendingThumbnailBlob ? URL.createObjectURL(pendingThumbnailBlob) : null;
                   const newPost = {
                     id: docRef.id,
                     authorId: user.uid,
