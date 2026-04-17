@@ -3077,7 +3077,7 @@
           const fullscreenPhoto = document.getElementById('fullscreen-photo');
           fullscreenPhoto.src = e.target.src;
           modal.style.display = 'flex';
-    
+      
           // Reset zoom and position
           scale = 1;
           posX = 0;
@@ -3128,14 +3128,16 @@
         const offsetY = e.center.y - rect.top;
         const originX = (offsetX / rect.width) * 100;
         const originY = (offsetY / rect.height) * 100;
-    
+      
         if (scale > 1) {
+          // Reset scale AND position
           scale = 1;
           posX = 0;
           posY = 0;
           fullscreenPhoto.style.transition = 'transform 0.2s ease';
           fullscreenPhoto.style.transform = 'translate(-50%, -50%) scale(1)';
         } else {
+          // Zoom in
           scale = 2;
           posX = e.center.x - startX;
           posY = e.center.y - startY;
@@ -3146,11 +3148,13 @@
     
       // Reset zoom and position when closing the modal
       document.querySelector('.close-fullscreen').addEventListener('click', () => {
+        // Reset scale AND position
         scale = 1;
         posX = 0;
         posY = 0;
         fullscreenPhoto.style.transform = 'translate(-50%, -50%) scale(1)';
         fullscreenPhoto.style.transition = 'transform 0.2s ease';
+        document.getElementById('fullscreen-photo-modal').style.display = 'none';
       });
     });
 
