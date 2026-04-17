@@ -1874,27 +1874,61 @@
     let originalImageFile = null;
     let lastCropOrientation = 'horizontal';
 
-    // Generate a JPEG thumbnail from the first frame of a video file
+    // Generate a JPEG thumbnail from the first frame of a video file.
+    // Uses multiple fallback strategies to work reliably on mobile Safari / iOS.
     function generateVideoThumbnail(videoFile) {
       return new Promise((resolve) => {
         const video = document.createElement('video');
-        video.preload = 'metadata';
         video.muted = true;
         video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+
+        let done = false;
         const objectUrl = URL.createObjectURL(videoFile);
-        video.src = objectUrl;
-        video.onloadeddata = () => { video.currentTime = 0.1; };
-        video.onseeked = () => {
+
+        function finish(blob) {
+          if (done) return;
+          done = true;
+          URL.revokeObjectURL(objectUrl);
+          resolve(blob);
+        }
+
+        function capture() {
+          if (done) return;
+          if (!video.videoWidth || !video.videoHeight) { finish(null); return; }
           const canvas = document.createElement('canvas');
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
           canvas.getContext('2d').drawImage(video, 0, 0);
-          canvas.toBlob((blob) => {
-            URL.revokeObjectURL(objectUrl);
-            resolve(blob);
-          }, 'image/jpeg', 0.8);
+          // toBlob can return null on some browsers if the canvas is still blank
+          canvas.toBlob((blob) => finish(blob || null), 'image/jpeg', 0.8);
+        }
+
+        // After seeking, wait one rAF so iOS has time to paint the frame
+        function onSeeked() {
+          requestAnimationFrame(() => setTimeout(capture, 50));
+        }
+
+        video.onloadedmetadata = () => {
+          video.currentTime = 0.001; // seek to first frame
         };
-        video.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+
+        video.onseeked = onSeeked;
+
+        // Fallback: some mobile browsers fire timeupdate but not onseeked
+        video.ontimeupdate = () => {
+          video.ontimeupdate = null;
+          onSeeked();
+        };
+
+        video.onerror = () => finish(null);
+
+        // Hard timeout — don't stall the upload if the video is uncooperative
+        setTimeout(() => finish(null), 8000);
+
+        video.src = objectUrl;
+        video.load();
       });
     }
 
