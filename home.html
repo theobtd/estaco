@@ -1874,6 +1874,30 @@
     let originalImageFile = null;
     let lastCropOrientation = 'horizontal';
 
+    // Generate a JPEG thumbnail from the first frame of a video file
+    function generateVideoThumbnail(videoFile) {
+      return new Promise((resolve) => {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+        video.playsInline = true;
+        const objectUrl = URL.createObjectURL(videoFile);
+        video.src = objectUrl;
+        video.onloadeddata = () => { video.currentTime = 0.1; };
+        video.onseeked = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          canvas.getContext('2d').drawImage(video, 0, 0);
+          canvas.toBlob((blob) => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(blob);
+          }, 'image/jpeg', 0.8);
+        };
+        video.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+      });
+    }
+
     // Create a new post
     postButton.addEventListener('click', () => {
       errorMessage.textContent = ''; // Clear any previous error message
@@ -1945,13 +1969,22 @@
             db.collection('posts').add(post)
               .then(async (docRef) => {
                 await addPostToOwnPosts(user.uid, docRef.id, new Date());
+
+                // Pre-generate video thumbnail so it's ready for both local render and upload
+                let thumbnailBlob = null;
+                let thumbnailObjectURL = null;
+                if (mediaFile && mediaFile.type.startsWith('video/')) {
+                  thumbnailBlob = await generateVideoThumbnail(mediaFile);
+                  if (thumbnailBlob) thumbnailObjectURL = URL.createObjectURL(thumbnailBlob);
+                }
+
                 const uploadPromises = [];
                 if (mediaFile) {
                   const storageRef = storage.ref();
                   const mediaType = postMedia.getAttribute('data-type');
                   const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
                   const uploadTask = mediaRef.put(mediaFile);
-    
+
                   uploadPromises.push(
                     new Promise((resolve, reject) => {
                       uploadTask.on('state_changed',
@@ -1960,19 +1993,24 @@
                           console.error('Upload error:', error);
                           reject(error);
                         },
-                        () => {
-                          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                            const updateData = mediaType === 'image'
-                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                              : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
-                            docRef.update(updateData).then(resolve);
-                          });
+                        async () => {
+                          const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                          const updateData = mediaType === 'image'
+                            ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                            : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                          if (mediaType === 'video' && thumbnailBlob) {
+                            const thumbRef = storageRef.child(`thumbnails/${docRef.id}`);
+                            await thumbRef.put(thumbnailBlob, { contentType: 'image/jpeg' });
+                            updateData.thumbnailURL = await thumbRef.getDownloadURL();
+                          }
+                          await docRef.update(updateData);
+                          resolve();
                         }
                       );
                     })
                   );
                 }
-    
+
                 Promise.all(uploadPromises)
                   .then(async () => {
                     alert(translations[userLanguage]["Post created!"]);
@@ -1987,6 +2025,7 @@
                       reactions: {},
                       photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
                       videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
+                      thumbnailURL: thumbnailObjectURL,
                       mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
                     };
                     renderNewPost(newPost);
@@ -2066,13 +2105,22 @@
           db.collection('posts').add(post)
             .then(async (docRef) => {
               await addPostToOwnPosts(user.uid, docRef.id, new Date());
+
+              // Pre-generate video thumbnail so it's ready for both local render and upload
+              let thumbnailBlob = null;
+              let thumbnailObjectURL = null;
+              if (mediaFile && mediaFile.type.startsWith('video/')) {
+                thumbnailBlob = await generateVideoThumbnail(mediaFile);
+                if (thumbnailBlob) thumbnailObjectURL = URL.createObjectURL(thumbnailBlob);
+              }
+
               const uploadPromises = [];
               if (mediaFile) {
                 const storageRef = storage.ref();
                 const mediaType = postMedia.getAttribute('data-type');
                 const mediaRef = storageRef.child(`${mediaType}s/${docRef.id}`);
                 const uploadTask = mediaRef.put(mediaFile);
-    
+
                 uploadPromises.push(
                   new Promise((resolve, reject) => {
                     uploadTask.on('state_changed',
@@ -2081,19 +2129,24 @@
                         console.error('Upload error:', error);
                         reject(error);
                       },
-                      () => {
-                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                          const updateData = mediaType === 'image'
-                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                              : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
-                          docRef.update(updateData).then(resolve);
-                        });
+                      async () => {
+                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                        const updateData = mediaType === 'image'
+                          ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                          : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                        if (mediaType === 'video' && thumbnailBlob) {
+                          const thumbRef = storageRef.child(`thumbnails/${docRef.id}`);
+                          await thumbRef.put(thumbnailBlob, { contentType: 'image/jpeg' });
+                          updateData.thumbnailURL = await thumbRef.getDownloadURL();
+                        }
+                        await docRef.update(updateData);
+                        resolve();
                       }
                     );
                   })
                 );
               }
-    
+
               Promise.all(uploadPromises)
                 .then(async () => {
                   alert(translations[userLanguage]["Post created!"]);
@@ -2108,6 +2161,7 @@
                     reactions: {},
                     photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
                     videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
+                    thumbnailURL: thumbnailObjectURL,
                     mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
                   };
                   renderNewPost(newPost);
@@ -2342,7 +2396,7 @@
             const orientation = post.mediaOrientation || 'horizontal';
             mediaHTML = `
                 <div class="media-container media-${orientation}">
-                    <video controls class="post-media" playsinline webkit-playsinline>
+                    <video controls class="post-media" playsinline webkit-playsinline preload="metadata" poster="${post.thumbnailURL || ''}">
                         <source src="${post.videoURL}" type="video/mp4">
                     </video>
                 </div>
@@ -3056,101 +3110,121 @@
     document.addEventListener('DOMContentLoaded', () => {
       const modal = document.getElementById('fullscreen-photo-modal');
       const fullscreenPhoto = document.getElementById('fullscreen-photo');
-    
-      // Variables for zoom and pan
+
+      // Current transform state (offsets from the natural centered position)
       let scale = 1;
       let posX = 0;
       let posY = 0;
-      let startX = 0;
-      let startY = 0;
-      let isDragging = false;
-    
+
+      // State captured at the start of each gesture
+      let startScale = 1;
+      let startPosX = 0;
+      let startPosY = 0;
+
+      function applyTransform(animated) {
+        fullscreenPhoto.style.transition = animated ? 'transform 0.2s ease' : 'none';
+        // Base position is translate(-50%, -50%) to keep the image centered;
+        // posX/posY are additional pixel offsets applied on top of that.
+        fullscreenPhoto.style.transform =
+          `translate(calc(-50% + ${posX}px), calc(-50% + ${posY}px)) scale(${scale})`;
+      }
+
+      function resetTransform(animated) {
+        scale = 1; posX = 0; posY = 0;
+        applyTransform(animated);
+      }
+
       // Initialize Hammer.js for the modal
       const hammer = new Hammer(modal);
       hammer.get('pinch').set({ enable: true });
       hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
-    
-      // Reset position and scale when opening a new image
+      hammer.get('tap').set({ taps: 2 });
+
+      // Open fullscreen on image click
       document.addEventListener('click', (e) => {
         if (e.target.classList.contains('post-media') && e.target.tagName === 'IMG') {
-          const modal = document.getElementById('fullscreen-photo-modal');
-          const fullscreenPhoto = document.getElementById('fullscreen-photo');
           fullscreenPhoto.src = e.target.src;
           modal.style.display = 'flex';
-    
-          // Reset zoom and position
-          scale = 1;
-          posX = 0;
-          posY = 0;
-          fullscreenPhoto.style.transform = 'translate(-50%, -50%) scale(1)';
-          fullscreenPhoto.style.transition = 'transform 0.2s ease';
+          resetTransform(false);
         }
       });
-    
-      // Pinch to zoom
-      hammer.on('pinchstart pinchmove', (e) => {
-        if (e.type === 'pinchstart') {
-          fullscreenPhoto.style.transition = 'none';
-          startX = posX;
-          startY = posY;
-        }
-    
-        if (e.type === 'pinchmove') {
-          scale = Math.max(1, Math.min(e.scale, 4));
-          fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-        }
+
+      // Pinch to zoom — zooms toward/away from the pinch focal point
+      hammer.on('pinchstart', () => {
+        startScale = scale;
+        startPosX = posX;
+        startPosY = posY;
       });
-    
-      // Pan to move around
-      hammer.on('panstart panmove', (e) => {
-        if (e.type === 'panstart') {
-          isDragging = true;
-          startX = e.center.x - posX;
-          startY = e.center.y - posY;
-          fullscreenPhoto.style.transition = 'none';
-        }
-    
-        if (e.type === 'panmove' && isDragging) {
-          posX = e.center.x - startX;
-          posY = e.center.y - startY;
-          fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-        }
+
+      hammer.on('pinchmove', (e) => {
+        const newScale = Math.max(1, Math.min(startScale * e.scale, 4));
+
+        // Focal point in screen coordinates
+        const focalX = e.center.x;
+        const focalY = e.center.y;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Find which image pixel is currently under the focal point
+        // (using the pre-gesture state as reference so the math is stable)
+        const imgFocalX = (focalX - (vw / 2 + startPosX)) / startScale;
+        const imgFocalY = (focalY - (vh / 2 + startPosY)) / startScale;
+
+        // Shift the image so that same pixel remains under the focal point
+        posX = focalX - vw / 2 - imgFocalX * newScale;
+        posY = focalY - vh / 2 - imgFocalY * newScale;
+        scale = newScale;
+
+        applyTransform(false);
       });
-    
-      hammer.on('panend', () => {
-        isDragging = false;
+
+      hammer.on('pinchend', () => {
+        if (scale <= 1) resetTransform(true);
+        else { startScale = scale; startPosX = posX; startPosY = posY; }
       });
-    
-      // Double-tap to zoom in/out
-      hammer.on('doubletap', (e) => {
-        const rect = fullscreenPhoto.getBoundingClientRect();
-        const offsetX = e.center.x - rect.left;
-        const offsetY = e.center.y - rect.top;
-        const originX = (offsetX / rect.width) * 100;
-        const originY = (offsetY / rect.height) * 100;
-    
+
+      // Pan to move around when zoomed in
+      hammer.on('panstart', () => {
+        startPosX = posX;
+        startPosY = posY;
+      });
+
+      hammer.on('panmove', (e) => {
         if (scale > 1) {
-          scale = 1;
-          posX = 0;
-          posY = 0;
-          fullscreenPhoto.style.transition = 'transform 0.2s ease';
-          fullscreenPhoto.style.transform = 'translate(-50%, -50%) scale(1)';
-        } else {
-          scale = 2;
-          posX = e.center.x - startX;
-          posY = e.center.y - startY;
-          fullscreenPhoto.style.transition = 'none';
-          fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+          posX = startPosX + e.deltaX;
+          posY = startPosY + e.deltaY;
+          applyTransform(false);
         }
       });
-    
-      // Reset zoom and position when closing the modal
+
+      hammer.on('panend', () => {
+        startPosX = posX;
+        startPosY = posY;
+      });
+
+      // Double-tap to toggle zoom to/from the tapped point
+      hammer.on('doubletap', (e) => {
+        if (scale > 1) {
+          resetTransform(true);
+        } else {
+          const targetScale = 2;
+          const focalX = e.center.x;
+          const focalY = e.center.y;
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          // At scale=1, posX=0, posY=0, so image pixel under tap is simply:
+          const imgFocalX = (focalX - vw / 2) / scale;
+          const imgFocalY = (focalY - vh / 2) / scale;
+          posX = focalX - vw / 2 - imgFocalX * targetScale;
+          posY = focalY - vh / 2 - imgFocalY * targetScale;
+          scale = targetScale;
+          applyTransform(true);
+        }
+      });
+
+      // Reset zoom when closing the modal
       document.querySelector('.close-fullscreen').addEventListener('click', () => {
-        scale = 1;
-        posX = 0;
-        posY = 0;
-        fullscreenPhoto.style.transform = 'translate(-50%, -50%) scale(1)';
-        fullscreenPhoto.style.transition = 'transform 0.2s ease';
+        resetTransform(false);
       });
     });
 
