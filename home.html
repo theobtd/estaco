@@ -1875,7 +1875,9 @@
     let lastCropOrientation = 'horizontal';
 
     // Generate a JPEG thumbnail from the first frame of a video file.
-    // Uses multiple fallback strategies to work reliably on mobile Safari / iOS.
+    // iOS Safari won't draw video frames to canvas unless the video has actually played,
+    // so we briefly play the video and capture on the first real timeupdate tick.
+    // A seek-based path handles browsers where play() is blocked.
     function generateVideoThumbnail(videoFile) {
       return new Promise((resolve) => {
         const video = document.createElement('video');
@@ -1884,48 +1886,54 @@
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
 
-        let done = false;
+        let settled = false;
         const objectUrl = URL.createObjectURL(videoFile);
 
         function finish(blob) {
-          if (done) return;
-          done = true;
+          if (settled) return;
+          settled = true;
+          try { video.pause(); } catch (_) {}
+          video.src = '';
           URL.revokeObjectURL(objectUrl);
           resolve(blob);
         }
 
         function capture() {
-          if (done) return;
+          if (settled) return;
           if (!video.videoWidth || !video.videoHeight) { finish(null); return; }
           const canvas = document.createElement('canvas');
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
           canvas.getContext('2d').drawImage(video, 0, 0);
-          // toBlob can return null on some browsers if the canvas is still blank
           canvas.toBlob((blob) => finish(blob || null), 'image/jpeg', 0.8);
         }
 
-        // After seeking, wait one rAF so iOS has time to paint the frame
-        function onSeeked() {
+        // Primary path: play briefly so iOS decodes a real frame, then capture
+        video.addEventListener('canplay', () => {
+          video.play().catch(() => {
+            // play() blocked — fall through to the seek-based path below
+            video.currentTime = 0.001;
+          });
+        }, { once: true });
+
+        // Capture on the first timeupdate where currentTime has actually advanced
+        // (this is the reliable signal on iOS that a frame is decoded and ready)
+        video.addEventListener('timeupdate', function handler() {
+          if (video.currentTime > 0) {
+            video.removeEventListener('timeupdate', handler);
+            video.pause();
+            requestAnimationFrame(capture);
+          }
+        });
+
+        // Seek-based fallback for browsers that don't advance via play()
+        video.addEventListener('seeked', () => {
           requestAnimationFrame(() => setTimeout(capture, 50));
-        }
-
-        video.onloadedmetadata = () => {
-          video.currentTime = 0.001; // seek to first frame
-        };
-
-        video.onseeked = onSeeked;
-
-        // Fallback: some mobile browsers fire timeupdate but not onseeked
-        video.ontimeupdate = () => {
-          video.ontimeupdate = null;
-          onSeeked();
-        };
+        }, { once: true });
 
         video.onerror = () => finish(null);
-
-        // Hard timeout — don't stall the upload if the video is uncooperative
-        setTimeout(() => finish(null), 8000);
+        // Hard timeout — don't stall the upload if the video misbehaves
+        setTimeout(() => finish(null), 10000);
 
         video.src = objectUrl;
         video.load();
