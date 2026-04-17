@@ -1874,70 +1874,29 @@
     let originalImageFile = null;
     let lastCropOrientation = 'horizontal';
 
-    // Generate a JPEG thumbnail from the first frame of a video file.
-    // iOS Safari won't draw video frames to canvas unless the video has actually played,
-    // so we briefly play the video and capture on the first real timeupdate tick.
-    // A seek-based path handles browsers where play() is blocked.
-    function generateVideoThumbnail(videoFile) {
-      return new Promise((resolve) => {
-        const video = document.createElement('video');
-        video.muted = true;
-        video.playsInline = true;
-        video.setAttribute('playsinline', '');
-        video.setAttribute('webkit-playsinline', '');
+    // Show the first frame of a video element.
+    // On iOS, a plain currentTime seek draws nothing — the video must actually play
+    // for the browser to decode a frame. We briefly play (muted) then immediately pause.
+    function showFirstFrame(video) {
+      if (video.dataset.frameInit) return;
+      video.dataset.frameInit = '1';
 
-        let settled = false;
-        const objectUrl = URL.createObjectURL(videoFile);
-
-        function finish(blob) {
-          if (settled) return;
-          settled = true;
-          try { video.pause(); } catch (_) {}
-          video.src = '';
-          URL.revokeObjectURL(objectUrl);
-          resolve(blob);
+      function seek() {
+        const p = video.play();
+        if (p && p.then) {
+          p.then(() => { video.pause(); video.currentTime = 0; })
+           .catch(() => { video.currentTime = 0.001; }); // play() blocked — plain seek fallback
+        } else {
+          video.pause();
+          video.currentTime = 0;
         }
+      }
 
-        function capture() {
-          if (settled) return;
-          if (!video.videoWidth || !video.videoHeight) { finish(null); return; }
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          canvas.getContext('2d').drawImage(video, 0, 0);
-          canvas.toBlob((blob) => finish(blob || null), 'image/jpeg', 0.8);
-        }
-
-        // Primary path: play briefly so iOS decodes a real frame, then capture
-        video.addEventListener('canplay', () => {
-          video.play().catch(() => {
-            // play() blocked — fall through to the seek-based path below
-            video.currentTime = 0.001;
-          });
-        }, { once: true });
-
-        // Capture on the first timeupdate where currentTime has actually advanced
-        // (this is the reliable signal on iOS that a frame is decoded and ready)
-        video.addEventListener('timeupdate', function handler() {
-          if (video.currentTime > 0) {
-            video.removeEventListener('timeupdate', handler);
-            video.pause();
-            requestAnimationFrame(capture);
-          }
-        });
-
-        // Seek-based fallback for browsers that don't advance via play()
-        video.addEventListener('seeked', () => {
-          requestAnimationFrame(() => setTimeout(capture, 50));
-        }, { once: true });
-
-        video.onerror = () => finish(null);
-        // Hard timeout — don't stall the upload if the video misbehaves
-        setTimeout(() => finish(null), 10000);
-
-        video.src = objectUrl;
-        video.load();
-      });
+      if (video.readyState >= 1) {
+        seek();
+      } else {
+        video.addEventListener('loadedmetadata', seek, { once: true });
+      }
     }
 
     // Create a new post
@@ -2012,14 +1971,6 @@
               .then(async (docRef) => {
                 await addPostToOwnPosts(user.uid, docRef.id, new Date());
 
-                // Pre-generate video thumbnail so it's ready for both local render and upload
-                let thumbnailBlob = null;
-                let thumbnailObjectURL = null;
-                if (mediaFile && mediaFile.type.startsWith('video/')) {
-                  thumbnailBlob = await generateVideoThumbnail(mediaFile);
-                  if (thumbnailBlob) thumbnailObjectURL = URL.createObjectURL(thumbnailBlob);
-                }
-
                 const uploadPromises = [];
                 if (mediaFile) {
                   const storageRef = storage.ref();
@@ -2035,18 +1986,13 @@
                           console.error('Upload error:', error);
                           reject(error);
                         },
-                        async () => {
-                          const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                          const updateData = mediaType === 'image'
-                            ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                            : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
-                          if (mediaType === 'video' && thumbnailBlob) {
-                            const thumbRef = storageRef.child(`thumbnails/${docRef.id}`);
-                            await thumbRef.put(thumbnailBlob, { contentType: 'image/jpeg' });
-                            updateData.thumbnailURL = await thumbRef.getDownloadURL();
-                          }
-                          await docRef.update(updateData);
-                          resolve();
+                        () => {
+                          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                            const updateData = mediaType === 'image'
+                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                              : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                            docRef.update(updateData).then(resolve);
+                          });
                         }
                       );
                     })
@@ -2067,7 +2013,6 @@
                       reactions: {},
                       photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
                       videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
-                      thumbnailURL: thumbnailObjectURL,
                       mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
                     };
                     renderNewPost(newPost);
@@ -2148,14 +2093,6 @@
             .then(async (docRef) => {
               await addPostToOwnPosts(user.uid, docRef.id, new Date());
 
-              // Pre-generate video thumbnail so it's ready for both local render and upload
-              let thumbnailBlob = null;
-              let thumbnailObjectURL = null;
-              if (mediaFile && mediaFile.type.startsWith('video/')) {
-                thumbnailBlob = await generateVideoThumbnail(mediaFile);
-                if (thumbnailBlob) thumbnailObjectURL = URL.createObjectURL(thumbnailBlob);
-              }
-
               const uploadPromises = [];
               if (mediaFile) {
                 const storageRef = storage.ref();
@@ -2171,18 +2108,13 @@
                         console.error('Upload error:', error);
                         reject(error);
                       },
-                      async () => {
-                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                        const updateData = mediaType === 'image'
-                          ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                          : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
-                        if (mediaType === 'video' && thumbnailBlob) {
-                          const thumbRef = storageRef.child(`thumbnails/${docRef.id}`);
-                          await thumbRef.put(thumbnailBlob, { contentType: 'image/jpeg' });
-                          updateData.thumbnailURL = await thumbRef.getDownloadURL();
-                        }
-                        await docRef.update(updateData);
-                        resolve();
+                      () => {
+                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                          const updateData = mediaType === 'image'
+                            ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                            : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                          docRef.update(updateData).then(resolve);
+                        });
                       }
                     );
                   })
@@ -2203,7 +2135,6 @@
                     reactions: {},
                     photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
                     videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
-                    thumbnailURL: thumbnailObjectURL,
                     mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
                   };
                   renderNewPost(newPost);
@@ -3268,6 +3199,20 @@
       document.querySelector('.close-fullscreen').addEventListener('click', () => {
         resetTransform(false);
       });
+
+      // Show the first frame of every video added to the feed
+      document.querySelectorAll('#feed video.post-media').forEach(showFirstFrame);
+      new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          for (const node of m.addedNodes) {
+            if (node.nodeType !== 1) continue;
+            const vids = node.tagName === 'VIDEO'
+              ? [node]
+              : node.querySelectorAll('video.post-media');
+            vids.forEach(showFirstFrame);
+          }
+        }
+      }).observe(document.getElementById('feed'), { childList: true, subtree: true });
     });
 
     // Function to log the current user's friends and their posts to the console
