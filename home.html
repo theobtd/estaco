@@ -3088,43 +3088,16 @@
       });
     
       // Pinch to zoom
-      // Variables to track pinch center
-      let pinchCenterX = 0;
-      let pinchCenterY = 0;
-      
       hammer.on('pinchstart pinchmove', (e) => {
         if (e.type === 'pinchstart') {
           fullscreenPhoto.style.transition = 'none';
-          // Store the initial pinch center (midpoint of the two fingers)
-          pinchCenterX = e.center.x;
-          pinchCenterY = e.center.y;
-          // Store the current transform values
-          const transform = window.getComputedStyle(fullscreenPhoto).transform;
-          const matrix = transform.match(/^matrix\((.+)\)$/);
-          if (matrix) {
-            const [, a, b, c, d, tx, ty] = matrix[1].split(', ').map(Number);
-            posX = tx;
-            posY = ty;
-          }
+          startX = posX;
+          startY = posY;
         }
-      
+    
         if (e.type === 'pinchmove') {
-          // Calculate the new scale (clamped between 1 and 4)
-          const newScale = Math.max(1, Math.min(e.scale, 4));
-      
-          // Calculate the delta between the current pinch center and the stored pinch center
-          const deltaX = e.center.x - pinchCenterX;
-          const deltaY = e.center.y - pinchCenterY;
-      
-          // Adjust posX and posY to keep the pinch center fixed under the fingers
-          posX += deltaX * (1 - newScale / scale);
-          posY += deltaY * (1 - newScale / scale);
-      
-          // Apply the new transform
-          fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${newScale})`;
-      
-          // Update the scale for the next event
-          scale = newScale;
+          scale = Math.max(1, Math.min(e.scale, 4));
+          fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
         }
       });
     
