@@ -1873,31 +1873,7 @@
 
     let originalImageFile = null;
     let lastCropOrientation = 'horizontal';
-
-    // Show the first frame of a video element.
-    // On iOS, a plain currentTime seek draws nothing — the video must actually play
-    // for the browser to decode a frame. We briefly play (muted) then immediately pause.
-    function showFirstFrame(video) {
-      if (video.dataset.frameInit) return;
-      video.dataset.frameInit = '1';
-
-      function seek() {
-        const p = video.play();
-        if (p && p.then) {
-          p.then(() => { video.pause(); video.currentTime = 0; })
-           .catch(() => { video.currentTime = 0.001; }); // play() blocked — plain seek fallback
-        } else {
-          video.pause();
-          video.currentTime = 0;
-        }
-      }
-
-      if (video.readyState >= 1) {
-        seek();
-      } else {
-        video.addEventListener('loadedmetadata', seek, { once: true });
-      }
-    }
+    let pendingThumbnailBlob = null; // thumbnail generated at file-selection time
 
     // Create a new post
     postButton.addEventListener('click', () => {
@@ -1972,6 +1948,9 @@
                 await addPostToOwnPosts(user.uid, docRef.id, new Date());
 
                 const uploadPromises = [];
+                const thumbnailBlob = pendingThumbnailBlob;
+                const thumbnailObjectURL = thumbnailBlob ? URL.createObjectURL(thumbnailBlob) : null;
+
                 if (mediaFile) {
                   const storageRef = storage.ref();
                   const mediaType = postMedia.getAttribute('data-type');
@@ -1986,13 +1965,18 @@
                           console.error('Upload error:', error);
                           reject(error);
                         },
-                        () => {
-                          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                            const updateData = mediaType === 'image'
-                              ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                              : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
-                            docRef.update(updateData).then(resolve);
-                          });
+                        async () => {
+                          const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                          const updateData = mediaType === 'image'
+                            ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                            : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                          if (mediaType === 'video' && thumbnailBlob) {
+                            const thumbRef = storageRef.child(`thumbnails/${docRef.id}`);
+                            await thumbRef.put(thumbnailBlob, { contentType: 'image/jpeg' });
+                            updateData.thumbnailURL = await thumbRef.getDownloadURL();
+                          }
+                          await docRef.update(updateData);
+                          resolve();
                         }
                       );
                     })
@@ -2013,10 +1997,11 @@
                       reactions: {},
                       photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
                       videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
+                      thumbnailURL: thumbnailObjectURL,
                       mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
                     };
                     renderNewPost(newPost);
-    
+
                     // --- UPDATED LOGIC: Restrict post visibility based on selected friends ---
                     const posterUid = auth.currentUser.uid;
                     let uidsToAddPost = [];
@@ -2093,6 +2078,9 @@
             .then(async (docRef) => {
               await addPostToOwnPosts(user.uid, docRef.id, new Date());
 
+              const thumbnailBlob = pendingThumbnailBlob;
+              const thumbnailObjectURL = thumbnailBlob ? URL.createObjectURL(thumbnailBlob) : null;
+
               const uploadPromises = [];
               if (mediaFile) {
                 const storageRef = storage.ref();
@@ -2108,13 +2096,18 @@
                         console.error('Upload error:', error);
                         reject(error);
                       },
-                      () => {
-                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                          const updateData = mediaType === 'image'
-                            ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
-                            : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
-                          docRef.update(updateData).then(resolve);
-                        });
+                      async () => {
+                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                        const updateData = mediaType === 'image'
+                          ? { photoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') }
+                          : { videoURL: downloadURL, mediaOrientation: postMedia.getAttribute('data-orientation') };
+                        if (mediaType === 'video' && thumbnailBlob) {
+                          const thumbRef = storageRef.child(`thumbnails/${docRef.id}`);
+                          await thumbRef.put(thumbnailBlob, { contentType: 'image/jpeg' });
+                          updateData.thumbnailURL = await thumbRef.getDownloadURL();
+                        }
+                        await docRef.update(updateData);
+                        resolve();
                       }
                     );
                   })
@@ -2135,10 +2128,11 @@
                     reactions: {},
                     photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
                     videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
+                    thumbnailURL: thumbnailObjectURL,
                     mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal'
                   };
                   renderNewPost(newPost);
-    
+
                   // --- UPDATED LOGIC: Restrict post visibility based on selected friends ---
                   const posterUid = auth.currentUser.uid;
                   let uidsToAddPost = [];
@@ -2369,7 +2363,7 @@
             const orientation = post.mediaOrientation || 'horizontal';
             mediaHTML = `
                 <div class="media-container media-${orientation}">
-                    <video controls class="post-media" playsinline webkit-playsinline preload="metadata" poster="${post.thumbnailURL || ''}">
+                    <video controls class="post-media" playsinline webkit-playsinline preload="none" poster="${post.thumbnailURL || ''}">
                         <source src="${post.videoURL}" type="video/mp4">
                     </video>
                 </div>
@@ -3200,19 +3194,6 @@
         resetTransform(false);
       });
 
-      // Show the first frame of every video added to the feed
-      document.querySelectorAll('#feed video.post-media').forEach(showFirstFrame);
-      new MutationObserver((mutations) => {
-        for (const m of mutations) {
-          for (const node of m.addedNodes) {
-            if (node.nodeType !== 1) continue;
-            const vids = node.tagName === 'VIDEO'
-              ? [node]
-              : node.querySelectorAll('video.post-media');
-            vids.forEach(showFirstFrame);
-          }
-        }
-      }).observe(document.getElementById('feed'), { childList: true, subtree: true });
     });
 
     // Function to log the current user's friends and their posts to the console
@@ -3750,16 +3731,58 @@
                 } else {
                     const videoPreview = document.getElementById('video-preview');
                     const videoPreviewContainer = document.getElementById('video-preview-container');
-                    videoPreview.src = URL.createObjectURL(file);
+                    const objectUrl = URL.createObjectURL(file);
+                    videoPreview.src = objectUrl;
                     videoPreviewContainer.style.display = 'block';
-        
+
                     // Detect video orientation
                     videoPreview.onloadedmetadata = () => {
                         const isHorizontal = videoPreview.videoWidth > videoPreview.videoHeight;
                         postMedia.setAttribute('data-orientation', isHorizontal ? 'horizontal' : 'vertical');
                     };
-        
+
                     postMedia.setAttribute('data-type', 'video');
+
+                    // Generate thumbnail now, while we're still in the user-gesture context.
+                    // We use a hidden off-screen video so we don't disturb the visible preview.
+                    // iOS requires the video to actually play before canvas can read a frame.
+                    pendingThumbnailBlob = null;
+                    const thumbVid = document.createElement('video');
+                    thumbVid.muted = true;
+                    thumbVid.playsInline = true;
+                    thumbVid.setAttribute('playsinline', '');
+                    thumbVid.setAttribute('webkit-playsinline', '');
+                    thumbVid.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0';
+                    document.body.appendChild(thumbVid);
+
+                    let thumbCaptured = false;
+                    function captureThumb() {
+                        if (thumbCaptured || !thumbVid.videoWidth) return;
+                        thumbCaptured = true;
+                        thumbVid.pause();
+                        const canvas = document.createElement('canvas');
+                        canvas.width = thumbVid.videoWidth;
+                        canvas.height = thumbVid.videoHeight;
+                        canvas.getContext('2d').drawImage(thumbVid, 0, 0);
+                        canvas.toBlob((blob) => {
+                            pendingThumbnailBlob = blob;
+                            thumbVid.src = '';
+                            document.body.removeChild(thumbVid);
+                        }, 'image/jpeg', 0.8);
+                    }
+
+                    thumbVid.addEventListener('timeupdate', function handler() {
+                        if (thumbVid.currentTime > 0) {
+                            thumbVid.removeEventListener('timeupdate', handler);
+                            captureThumb();
+                        }
+                    });
+                    thumbVid.addEventListener('seeked', captureThumb, { once: true });
+                    thumbVid.addEventListener('canplay', () => {
+                        thumbVid.play().catch(() => { thumbVid.currentTime = 0.001; });
+                    }, { once: true });
+                    thumbVid.src = objectUrl;
+                    thumbVid.load();
                 }
             });
         }
