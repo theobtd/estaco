@@ -3087,34 +3087,39 @@
         }
       });
     
+      // Initialize variables for pinch-to-zoom
+      let initialPinchDistance = 0;
+      let initialScale = 1;
+      let pinchCenterX = 0;
+      let pinchCenterY = 0;
+      
       // Pinch to zoom
-      hammer.on('pinchstart pinchmove', (e) => {
-        if (e.type === 'pinchstart') {
-          fullscreenPhoto.style.transition = 'none';
-          startX = posX;
-          startY = posY;
-        }
-    
-        if (e.type === 'pinchmove') {
-          scale = Math.max(1, Math.min(e.scale, 4));
-          fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-        }
+      hammer.on('pinchstart', (e) => {
+        fullscreenPhoto.style.transition = 'none';
+        initialPinchDistance = e.distance;
+        initialScale = scale;
+        pinchCenterX = e.center.x;
+        pinchCenterY = e.center.y;
       });
-    
-      // Pan to move around
-      hammer.on('panstart panmove', (e) => {
-        if (e.type === 'panstart') {
-          isDragging = true;
-          startX = e.center.x - posX;
-          startY = e.center.y - posY;
-          fullscreenPhoto.style.transition = 'none';
-        }
-    
-        if (e.type === 'panmove' && isDragging) {
-          posX = e.center.x - startX;
-          posY = e.center.y - startY;
-          fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-        }
+      
+      hammer.on('pinchmove', (e) => {
+        // Calculate the new scale based on the pinch distance
+        scale = initialScale * (e.distance / initialPinchDistance);
+      
+        // Clamp the scale between 1 and 4 (or your desired max zoom)
+        scale = Math.max(1, Math.min(scale, 4));
+      
+        // Calculate the new position to keep the pinch center fixed
+        const rect = fullscreenPhoto.getBoundingClientRect();
+        const imageCenterX = rect.left + rect.width / 2;
+        const imageCenterY = rect.top + rect.height / 2;
+      
+        // Adjust posX and posY to keep the pinch center under the user's fingers
+        posX = pinchCenterX - (pinchCenterX - imageCenterX) * (scale / initialScale);
+        posY = pinchCenterY - (pinchCenterY - imageCenterY) * (scale / initialScale);
+      
+        // Apply the transform
+        fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
       });
     
       hammer.on('panend', () => {
