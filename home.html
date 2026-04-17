@@ -3102,19 +3102,32 @@
       });
     
       // Pan to move around
-      hammer.on('panstart panmove', (e) => {
-        if (e.type === 'panstart') {
-          isDragging = true;
-          startX = e.center.x - posX;
-          startY = e.center.y - posY;
-          fullscreenPhoto.style.transition = 'none';
-        }
-    
-        if (e.type === 'panmove' && isDragging) {
-          posX = e.center.x - startX;
-          posY = e.center.y - startY;
+      hammer.on('panstart', (e) => {
+        isDragging = true;
+        startX = e.center.x - posX;
+        startY = e.center.y - posY;
+        fullscreenPhoto.style.transition = 'none';
+      });
+      
+      hammer.on('panmove', (e) => {
+        if (isDragging) {
+          const newPosX = e.center.x - startX;
+          const newPosY = e.center.y - startY;
+      
+          // Calculate max allowed pan based on image dimensions and scale
+          const maxPosX = (fullscreenPhoto.offsetWidth * scale - window.innerWidth) / 2;
+          const maxPosY = (fullscreenPhoto.offsetHeight * scale - window.innerHeight) / 2;
+      
+          // Clamp the position
+          posX = Math.max(-maxPosX, Math.min(maxPosX, newPosX));
+          posY = Math.max(-maxPosY, Math.min(maxPosY, newPosY));
+      
           fullscreenPhoto.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
         }
+      });
+      
+      hammer.on('panend', () => {
+        isDragging = false;
       });
     
       hammer.on('panend', () => {
