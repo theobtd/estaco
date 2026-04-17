@@ -1348,7 +1348,7 @@
     
       // Process post content for @username tags
       let processedContent = post.content;
-      
+    
       // Construct the post HTML
       let mediaHTML = '';
       if (post.photoURL) {
@@ -1369,6 +1369,26 @@
           `;
       }
     
+      // Get the current user's reaction for this post
+      const userReaction = post.reactions && post.reactions[auth.currentUser.uid];
+      const likeClass = userReaction && userReaction.type === 'like' ? 'selected' : '';
+      const loveClass = userReaction && userReaction.type === 'love' ? 'selected' : '';
+      const laughClass = userReaction && userReaction.type === 'laugh' ? 'selected' : '';
+    
+      const reactions = post.reactions || {};
+      let likeCount = 0, loveCount = 0, laughCount = 0;
+      Object.values(reactions).forEach(reaction => {
+        if (reaction.type === 'like') likeCount++;
+        if (reaction.type === 'love') loveCount++;
+        if (reaction.type === 'laugh') laughCount++;
+      });
+    
+      const isAuthor = auth.currentUser && auth.currentUser.uid === post.authorId;
+      const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
+      const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
+      const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
+    
+      // No "See comments" button for new posts (since there are no comments yet)
       const postHTML = `
         <div class="post" data-post-id="${post.id}">
           <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -1385,7 +1405,6 @@
           <button class="translate-button" data-post-id="${post.id}" data-i18n="Translate">Translate</button>
           ${mediaHTML}
           <div class="post-actions">
-            ${seeCommentsButtonHTML}
             <div class="reactions">
               <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
               <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
