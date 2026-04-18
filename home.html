@@ -2462,7 +2462,7 @@
         const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
         const postAuthorId = postElement.getAttribute('data-author-id');
     
-        // If the post is yours, show the popup and return immediately
+        // If the post is yours, show the popup and return
         if (postAuthorId === user.uid) {
           const popup = document.getElementById('reaction-popup');
           const reactionList = document.getElementById('reaction-list');
@@ -2518,10 +2518,10 @@
           });
     
           popup.style.display = 'block';
-          return; // Exit early to prevent any further action
+          return;
         }
     
-        // If not the author, proceed with the reaction logic
+        // Optimistic UI update: Assume success
         const postRef = db.collection('posts').doc(postId);
         const wasSelected = button.classList.contains('selected');
     
@@ -2587,7 +2587,7 @@
               const postData = doc.data();
               const reactions = postData.reactions || {};
               const userReaction = reactions[user.uid];
-    
+          
               if (userReaction && userReaction.type === reaction) {
                 delete reactions[user.uid];
               } else {
@@ -2597,7 +2597,7 @@
                   username: user.displayName || "Unknown User"
                 };
               }
-    
+          
               transaction.update(postRef, { reactions });
               return post;
             });
@@ -2656,6 +2656,16 @@
           });
         });
       }
+
+      // Close popup with animation
+      document.getElementById('close-reaction-popup').addEventListener('click', () => {
+        const popup = document.getElementById('reaction-popup');
+        popup.style.animation = 'slideDown 0.3s ease-out forwards';
+        setTimeout(() => {
+          popup.style.display = 'none';
+          popup.style.animation = '';
+        }, 300);
+      });
     });
 
     document.getElementById('reaction-popup').addEventListener('click', (e) => {
