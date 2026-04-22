@@ -861,7 +861,7 @@
                                                         .get()
                                                         .then((requestSnapshot) => {
                                                             if (!requestSnapshot.empty) {
-                                                                alert(translations[userLanguage]["You already have a pending friend request to this user."]);
+                                                                alert(translations[userLanguage]?.[ "You already have a pending friend request to this user."] || "You already have a pending friend request to this user.");
                                                                 // Hide loader
                                                                 document.getElementById('loader-modal').style.display = 'none';
                                                                 return;
@@ -1664,6 +1664,7 @@
             "Failed to initiate account deletion. Please try again later.": "Failed to initiate account deletion. Please try again later.",
             "You must be logged in to delete your account.": "You must be logged in to delete your account.",
             "Account Deletion Initiated": "Account Deletion Initiated",
+              "You already have a pending friend request to this user.": "You already have a pending friend request to this user.",
               // ... rest of your translations
           },
           French: {
@@ -1727,6 +1728,7 @@
             "You must be logged in to delete your account.": "Vous devez être connecté pour supprimer votre compte.",
             "Account Deletion Initiated": "Suppression du compte initiée",
             "You have reached the maximum number of friends (15).": "Vous avez atteint le nombre maximum d'amis (15).",
+            "You already have a pending friend request to this user.": "Vous avez déjà envoyé une demande d'ami à cet utilisateur.",
               // ... rest of your translations
           },
           Korean: {
@@ -1790,6 +1792,7 @@
             "You must be logged in to delete your account.": "계정을 삭제하려면 로그인해야 합니다.",
             "Account Deletion Initiated": "계정 삭제가 시작되었습니다",
             "You have reached the maximum number of friends (15).": "최대 친구 수(15명)에 도달했습니다.",
+            "You already have a pending friend request to this user.": "이 사용자에게 이미 친구 요청을 보냈습니다.",
               // ... rest of your translations
           }
         };
