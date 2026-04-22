@@ -812,7 +812,7 @@
                 db.collection('friends').doc(user.uid).get()
                     .then((doc) => {
                         const friends = doc.data()?.friends || [];
-                        if (friends.length >= 17) {
+                        if (friends.length >= 15) {
                             alert(translations[userLanguage]?.[ "You have reached the maximum number of friends (15)."] || "You have reached the maximum number of friends (15).");
                             // Hide loader
                             document.getElementById('loader-modal').style.display = 'none';
@@ -1136,7 +1136,7 @@
             db.collection('friends').doc(toId).get()
                 .then((doc) => {
                     const friends = doc.data()?.friends || [];
-                    if (friends.length >= 17) {
+                    if (friends.length >= 15) {
                         alert(translations[userLanguage]?.[ "You have reached the maximum number of friends (15)."] || "You have reached the maximum number of friends (15).");
                         // Hide loader
                         document.getElementById('loader-modal').style.display = 'none';
