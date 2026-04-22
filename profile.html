@@ -813,7 +813,7 @@
                     .then((doc) => {
                         const friends = doc.data()?.friends || [];
                         if (friends.length >= 17) {
-                            alert(translations[userLanguage]["You have reached the maximum number of friends (15)."]);
+                            alert(translations[userLanguage]?.[ "You have reached the maximum number of friends (15)."] || "You have reached the maximum number of friends (15).");
                             // Hide loader
                             document.getElementById('loader-modal').style.display = 'none';
                             return;
@@ -1137,7 +1137,7 @@
                 .then((doc) => {
                     const friends = doc.data()?.friends || [];
                     if (friends.length >= 17) {
-                        alert('You have reached the maximum number of friends (15).');
+                        alert(translations[userLanguage]?.[ "You have reached the maximum number of friends (15)."] || "You have reached the maximum number of friends (15).");
                         // Hide loader
                         document.getElementById('loader-modal').style.display = 'none';
                         return;
