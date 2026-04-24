@@ -2661,7 +2661,7 @@
 
       // Close popup with animation
       document.getElementById('close-reaction-popup').addEventListener('click', (e) => {
-        e.stopPropagation(); // Critical: Prevents event from reaching the popup
+        e.stopPropagation(); // Prevents the event from reaching the popup
         const popup = document.getElementById('reaction-popup');
         popup.style.animation = 'slideDown 0.3s ease-out forwards';
         setTimeout(() => {
@@ -2672,7 +2672,8 @@
     });
     
     document.getElementById('reaction-popup').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) { // Only close if clicking the popup itself
+      // Only close if the click is on the popup itself (not its children)
+      if (e.target === e.currentTarget) {
         e.currentTarget.style.animation = 'slideDown 0.3s ease-out forwards';
         setTimeout(() => {
           e.currentTarget.style.display = 'none';
