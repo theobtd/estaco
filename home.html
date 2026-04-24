@@ -2049,6 +2049,8 @@
                     // Hide full-screen overlay
                     document.getElementById('upload-overlay').style.display = 'none';
                     postButton.disabled = false;
+
+                    alert(translations[userLanguage]["Post created!"]);
                   });
               })
               .catch((error) => {
