@@ -2657,28 +2657,6 @@
         });
       }
 
-      // Close popup with animation
-      document.getElementById('close-reaction-popup').addEventListener('click', (e) => {
-        e.stopPropagation(); // Critical: Prevents event from reaching the popup
-        const popup = document.getElementById('reaction-popup');
-        popup.style.animation = 'slideDown 0.3s ease-out forwards';
-        setTimeout(() => {
-          popup.style.display = 'none';
-          popup.style.animation = '';
-        }, 300);
-      });
-    });
-    
-    document.getElementById('reaction-popup').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) { // Only close if clicking the popup itself
-        e.currentTarget.style.animation = 'slideDown 0.3s ease-out forwards';
-        setTimeout(() => {
-          e.currentTarget.style.display = 'none';
-          e.currentTarget.style.animation = '';
-        }, 300);
-      }
-    });
-
     // Add event listener for comment buttons
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('comment-button')) {
@@ -2725,6 +2703,28 @@
             loadComments(postId);
           }
         }
+      }
+    });
+
+    // Add this near the top of your script (e.g., after DOMContentLoaded)
+    document.getElementById('close-reaction-popup').addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent event from bubbling up to the popup
+      const popup = document.getElementById('reaction-popup');
+      popup.style.animation = 'slideDown 0.3s ease-out forwards';
+      setTimeout(() => {
+        popup.style.display = 'none';
+        popup.style.animation = '';
+      }, 300);
+    });
+
+    // Add this once (e.g., after DOMContentLoaded)
+    document.getElementById('reaction-popup').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) { // Only close if clicking directly on the popup
+        e.currentTarget.style.animation = 'slideDown 0.3s ease-out forwards';
+        setTimeout(() => {
+          e.currentTarget.style.display = 'none';
+          e.currentTarget.style.animation = '';
+        }, 300);
       }
     });
 
