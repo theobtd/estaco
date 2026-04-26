@@ -147,55 +147,56 @@
       font-family: 'Inter', sans-serif;
       font-size: 14px;
     }
-    /* Slide transition styles */
-    body {
-      overflow-x: hidden; /* Prevent horizontal scrolling */
-      position: relative;
-    }
-    
-    .page {
-      position: absolute;
+    /* Detail Page (Slides in from the right) */
+    .detail-page {
+      position: fixed;
       top: 0;
-      left: 0;
+      left: 100%; /* Start off-screen to the right */
       width: 100%;
       height: 100%;
-      transition: transform 0.3s ease-in-out;
-      background-color: var(--estaco-background);
+      background: white;
+      z-index: 200;
+      transition: left 0.3s ease-in-out;
+      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+      overflow-y: auto; /* Allow scrolling if content is long */
     }
     
-    #notifications-page {
-      transform: translateX(0);
+    .detail-page.active {
+      left: 0; /* Slide in to cover the screen */
     }
     
-    #post-detail-page {
-      transform: translateX(100%);
+    .detail-header {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 20px;
-      box-sizing: border-box;
+      padding: 15px;
+      border-bottom: 1px solid var(--estaco-border);
+      background: white;
+      position: sticky;
+      top: 0;
+      z-index: 201;
     }
     
-    #post-detail-page.active {
-      transform: translateX(0);
-    }
-    
-    #notifications-page.hidden {
-      transform: translateX(-100%);
-    }
-    
-    /* Back button for post detail page */
-    #back-button {
-      position: fixed;
-      top: 10px;
-      left: 10px;
+    .back-button {
       background: none;
       border: none;
-      font-size: 24px;
+      font-size: 20px;
       cursor: pointer;
+      margin-right: 10px;
       color: var(--estaco-primary);
-      z-index: 101;
+    }
+    
+    .detail-content {
+      padding: 20px;
+    }
+    
+    #post-id-display {
+      font-size: 16px;
+      color: var(--estaco-text);
+    }
+    
+    #post-id-value {
+      font-weight: bold;
+      color: var(--estaco-secondary);
     }
   </style>
 </head>
@@ -204,21 +205,23 @@
     <h1 data-i18n="Notifications">Notifications</h1>
   </div>
 
-  <div id="notifications-page" class="page">
-    <div class="notifications-container">
-      <div id="notifications">
-        <h3 data-i18n="Your Notifications">Your Notifications</h3>
-        <div id="notifications-list"></div>
-        <button id="load-more" style="display: none;" data-i18n="Load more">Load more</button>
-      </div>
+  <div class="notifications-container">
+    <div id="notifications">
+      <h3 data-i18n="Your Notifications">Your Notifications</h3>
+      <div id="notifications-list"></div>
+      <button id="load-more" style="display: none;" data-i18n="Load more">Load more</button>
     </div>
   </div>
 
-  <!-- Post Detail Page (initially hidden) -->
-  <div id="post-detail-page" class="page">
-    <button id="back-button">←</button>
-    <h2>Post Detail</h2>
-    <p id="post-id-display"></p>
+  <!-- Hidden Detail Page (Slides in from the right) -->
+  <div id="detail-page" class="detail-page">
+    <div class="detail-header">
+      <button id="back-button" class="back-button">← Back</button>
+      <h2>Post Details</h2>
+    </div>
+    <div class="detail-content">
+      <p id="post-id-display">Post ID: <span id="post-id-value"></span></p>
+    </div>
   </div>
 
   <div id="bottom-nav-bar">
@@ -588,19 +591,18 @@
             const postId = notificationElement.getAttribute('data-post-id');
             if (postId) {
               // Set the post ID in the detail page
-              document.getElementById('post-id-display').textContent = `Post ID: ${postId}`;
-        
-              // Slide to the post detail page
-              document.getElementById('notifications-page').classList.add('hidden');
-              document.getElementById('post-detail-page').classList.add('active');
+              document.getElementById('post-id-value').textContent = postId;
+              // Slide in the detail page
+              document.getElementById('detail-page').classList.add('active');
+            } else {
+              alert('No Post ID associated with this notification.');
             }
           });
         });
         
         // Add event listener for the back button
         document.getElementById('back-button').addEventListener('click', () => {
-          document.getElementById('notifications-page').classList.remove('hidden');
-          document.getElementById('post-detail-page').classList.remove('active');
+          document.getElementById('detail-page').classList.remove('active');
         });
     
         // Show or hide the "Load more" button
