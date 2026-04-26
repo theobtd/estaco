@@ -177,12 +177,18 @@
     }
     
     .back-button {
-      background: none;
+      background-color: var(--estaco-primary);
+      color: white;
       border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 20px; /* Stadium shape */
       font-size: 20px;
       cursor: pointer;
-      margin-right: 10px;
-      color: var(--estaco-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0; /* Remove margin since it's now standalone */
     }
     
     .detail-content {
@@ -216,8 +222,7 @@
   <!-- Hidden Detail Page (Slides in from the right) -->
   <div id="detail-page" class="detail-page">
     <div class="detail-header">
-      <button id="back-button" class="back-button">← Back</button>
-      <h2>Post Details</h2>
+      <button id="back-button" class="back-button">←</button>
     </div>
     <div class="detail-content">
       <p id="post-id-display">Post ID: <span id="post-id-value"></span></p>
