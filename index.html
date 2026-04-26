@@ -532,6 +532,13 @@
     closeAboutModal.addEventListener('click', () => {
       aboutModal.style.display = 'none';
     });
+    
+    // Close the modal when clicking outside the popup content
+    aboutModal.addEventListener('click', (event) => {
+      if (event.target === aboutModal) {
+        aboutModal.style.display = 'none';
+      }
+    });
 
     const installGuide = document.getElementById('install-guide');
 
