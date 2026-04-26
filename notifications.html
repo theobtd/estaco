@@ -1698,9 +1698,8 @@
         document.querySelectorAll('.respond-button').forEach(button => {
           button.addEventListener('click', async () => {
             const authorName = button.getAttribute('data-author-name');
-            const commentContentDiv = button.closest('.comment-content');
-            const postId = commentContentDiv.closest('.comments-section').querySelector('.comment-input').getAttribute('data-post-id');
-            const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+            const commentInput = button.closest('.comments-section').querySelector('.comment-input');
+            const postId = commentInput.getAttribute('data-post-id');
         
             // Get the UID of the author being responded to
             const commentElement = button.closest('.comment');
@@ -1710,13 +1709,6 @@
             // Focus the comment input
             commentInput.focus();
         
-            // Create the tag with space
-            const tagWithSpace = `@${authorName} `;
-        
-            // Create a temporary div to parse the HTML
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = commentInput.innerHTML;
-        
             // Create the tag span
             const tagSpan = document.createElement('span');
             tagSpan.className = 'tag-validated';
@@ -1724,15 +1716,15 @@
             tagSpan.setAttribute('contenteditable', 'false');
             tagSpan.setAttribute('data-uid', commentAuthorUid);
         
+            // Create a space text node
+            const spaceNode = document.createTextNode(' ');
+        
             // Get current selection
             const selection = window.getSelection();
             const range = selection.getRangeAt(0);
         
-            // Insert the tag span
+            // Insert the tag and space
             range.insertNode(tagSpan);
-        
-            // Insert a space after the tag
-            const spaceNode = document.createTextNode(' ');
             range.insertNode(spaceNode);
         
             // Move cursor to the end of the space
@@ -1927,81 +1919,28 @@
       const selection = window.getSelection();
       const range = selection.getRangeAt(0);
     
-      // Create the tag span with space
-      const tag = `@${username} `;
+      // Create the tag span
       const tagSpan = document.createElement('span');
       tagSpan.className = 'tag-validated';
       tagSpan.textContent = `@${username}`;
       tagSpan.setAttribute('contenteditable', 'false');
       tagSpan.setAttribute('data-uid', uid);
     
-      // Find the text node that contains the @ position
-      let targetNode = null;
-      let charCount = 0;
+      // Create a space text node
+      const spaceNode = document.createTextNode(' ');
     
-      for (let i = 0; i < inputElement.childNodes.length; i++) {
-        const node = inputElement.childNodes[i];
-        if (node.nodeType === Node.TEXT_NODE) {
-          if (charCount + node.length > atPos) {
-            targetNode = node;
-            break;
-          }
-          charCount += node.length;
-        }
-      }
+      // Insert the tag and space at the cursor position
+      range.insertNode(tagSpan);
+      range.insertNode(spaceNode);
     
-      if (targetNode) {
-        // Split the text node
-        const beforeText = targetNode.textContent.substring(0, atPos - charCount);
-        const afterText = targetNode.textContent.substring(atPos - charCount + currentQuery.length + 1);
+      // Move cursor to the end of the space (after the tag)
+      range.setStartAfter(spaceNode);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
     
-        // Replace the text node with before text, tag span, and after text
-        const parent = targetNode.parentNode;
-        const index = Array.from(parent.childNodes).indexOf(targetNode);
-    
-        // Remove the original text node
-        parent.removeChild(targetNode);
-    
-        // Insert before text if it's not empty
-        if (beforeText) {
-          parent.insertBefore(document.createTextNode(beforeText), parent.childNodes[index]);
-        }
-    
-        // Insert the tag span
-        parent.insertBefore(tagSpan, parent.childNodes[index + (beforeText ? 1 : 0)]);
-    
-        // Insert a space after the tag
-        parent.insertBefore(document.createTextNode(' '), parent.childNodes[index + (beforeText ? 2 : 1)]);
-    
-        // Insert after text if it's not empty
-        if (afterText) {
-          parent.insertBefore(document.createTextNode(afterText), parent.childNodes[index + (beforeText ? 3 : 2)]);
-        }
-    
-        // Move cursor to the end of the space (after the tag)
-        // Use setTimeout to ensure DOM is updated
-        setTimeout(() => {
-          const newRange = document.createRange();
-          const spaceNode = parent.childNodes[index + (beforeText ? 2 : 1)];
-          newRange.setStartAfter(spaceNode);
-          newRange.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(newRange);
-          inputElement.focus();
-        }, 0);
-      } else {
-        // If we can't find the target node, just append to the end
-        inputElement.appendChild(tagSpan);
-        inputElement.appendChild(document.createTextNode(' '));
-    
-        // Move cursor to the end
-        const newRange = document.createRange();
-        newRange.selectNodeContents(inputElement);
-        newRange.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-        inputElement.focus();
-      }
+      // Trigger input event
+      inputElement.dispatchEvent(new Event('input', { bubbles: true }));
     }
     
     // Hide dropdown when clicking outside
