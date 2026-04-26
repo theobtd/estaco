@@ -768,6 +768,41 @@
     async function loadNotifications(userId, loadMore = false) {
       if (isLoading) return;
       isLoading = true;
+
+      // For reaction notifications
+      return `
+        <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
+          <!-- existing content -->
+        </div>
+      `;
+      
+      // For comment notifications
+      return `
+        <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
+          <!-- existing content -->
+        </div>
+      `;
+      
+      // For tag notifications
+      return `
+        <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
+          <!-- existing content -->
+        </div>
+      `;
+      
+      // For comment_tag notifications
+      return `
+        <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
+          <!-- existing content -->
+        </div>
+      `;
+      
+      // For friend_request notifications
+      return `
+        <div class="notification" data-post-id="${notification.postId || ''}" data-notification-type="${notification.type}">
+          <!-- existing content -->
+        </div>
+      `;
     
       try {
         let query = db.collection(`users/${userId}/notifications`)
@@ -932,6 +967,15 @@
         document.querySelectorAll('.notification').forEach((notificationElement) => {
           notificationElement.addEventListener('click', async () => {
             const postId = notificationElement.getAttribute('data-post-id');
+            const notificationType = notificationElement.getAttribute('data-notification-type');
+        
+            // Special handling for friend requests
+            if (notificationType === 'friend_request') {
+              window.location.href = 'profile.html';
+              return;
+            }
+        
+            // For all other notification types (reaction, comment, tag, comment_tag)
             if (postId) {
               // Slide in the detail page
               document.getElementById('detail-page').classList.add('active');
