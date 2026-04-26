@@ -576,15 +576,6 @@
       align-items: center;
       gap: 4px;
     }
-    .comment-text .tag-validated {
-      background-color: var(--estaco-primary-light);
-      color: var(--estaco-text);
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-weight: 500;
-      white-space: nowrap;
-      display: inline-block;
-    }
   </style>
 </head>
 <body>
@@ -1703,32 +1694,9 @@
         for (const doc of commentsSnapshot.docs) {
           const comment = doc.data();
     
-          // Function to parse and style tags in the comment text
-          function parseAndStyleTags(text) {
-            // Create a temporary div to parse the text
-            const tempDiv = document.createElement('div');
-            tempDiv.textContent = text;
-    
-            // Replace @mentions with styled spans
-            const tagRegex = /@(\w+)/g;
-            let processedText = text.replace(tagRegex, (match, username) => {
-              // Check if this username exists in friends
-              const friend = friends.find(f => f.name === username);
-              if (friend) {
-                return `<span class="tag-validated" data-uid="${friend.uid}">@${username}</span>`;
-              } else {
-                // If not found in friends, just return the text
-                return match;
-              }
-            });
-    
-            return processedText;
-          }
-    
           // Always show comments from the current user
           if (comment.authorId === user.uid) {
             const profilePictureHTML = await getAuthorPicture(comment.authorId, comment.authorName);
-            const styledContent = parseAndStyleTags(comment.content);
             const commentHTML = `
               <div class="comment" data-comment-id="${doc.id}">
                 <div class="comment-author-picture">
@@ -1736,7 +1704,7 @@
                 </div>
                 <div class="comment-content">
                   <div class="comment-author-name">${comment.authorName}</div>
-                  <div class="comment-text">${styledContent}</div>
+                  <div class="comment-text">${comment.content}</div>
                   <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
                 </div>
               </div>
@@ -1746,7 +1714,6 @@
           // For other comments, show if the commenter is a friend
           else if (friendIds.includes(comment.authorId)) {
             const profilePictureHTML = await getAuthorPicture(comment.authorId, comment.authorName);
-            const styledContent = parseAndStyleTags(comment.content);
             const commentHTML = `
               <div class="comment" data-comment-id="${doc.id}">
                 <div class="comment-author-picture">
@@ -1754,7 +1721,7 @@
                 </div>
                 <div class="comment-content">
                   <div class="comment-author-name">${comment.authorName}</div>
-                  <div class="comment-text">${styledContent}</div>
+                  <div class="comment-text">${comment.content}</div>
                   <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
                 </div>
               </div>
@@ -1772,15 +1739,15 @@
             const commentInput = button.closest('.comments-section').querySelector('.comment-input');
             const tagPreview = button.closest('.comments-section').querySelector('.tag-preview');
             const postId = commentInput.getAttribute('data-post-id');
-    
+        
             // Get the UID of the author being responded to
             const commentElement = button.closest('.comment');
             const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
             const commentAuthorUid = await getUidByUsername(commentAuthorName);
-    
+        
             // Focus the comment input
             commentInput.focus();
-    
+        
             // Check if the tag already exists in the preview
             const existingTag = tagPreview.querySelector(`.tag-validated[data-uid="${commentAuthorUid}"]`);
             if (!existingTag) {
@@ -1789,7 +1756,7 @@
               tagSpan.className = 'tag-validated';
               tagSpan.textContent = `@${authorName}`;
               tagSpan.setAttribute('data-uid', commentAuthorUid);
-    
+        
               // Add a remove button
               const removeBtn = document.createElement('span');
               removeBtn.textContent = '×';
@@ -1800,7 +1767,7 @@
                 e.stopPropagation();
                 tagPreview.removeChild(tagSpan);
               });
-    
+        
               tagSpan.appendChild(removeBtn);
               tagPreview.appendChild(tagSpan);
             }
