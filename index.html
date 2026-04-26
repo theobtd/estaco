@@ -255,6 +255,15 @@
     <p style="margin-top:16px;color:var(--estaco-text-light);" data-i18n="Creating your account...">Creating your account...</p>
   </div>
 
+  <button id="show-about" style="width: 100%; margin: 10px 0; background-color: var(--estaco-accent); color: var(--estaco-text); border: none; border-radius: 8px; padding: 12px; font-weight: 500; cursor: pointer;" data-i18n="About Us">About Us</button>
+  
+  <div id="about-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 20px; border-radius: 10px; max-width: 350px; margin: 0 auto; text-align: center;">
+      <h3 data-i18n="About Us">About Us</h3>
+      <p data-i18n="This is us!">This is us!</p>
+      <button id="close-about-modal" style="background-color: var(--estaco-accent); color: var(--estaco-text); border: none; border-radius: 8px; padding: 10px; font-weight: 500; cursor: pointer; margin-top: 10px;" data-i18n="Close">Close</button>
+  </div>
+  
   <script>
     // Force Firebase Auth to use localStorage by making IDB fail immediately.
     // In Median.co WKWebView, IDB opens but loses connection later, causing sign-outs.
@@ -497,6 +506,18 @@
       });
     }
 
+    const showAbout = document.getElementById('show-about');
+    const aboutModal = document.getElementById('about-modal');
+    const closeAboutModal = document.getElementById('close-about-modal');
+    
+    showAbout.addEventListener('click', () => {
+      aboutModal.style.display = 'flex';
+    });
+    
+    closeAboutModal.addEventListener('click', () => {
+      aboutModal.style.display = 'none';
+    });
+
     const installGuide = document.getElementById('install-guide');
 
     let userLanguage = "English"; // Define globally
@@ -540,6 +561,9 @@
         "Send Reset Link": "Send Reset Link",
         "Password reset email sent! Check your inbox.": "Password reset email sent! Check your inbox.",
         "Cancel": "Cancel",
+        "About Us": "About Us",
+        "This is us!": "This is us!",
+        "Close": "Close",
       },
       French: {
         "Create Account": "Créer un compte",
@@ -578,6 +602,8 @@
         "Send Reset Link": "Envoyer lien de reinitialisation",
         "Password reset email sent! Check your inbox.": "lien de reinitialisation envoyé",
         "Cancel": "Annuler",
+        "This is us!": "AAAAAH",
+        "Close": "Fermer",
       },
       Korean: {
         "Create Account": "계정 만들기",
@@ -616,6 +642,9 @@
         "Send Reset Link": "재설정 링크 보내기",
         "Password reset email sent! Check your inbox.": "비밀번호 재설정 이메일을 보냈습니다! 이메일함을 확인해 주세요.",
         "Cancel": "취소",
+        "About Us": "About Us",
+        "This is us!": "This is us!",
+        "Close": "Close",
       }
     };
     
