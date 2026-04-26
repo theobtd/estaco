@@ -1706,35 +1706,38 @@
             const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
             const commentAuthorUid = await getUidByUsername(commentAuthorName);
         
-            // Focus the comment input
+            // Focus the comment input first
             commentInput.focus();
         
-            // Create the tag span
-            const tagSpan = document.createElement('span');
-            tagSpan.className = 'tag-validated';
-            tagSpan.textContent = `@${authorName}`;
-            tagSpan.setAttribute('contenteditable', 'false');
-            tagSpan.setAttribute('data-uid', commentAuthorUid);
+            // Use setTimeout to ensure focus is complete
+            setTimeout(() => {
+              // Get the current selection after focus
+              const selection = window.getSelection();
+              const range = selection.getRangeAt(0);
         
-            // Create a space text node
-            const spaceNode = document.createTextNode(' ');
+              // Create the tag span
+              const tagSpan = document.createElement('span');
+              tagSpan.className = 'tag-validated';
+              tagSpan.textContent = `@${authorName}`;
+              tagSpan.setAttribute('contenteditable', 'false');
+              tagSpan.setAttribute('data-uid', commentAuthorUid);
         
-            // Get current selection
-            const selection = window.getSelection();
-            const range = selection.getRangeAt(0);
+              // Create a space text node
+              const spaceNode = document.createTextNode(' ');
         
-            // Insert the tag and space
-            range.insertNode(tagSpan);
-            range.insertNode(spaceNode);
+              // Insert the tag and space
+              range.insertNode(tagSpan);
+              range.insertNode(spaceNode);
         
-            // Move cursor to the end of the space
-            range.setStartAfter(spaceNode);
-            range.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(range);
+              // Move cursor to the end of the space
+              range.setStartAfter(spaceNode);
+              range.collapse(true);
+              selection.removeAllRanges();
+              selection.addRange(range);
         
-            // Trigger input event
-            commentInput.dispatchEvent(new Event('input', { bubbles: true }));
+              // Trigger input event
+              commentInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }, 0);
           });
         });
     
