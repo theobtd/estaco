@@ -1566,6 +1566,31 @@
         }, 300);
       }
     });
+
+    // Add swipe-to-close functionality for the detail page
+    const detailPage = document.getElementById('detail-page');
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    detailPage.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    
+    detailPage.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    }, { passive: true });
+    
+    function handleSwipe() {
+      const swipeThreshold = 50; // Minimum distance (in pixels) to consider it a swipe
+      const diff = touchStartX - touchEndX;
+    
+      // If swipe left (diff > 0) and distance is greater than threshold
+      if (diff > swipeThreshold) {
+        detailPage.classList.remove('active');
+        document.getElementById('detail-post-container').innerHTML = '';
+      }
+    }
     
     // Function to add a comment (similar to your main feed)
     async function addComment(postId, content) {
