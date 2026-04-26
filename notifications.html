@@ -200,11 +200,11 @@
   </style>
 </head>
 <body>
+  <div id="top-nav-bar">
+    <h1 data-i18n="Notifications">Notifications</h1>
+  </div>
+
   <div id="notifications-page" class="page">
-    <div id="top-nav-bar">
-      <h1 data-i18n="Notifications">Notifications</h1>
-    </div>
-  
     <div class="notifications-container">
       <div id="notifications">
         <h3 data-i18n="Your Notifications">Your Notifications</h3>
@@ -212,28 +212,28 @@
         <button id="load-more" style="display: none;" data-i18n="Load more">Load more</button>
       </div>
     </div>
-  
-    <div id="bottom-nav-bar">
-      <button class="nav-button" id="home-button">
-        <span class="icon">🏠</span>
-        <span class="label" data-i18n="Feed">Feed</span>
-      </button>
-      <button class="nav-button" id="notifications-button">
-        <span class="icon">🔔</span>
-        <span class="label" data-i18n="Notifications">Notifications</span>
-      </button>
-      <button class="nav-button" id="profile-button">
-        <span class="icon">👤</span>
-        <span class="label" data-i18n="Profile">Profile</span>
-      </button>
-    </div>
   </div>
-  
+
   <!-- Post Detail Page (initially hidden) -->
   <div id="post-detail-page" class="page">
     <button id="back-button">←</button>
     <h2>Post Detail</h2>
     <p id="post-id-display"></p>
+  </div>
+
+  <div id="bottom-nav-bar">
+    <button class="nav-button" id="home-button">
+      <span class="icon">🏠</span>
+      <span class="label" data-i18n="Feed">Feed</span>
+    </button>
+    <button class="nav-button" id="notifications-button">
+      <span class="icon">🔔</span>
+      <span class="label" data-i18n="Notifications">Notifications</span>
+    </button>
+    <button class="nav-button" id="profile-button">
+      <span class="icon">👤</span>
+      <span class="label" data-i18n="Profile">Profile</span>
+    </button>
   </div>
 
   <script>
