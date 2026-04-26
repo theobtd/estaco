@@ -535,6 +535,17 @@
       contenteditable: false;
       user-select: none;
     }
+    #user-tag-dropdown {
+      display: none;
+      position: absolute;
+      background: white;
+      border: 1px solid #ddd;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      width: 200px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
   </style>
 </head>
 <body>
@@ -586,8 +597,8 @@
     </div>
   </div>
 
-  <div id="user-tag-dropdown" style="display: none; position: absolute; background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; z-index: 1000; width: 200px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"></div>
-
+  <div id="user-tag-dropdown"></div>
+  
   <script>
     // Disable IndexedDB so Firebase Auth falls back to localStorage (fixes WKWebView/Median.co persistence)
     (function() {
