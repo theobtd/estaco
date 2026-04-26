@@ -1712,34 +1712,26 @@
         
             // Insert at cursor position or append if no selection
             const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-              const range = selection.getRangeAt(0);
-              range.deleteContents();
+            const range = selection.getRangeAt(0);
         
-              const tempDiv = document.createElement('div');
-              tempDiv.innerHTML = tagHtml;
-              const fragment = document.createDocumentFragment();
-              while (tempDiv.firstChild) {
-                fragment.appendChild(tempDiv.firstChild);
-              }
+            // Create a temporary div to parse the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = tagHtml;
+            const tagSpan = tempDiv.firstChild;
         
-              range.insertNode(fragment);
+            // Insert the tag
+            range.deleteContents();
+            range.insertNode(tagSpan);
         
-              // Move cursor to end
-              range.setStartAfter(fragment.lastChild);
-              range.collapse(true);
-              selection.removeAllRanges();
-              selection.addRange(range);
-            } else {
-              // If no selection, append to end
-              commentInput.innerHTML += tagHtml;
-              // Move cursor to end
-              const range = document.createRange();
-              range.selectNodeContents(commentInput);
-              range.collapse(false);
-              selection.removeAllRanges();
-              selection.addRange(range);
-            }
+            // Create a text node for the space
+            const spaceNode = document.createTextNode(' ');
+            range.insertNode(spaceNode);
+        
+            // Move cursor to end of the inserted content
+            range.setStartAfter(spaceNode);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
         
             // Focus the input
             commentInput.focus();
