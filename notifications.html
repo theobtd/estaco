@@ -1930,6 +1930,9 @@
       tagSpan.setAttribute('contenteditable', 'false');
       tagSpan.setAttribute('data-uid', uid);
     
+      // Create a space text node
+      const spaceText = document.createTextNode(' ');
+    
       // Find the text node that contains the @ position
       let targetNode = null;
       let charCount = 0;
@@ -1950,7 +1953,7 @@
         const beforeText = targetNode.textContent.substring(0, atPos - charCount);
         const afterText = targetNode.textContent.substring(atPos - charCount + currentQuery.length + 1);
     
-        // Replace the text node with before text, tag span, and after text
+        // Replace the text node with before text, tag span, space, and after text
         const parent = targetNode.parentNode;
         const index = Array.from(parent.childNodes).indexOf(targetNode);
     
@@ -1966,16 +1969,16 @@
         parent.insertBefore(tagSpan, parent.childNodes[index + (beforeText ? 1 : 0)]);
     
         // Insert a space after the tag
-        parent.insertBefore(document.createTextNode(' '), parent.childNodes[index + (beforeText ? 2 : 1)]);
+        parent.insertBefore(spaceText, parent.childNodes[index + (beforeText ? 2 : 1)]);
     
         // Insert after text if it's not empty
         if (afterText) {
           parent.insertBefore(document.createTextNode(afterText), parent.childNodes[index + (beforeText ? 3 : 2)]);
         }
     
-        // Move cursor to the end of the tag
+        // Move cursor to the end of the space (after the tag)
         const newRange = document.createRange();
-        newRange.setStartAfter(tagSpan);
+        newRange.setStartAfter(spaceText);
         newRange.collapse(true);
         selection.removeAllRanges();
         selection.addRange(newRange);
