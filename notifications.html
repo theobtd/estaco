@@ -1013,6 +1013,19 @@
       return colors[index];
     }
 
+    // Helper function to extract tagged user UIDs from content
+    function extractTaggedUserUids(content) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      const tags = tempDiv.querySelectorAll('.tag-validated');
+      const uids = [];
+      tags.forEach(tag => {
+        const uid = tag.dataset.uid;
+        if (uid) uids.push(uid);
+      });
+      return uids;
+    }
+
     // Function to get the author's profile picture
     function getAuthorPicture(authorId, authorName) {
       return db.collection('users').doc(authorId).get().then((userDoc) => {
@@ -1526,11 +1539,17 @@
       }
     
       try {
+        // Extract tagged user UIDs from the content
+        const taggedUserUids = extractTaggedUserUids(content);
+    
+        // Add the comment to Firestore
         const comment = {
           authorId: user.uid,
           authorName: user.displayName || "Unknown User",
           content: content,
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          // Only include taggedUserUids if there are any
+          ...(taggedUserUids.length > 0 && { taggedUserUids })
         };
     
         const docRef = await db.collection('posts').doc(postId).collection('comments').add(comment);
@@ -1539,6 +1558,7 @@
         const postDoc = await db.collection('posts').doc(postId).get();
         if (postDoc.exists) {
           const post = postDoc.data();
+          // Only add a notification if the commenter is not the author
           if (post.authorId !== user.uid) {
             await addCommentNotification(
               post.authorId,
@@ -1548,6 +1568,22 @@
               content,
               firebase.firestore.FieldValue.serverTimestamp()
             );
+          }
+        }
+    
+        // Add tag notifications for each tagged user
+        if (taggedUserUids.length > 0) {
+          for (const taggedUid of taggedUserUids) {
+            // Skip if the tagged user is the comment author (can't tag yourself)
+            if (taggedUid !== user.uid) {
+              await addCommentTagNotification(
+                taggedUid, // Tagged user's UID
+                postId, // Post ID
+                user.uid, // Current user's UID (commenter)
+                user.displayName || "Unknown User", // Current user's name
+                firebase.firestore.FieldValue.serverTimestamp()
+              );
+            }
           }
         }
     
@@ -1703,6 +1739,56 @@
       } catch (error) {
         console.error("Error getting UID by username:", error);
         return null;
+      }
+    }
+
+    // Function to add comment tag notification
+    async function addCommentTagNotification(taggedUid, postId, commenterId, commenterName, timestamp) {
+      try {
+        // Fetch the post to get its caption
+        const postDoc = await db.collection('posts').doc(postId).get();
+        let postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
+        // Limit postCaption to 80 characters
+        postCaption = postCaption.length > 80 ? postCaption.substring(0, 80) + "..." : postCaption;
+    
+        const notificationsRef = db.collection(`users/${taggedUid}/notifications`);
+        // Query for existing notifications
+        const querySnapshot = await notificationsRef
+          .where('type', '==', 'comment_tag')
+          .where('postId', '==', postId)
+          .where('commenterId', '==', commenterId)
+          .get();
+    
+        if (!querySnapshot.empty) {
+          // Update existing notification
+          querySnapshot.forEach((doc) => {
+            doc.ref.update({
+              timestamp,
+              message: `${commenterName} tagged you again in a comment.`,
+              postCaption: postCaption,
+            });
+          });
+        } else {
+          // Create new notification
+          await notificationsRef.add({
+            type: "comment_tag",
+            commenterId,
+            commenterName,
+            postId,
+            postCaption: postCaption,
+            timestamp,
+            message: `${commenterName} tagged you in a comment.`
+          });
+        }
+        // Increment the NotificationsCounter for the tagged user
+        const userRef = db.collection('users').doc(taggedUid);
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          const currentCount = userDoc.data()?.NotificationsCounter || 0;
+          transaction.update(userRef, { NotificationsCounter: currentCount + 1 });
+        });
+      } catch (error) {
+        console.error("Error adding/updating comment tag notification:", error);
       }
     }
     
