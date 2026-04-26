@@ -576,13 +576,6 @@
       align-items: center;
       gap: 4px;
     }
-    
-    .tag-preview .tag-validated::after {
-      content: "×";
-      cursor: pointer;
-      font-size: 10px;
-      color: var(--estaco-text-light);
-    }
   </style>
 </head>
 <body>
@@ -1583,12 +1576,25 @@
       const tagPreview = document.getElementById(`tag-preview-${postId}`);
       const tags = tagPreview ? Array.from(tagPreview.querySelectorAll('.tag-validated')) : [];
     
-      // Extract tagged UIDs
-      const taggedUserUids = tags.map(tag => tag.dataset.uid).filter(uid => uid);
+      // Extract tagged UIDs and clean tag texts (remove the "×" button)
+      const taggedUserUids = [];
+      const tagTexts = [];
+    
+      tags.forEach(tag => {
+        const uid = tag.dataset.uid;
+        if (uid) {
+          taggedUserUids.push(uid);
+          // Get the tag text without the "×" button
+          const tagText = Array.from(tag.childNodes)
+            .filter(node => node.nodeType === Node.TEXT_NODE)
+            .map(node => node.textContent)
+            .join('');
+          tagTexts.push(tagText);
+        }
+      });
     
       // Combine tags and input content
-      const tagTexts = tags.map(tag => tag.textContent).join(' ');
-      const fullContent = tagTexts + ' ' + content;
+      const fullContent = tagTexts.join(' ') + ' ' + content;
     
       const textContent = fullContent.replace(/<[^>]*>/g, '');
       if (textContent.length > 250) {
@@ -1604,7 +1610,7 @@
         const comment = {
           authorId: user.uid,
           authorName: user.displayName || "Unknown User",
-          content: fullContent, // Include tags in the content
+          content: fullContent, // Include tags in the content (without "×")
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           ...(taggedUserUids.length > 0 && { taggedUserUids })
         };
@@ -1733,15 +1739,15 @@
             const commentInput = button.closest('.comments-section').querySelector('.comment-input');
             const tagPreview = button.closest('.comments-section').querySelector('.tag-preview');
             const postId = commentInput.getAttribute('data-post-id');
-          
+        
             // Get the UID of the author being responded to
             const commentElement = button.closest('.comment');
             const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
             const commentAuthorUid = await getUidByUsername(commentAuthorName);
-          
+        
             // Focus the comment input
             commentInput.focus();
-          
+        
             // Check if the tag already exists in the preview
             const existingTag = tagPreview.querySelector(`.tag-validated[data-uid="${commentAuthorUid}"]`);
             if (!existingTag) {
@@ -1750,8 +1756,8 @@
               tagSpan.className = 'tag-validated';
               tagSpan.textContent = `@${authorName}`;
               tagSpan.setAttribute('data-uid', commentAuthorUid);
-          
-              // Add a remove button (optional)
+        
+              // Add a remove button
               const removeBtn = document.createElement('span');
               removeBtn.textContent = '×';
               removeBtn.style.cursor = 'pointer';
@@ -1761,7 +1767,7 @@
                 e.stopPropagation();
                 tagPreview.removeChild(tagSpan);
               });
-          
+        
               tagSpan.appendChild(removeBtn);
               tagPreview.appendChild(tagSpan);
             }
