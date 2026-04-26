@@ -417,7 +417,7 @@
         const newNotificationsHTML = notifications.map(notification => {
           if (notification.type === 'reaction') {
             return `
-              <div class="notification">
+              <div class="notification" data-post-id="${notification.postId}">
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
                     ${notification.reactorName.charAt(0).toUpperCase()}
@@ -440,7 +440,7 @@
             `;
           } else if (notification.type === 'comment') {
             return `
-              <div class="notification">
+              <div class="notification" data-post-id="${notification.postId}">
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
                     ${notification.reactorName.charAt(0).toUpperCase()}
@@ -461,7 +461,7 @@
             `;
           } else if (notification.type === 'tag') {
             return `
-              <div class="notification">
+              <div class="notification" data-post-id="${notification.postId}">
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
                     ${notification.reactorName.charAt(0).toUpperCase()}
@@ -479,7 +479,7 @@
             `;
           } else if (notification.type === 'comment_tag') {
             return `
-              <div class="notification">
+              <div class="notification" data-post-id="${notification.postId}">
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
                     ${notification.reactorName.charAt(0).toUpperCase()}
@@ -497,7 +497,7 @@
             `;
           } else if (notification.type === 'friend_request') {
             return `
-              <div class="notification">
+              <div class="notification" data-post-id="${notification.postId || ''}">
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
                     ${notification.reactorName.charAt(0).toUpperCase()}
@@ -515,12 +515,25 @@
             `;
           }
         }).join('');
-    
+        
+        // Add the HTML to the DOM
         if (loadMore) {
           notificationsList.innerHTML += newNotificationsHTML;
         } else {
           notificationsList.innerHTML = newNotificationsHTML;
         }
+        
+        // Add click event listeners to all notifications
+        document.querySelectorAll('.notification').forEach((notificationElement) => {
+          notificationElement.addEventListener('click', () => {
+            const postId = notificationElement.getAttribute('data-post-id');
+            if (postId) {
+              alert(`Post ID: ${postId}`);
+            } else {
+              alert('No Post ID associated with this notification.');
+            }
+          });
+        });
     
         // Show or hide the "Load more" button
         const loadMoreButton = document.getElementById('load-more');
