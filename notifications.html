@@ -1707,34 +1707,39 @@
             const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
             const commentAuthorUid = await getUidByUsername(commentAuthorName);
         
-            // Create the tag HTML
-            const tagHtml = `<span class="tag-validated" contenteditable="false" data-uid="${commentAuthorUid}">@${authorName}</span> `;
+            // Focus the comment input
+            commentInput.focus();
         
-            // Insert at cursor position or append if no selection
-            const selection = window.getSelection();
-            const range = selection.getRangeAt(0);
+            // Create the tag with space
+            const tagWithSpace = `@${authorName} `;
         
             // Create a temporary div to parse the HTML
             const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = tagHtml;
-            const tagSpan = tempDiv.firstChild;
+            tempDiv.innerHTML = commentInput.innerHTML;
         
-            // Insert the tag
-            range.deleteContents();
+            // Create the tag span
+            const tagSpan = document.createElement('span');
+            tagSpan.className = 'tag-validated';
+            tagSpan.textContent = `@${authorName}`;
+            tagSpan.setAttribute('contenteditable', 'false');
+            tagSpan.setAttribute('data-uid', commentAuthorUid);
+        
+            // Get current selection
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+        
+            // Insert the tag span
             range.insertNode(tagSpan);
         
-            // Create a text node for the space
+            // Insert a space after the tag
             const spaceNode = document.createTextNode(' ');
             range.insertNode(spaceNode);
         
-            // Move cursor to end of the inserted content
+            // Move cursor to the end of the space
             range.setStartAfter(spaceNode);
             range.collapse(true);
             selection.removeAllRanges();
             selection.addRange(range);
-        
-            // Focus the input
-            commentInput.focus();
         
             // Trigger input event
             commentInput.dispatchEvent(new Event('input', { bubbles: true }));
