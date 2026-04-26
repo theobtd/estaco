@@ -525,6 +525,16 @@
       font-size: 16px;
       color: var(--estaco-text);
     }
+    .tag-validated {
+      background-color: var(--estaco-primary-light);
+      color: var(--estaco-text);
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-weight: 500;
+      white-space: nowrap;
+      contenteditable: false;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -1344,6 +1354,129 @@
           }
         });
       }
+
+      // Add input event listener for comment input to handle @-mentions
+      const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+      if (commentInput) {
+        commentInput.addEventListener('input', (e) => {
+          const selection = window.getSelection();
+          const range = selection.getRangeAt(0);
+          const text = commentInput.textContent;
+          const cursorPos = range.startOffset;
+      
+          // Check if the character before the cursor is @ and not part of a tag
+          if (cursorPos > 0 && text[cursorPos - 1] === '@') {
+            const node = range.startContainer;
+            let isInsideTag = false;
+      
+            // Check if the @ is inside a tag
+            let currentNode = node;
+            while (currentNode && currentNode !== commentInput) {
+              if (currentNode.classList && currentNode.classList.contains('tag-validated')) {
+                isInsideTag = true;
+                break;
+              }
+              currentNode = currentNode.parentNode;
+            }
+      
+            if (!isInsideTag) {
+              const lastAtPos = cursorPos - 1;
+              const query = text.substring(lastAtPos + 1, cursorPos).trim();
+              showUserTagDropdown(commentInput, query, lastAtPos);
+            } else {
+              hideUserTagDropdown();
+            }
+          } else {
+            hideUserTagDropdown();
+          }
+        });
+      
+        // Listen for clicks inside the comment input
+        commentInput.addEventListener('click', (e) => {
+          const selection = window.getSelection();
+          const range = selection.getRangeAt(0);
+          const text = commentInput.textContent;
+          const cursorPos = range.startOffset;
+          const lastAtPos = text.lastIndexOf('@', cursorPos - 1);
+      
+          if (lastAtPos !== -1 && cursorPos > lastAtPos) {
+            const query = text.substring(lastAtPos + 1, cursorPos).trim();
+            showUserTagDropdown(commentInput, query, lastAtPos);
+          } else {
+            hideUserTagDropdown();
+          }
+        });
+      
+        // Listen for backspace/delete to handle tag removal
+        commentInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' || e.key === 'Delete') {
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+            const cursorNode = range.startContainer;
+            const cursorOffset = range.startOffset;
+      
+            // Check if the cursor is inside or right after a validated tag
+            const tags = commentInput.querySelectorAll('.tag-validated');
+            let tagToRemove = null;
+            let tagIndex = -1;
+      
+            tags.forEach((tag, index) => {
+              // Check if cursor is inside the tag
+              if (tag.contains(cursorNode) || tag === cursorNode) {
+                tagToRemove = tag;
+                tagIndex = index;
+              }
+              // Check if cursor is right after the tag
+              else if (tag.parentNode === commentInput &&
+                      commentInput.childNodes[tagIndex + 1] === tag &&
+                      cursorNode === commentInput &&
+                      cursorOffset === tagIndex + 1) {
+                tagToRemove = tag;
+                tagIndex = index;
+              }
+            });
+      
+            if (tagToRemove) {
+              e.preventDefault();
+              const tagText = tagToRemove.textContent;
+              const tagStart = getNodeIndex(tagToRemove);
+              const tagEnd = tagStart + tagText.length;
+      
+              // Remove the tag and the space after it if it exists
+              const nodesToRemove = [];
+              for (let i = tagStart; i < commentInput.childNodes.length; i++) {
+                const node = commentInput.childNodes[i];
+                if (node === tagToRemove || (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '')) {
+                  nodesToRemove.push(node);
+                } else if (nodesToRemove.length > 0) {
+                  break;
+                }
+              }
+      
+              nodesToRemove.forEach(node => {
+                commentInput.removeChild(node);
+              });
+      
+              // Move the cursor to the position where the tag was
+              const newRange = document.createRange();
+              const newSelection = window.getSelection();
+              newRange.setStart(commentInput, tagStart);
+              newRange.collapse(true);
+              newSelection.removeAllRanges();
+              newSelection.addRange(newRange);
+            }
+          }
+        });
+      }
+      
+      // Helper function to get the index of a node among its siblings
+      function getNodeIndex(node) {
+        let index = 0;
+        while ((node = node.previousSibling)) {
+          index++;
+        }
+        return index;
+      }
     }
 
     // Close popup with animation when clicking the close button
@@ -1496,31 +1629,43 @@
             const commentContentDiv = button.closest('.comment-content');
             const postId = commentContentDiv.closest('.comments-section').querySelector('.comment-input').getAttribute('data-post-id');
             const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
-    
+        
             // Get the UID of the author being responded to
             const commentElement = button.closest('.comment');
             const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
             const commentAuthorUid = await getUidByUsername(commentAuthorName);
-    
-            // Insert @AuthorName into the comment input as a tag
-            const atMention = `@${authorName}`;
-            const tagSpan = `<span class="tag-validated" contenteditable="false" data-uid="${commentAuthorUid}">${atMention}</span> `;
+        
+            // Focus the comment input
             commentInput.focus();
-    
-            // Insert the tag span
+        
+            // Get current cursor position
             const selection = window.getSelection();
             const range = selection.getRangeAt(0);
-            range.deleteContents();
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = tagSpan;
-            const tagNode = tempDiv.firstChild;
-            range.insertNode(tagNode);
-    
-            // Move cursor to the end of the tag
-            range.setStartAfter(tagNode);
+        
+            // Create the tag span
+            const atMention = `@${authorName}`;
+            const tagSpan = document.createElement('span');
+            tagSpan.className = 'tag-validated';
+            tagSpan.textContent = atMention;
+            tagSpan.setAttribute('contenteditable', 'false');
+            tagSpan.setAttribute('data-uid', commentAuthorUid);
+        
+            // Insert the tag at cursor position
+            range.insertNode(tagSpan);
+        
+            // Add a space after the tag
+            const spaceText = document.createTextNode(' ');
+            range.insertNode(spaceText);
+        
+            // Move cursor to the end of the inserted content
+            range.setStartAfter(spaceText);
             range.collapse(true);
             selection.removeAllRanges();
             selection.addRange(range);
+        
+            // Trigger input event to update any listeners
+            const event = new Event('input', { bubbles: true });
+            commentInput.dispatchEvent(event);
           });
         });
     
@@ -1598,8 +1743,136 @@
       }
     }
 
+    // Global variables for the dropdown
+    let currentInputElement = null;
+    let currentAtPosition = -1;
+    let currentQuery = "";
+    
+    // Function to show the dropdown with friends
+    async function showUserTagDropdown(inputElement, query, atPos) {
+      currentInputElement = inputElement;
+      currentAtPosition = atPos;
+      currentQuery = query;
+    
+      const dropdown = document.getElementById('user-tag-dropdown');
+      dropdown.innerHTML = '';
+    
+      const user = auth.currentUser;
+      if (!user) return;
+    
+      // Fetch the user's friends from Firestore
+      const friendsDoc = await db.collection('friends').doc(user.uid).get();
+      if (!friendsDoc.exists) return;
+    
+      const friends = friendsDoc.data()?.friends || [];
+      const filteredFriends = friends.filter(friend =>
+        friend.name.toLowerCase().includes(query.toLowerCase())
+      );
+    
+      // Add each friend to the dropdown
+      filteredFriends.forEach(friend => {
+        const item = document.createElement('div');
+        item.className = 'user-tag-item';
+        item.textContent = friend.name;
+        item.dataset.uid = friend.uid;
+        item.addEventListener('click', () => {
+          insertTaggedUser(currentInputElement, friend.name, currentAtPosition, friend.uid);
+          hideUserTagDropdown();
+        });
+        dropdown.appendChild(item);
+      });
+    
+      // Position the dropdown below the input
+      const rect = inputElement.getBoundingClientRect();
+      dropdown.style.display = 'block';
+      dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+      dropdown.style.left = `${rect.left + window.scrollX}px`;
+    }
+    
+    // Function to hide the dropdown
+    function hideUserTagDropdown() {
+      document.getElementById('user-tag-dropdown').style.display = 'none';
+    }
+    
+    // Function to insert the selected user into the input
+    function insertTaggedUser(inputElement, username, atPos, uid) {
+      // Get the current selection
+      const selection = window.getSelection();
+      const range = selection.getRangeAt(0);
+    
+      // Create the tag span
+      const tag = `@${username}`;
+      const tagSpan = document.createElement('span');
+      tagSpan.className = 'tag-validated';
+      tagSpan.textContent = tag;
+      tagSpan.setAttribute('contenteditable', 'false');
+      tagSpan.setAttribute('data-uid', uid);
+    
+      // Find the text node that contains the @ position
+      let targetNode = null;
+      let charCount = 0;
+    
+      for (let i = 0; i < inputElement.childNodes.length; i++) {
+        const node = inputElement.childNodes[i];
+        if (node.nodeType === Node.TEXT_NODE) {
+          if (charCount + node.length > atPos) {
+            targetNode = node;
+            break;
+          }
+          charCount += node.length;
+        }
+      }
+    
+      if (targetNode) {
+        // Split the text node
+        const beforeText = targetNode.textContent.substring(0, atPos - charCount);
+        const afterText = targetNode.textContent.substring(atPos - charCount + currentQuery.length + 1);
+    
+        // Replace the text node with before text, tag span, and after text
+        const parent = targetNode.parentNode;
+        const index = Array.from(parent.childNodes).indexOf(targetNode);
+    
+        // Remove the original text node
+        parent.removeChild(targetNode);
+    
+        // Insert before text if it's not empty
+        if (beforeText) {
+          parent.insertBefore(document.createTextNode(beforeText), parent.childNodes[index]);
+        }
+    
+        // Insert the tag span
+        parent.insertBefore(tagSpan, parent.childNodes[index + (beforeText ? 1 : 0)]);
+    
+        // Insert a space after the tag
+        parent.insertBefore(document.createTextNode(' '), parent.childNodes[index + (beforeText ? 2 : 1)]);
+    
+        // Insert after text if it's not empty
+        if (afterText) {
+          parent.insertBefore(document.createTextNode(afterText), parent.childNodes[index + (beforeText ? 3 : 2)]);
+        }
+    
+        // Move cursor to the end of the tag
+        const newRange = document.createRange();
+        newRange.setStartAfter(tagSpan);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    
+      inputElement.focus();
+    }
+    
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.matches('.comment-input, .user-tag-item')) {
+        hideUserTagDropdown();
+      }
+    });
+
     // Call updatePageLanguage on page load with the default language
     updatePageLanguage(userLanguage);
+
+    <div id="user-tag-dropdown" style="display: none; position: absolute; background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; z-index: 1000; width: 200px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"></div>
 
   }); // end _authRestoreReady.then
   </script>
