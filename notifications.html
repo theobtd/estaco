@@ -1412,19 +1412,6 @@
           });
         });
       });
-
-      commentButton.addEventListener('click', () => {
-        const postId = commentButton.getAttribute('data-post-id');
-        const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
-        const tagPreview = document.getElementById(`tag-preview-${postId}`);
-        const content = commentInput.innerHTML.trim();
-      
-        if (content || (tagPreview && tagPreview.children.length > 0)) {
-          addComment(postId, content);
-          commentInput.innerHTML = '';
-          if (tagPreview) tagPreview.innerHTML = '';
-        }
-      });
     
       // Comment button
       const commentButton = document.querySelector(`.comment-button[data-post-id="${postId}"]`);
