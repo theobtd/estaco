@@ -1707,39 +1707,42 @@
             const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
             const commentAuthorUid = await getUidByUsername(commentAuthorName);
         
-            // Focus the comment input
-            commentInput.focus();
+            // Create the tag HTML
+            const tagHtml = `<span class="tag-validated" contenteditable="false" data-uid="${commentAuthorUid}">@${authorName}</span> `;
         
-            // Create the tag with space
-            const tagWithSpace = `@${authorName} `;
-        
-            // Create a temporary div to parse the HTML
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = commentInput.innerHTML;
-        
-            // Create the tag span
-            const tagSpan = document.createElement('span');
-            tagSpan.className = 'tag-validated';
-            tagSpan.textContent = `@${authorName}`;
-            tagSpan.setAttribute('contenteditable', 'false');
-            tagSpan.setAttribute('data-uid', commentAuthorUid);
-        
-            // Get current selection
+            // Insert at cursor position or append if no selection
             const selection = window.getSelection();
-            const range = selection.getRangeAt(0);
+            if (selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              range.deleteContents();
         
-            // Insert the tag span
-            range.insertNode(tagSpan);
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = tagHtml;
+              const fragment = document.createDocumentFragment();
+              while (tempDiv.firstChild) {
+                fragment.appendChild(tempDiv.firstChild);
+              }
         
-            // Insert a space after the tag
-            const spaceNode = document.createTextNode(' ');
-            range.insertNode(spaceNode);
+              range.insertNode(fragment);
         
-            // Move cursor to the end of the space
-            range.setStartAfter(spaceNode);
-            range.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(range);
+              // Move cursor to end
+              range.setStartAfter(fragment.lastChild);
+              range.collapse(true);
+              selection.removeAllRanges();
+              selection.addRange(range);
+            } else {
+              // If no selection, append to end
+              commentInput.innerHTML += tagHtml;
+              // Move cursor to end
+              const range = document.createRange();
+              range.selectNodeContents(commentInput);
+              range.collapse(false);
+              selection.removeAllRanges();
+              selection.addRange(range);
+            }
+        
+            // Focus the input
+            commentInput.focus();
         
             // Trigger input event
             commentInput.dispatchEvent(new Event('input', { bubbles: true }));
