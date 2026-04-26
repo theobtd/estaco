@@ -151,18 +151,18 @@
     .detail-page {
       position: fixed;
       top: 0;
-      left: 100%; /* Start off-screen to the right */
+      left: 100%;
       width: 100%;
       height: 100%;
       background: white;
       z-index: 200;
       transition: left 0.3s ease-in-out;
       box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-      overflow-y: auto; /* Allow scrolling if content is long */
+      overflow-y: auto;
     }
     
     .detail-page.active {
-      left: 0; /* Slide in to cover the screen */
+      left: 0;
     }
     
     .detail-header {
@@ -182,27 +182,229 @@
       border: none;
       width: 40px;
       height: 40px;
-      border-radius: 20px; /* Stadium shape */
+      border-radius: 20px;
       font-size: 20px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 0; /* Remove margin since it's now standalone */
     }
     
-    .detail-content {
-      padding: 20px;
+    /* Post styles for the detail page */
+    .detail-post {
+      padding: 10px;
+      border: 1px solid var(--estaco-border);
+      border-radius: 5px;
+      margin-bottom: 10px;
+      background: var(--estaco-background);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      width: 100%;
+      box-sizing: border-box;
     }
     
-    #post-id-display {
+    .detail-post-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .detail-post-author-picture {
+      width: 40px;
+      height: 40px;
+      border-radius: 15%;
+      margin-right: 10px;
+    }
+    
+    .detail-post-author-name {
+      margin: 0;
       font-size: 16px;
-      color: var(--estaco-text);
+      font-weight: 500;
     }
     
-    #post-id-value {
+    .detail-post-timestamp {
+      text-align: right;
+      font-size: 12px;
+      color: var(--estaco-text-light);
+      margin-top: -15px;
+      margin-left: auto;
+    }
+    
+    .media-container {
+      position: relative;
+      margin-top: 10px;
+      overflow: hidden;
+      background-color: var(--estaco-surface);
+    }
+    
+    .media-horizontal,
+    .media-vertical {
+      width: 100%;
+      height: auto;
+      position: relative;
+      overflow: hidden;
+      background-color: transparent;
+      margin: 0;
+    }
+    
+    .media-horizontal {
+      aspect-ratio: 16 / 9;
+    }
+    
+    .media-vertical {
+      aspect-ratio: 3 / 4;
+    }
+    
+    .media-container img,
+    .media-container video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .reactions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .reaction-button {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    
+    .reaction-count {
+      font-size: 12px;
+      margin-left: 3px;
+      color: #666;
+    }
+    
+    .reaction-button.selected {
+      background-color: var(--estaco-primary);
+      color: white;
+      border-radius: 4px;
+      padding: 2px 4px;
+    }
+    
+    .comments-section {
+      margin-top: 10px;
+      border-top: 1px solid var(--estaco-border);
+      padding-top: 10px;
+    }
+    
+    .comment-form {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    
+    .comment-input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      min-height: 40px;
+      outline: none;
+    }
+    
+    .comment-input:empty::before {
+      content: attr(data-placeholder);
+      color: #999;
+      pointer-events: none;
+      display: block;
+    }
+    
+    .comment-button {
+      padding: 8px 12px;
+      background: var(--estaco-accent);
+      border: none;
+      border-radius: 4px;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+    
+    .comment {
+      display: flex;
+      margin-bottom: 8px;
+      align-items: flex-start;
+    }
+    
+    .comment-author-picture {
+      width: 30px;
+      height: 30px;
+      border-radius: 10%;
+      margin-right: 8px;
+    }
+    
+    .comment-content {
+      background: var(--estaco-surface);
+      padding: 8px 12px;
+      border-radius: 8px;
+      flex: 1;
+    }
+    
+    .comment-author-name {
       font-weight: bold;
+      margin-bottom: 2px;
+    }
+    
+    .post-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      width: 100%;
+    }
+    
+    .see-comments-button {
+      padding: 8px 12px;
+      background: var(--estaco-surface);
+      border: 1px solid var(--estaco-border);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--estaco-text-light);
+      transition: background-color 0.2s;
+      margin: 0;
+    }
+    
+    .translate-button {
+      background: none;
+      border: 1px solid var(--estaco-border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 5px;
+      margin-bottom: 5px;
       color: var(--estaco-secondary);
+      transition: background-color 0.2s;
+    }
+    
+    .post-options-button {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--estaco-text-light);
+      margin-left: 5px;
+      padding: 0 5px;
+      border-radius: 50%;
+      transition: background-color 0.2s;
+    }
+    
+    .delete-post-button {
+      background: var(--estaco-error);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
     }
   </style>
 </head>
@@ -224,8 +426,8 @@
     <div class="detail-header">
       <button id="back-button" class="back-button">←</button>
     </div>
-    <div class="detail-content">
-      <p id="post-id-display">Post ID: <span id="post-id-value"></span></p>
+    <div class="detail-content" id="detail-post-container">
+      <!-- Post will be rendered here -->
     </div>
   </div>
 
@@ -592,17 +794,25 @@
         
         // Add click event listeners to all notifications
         document.querySelectorAll('.notification').forEach((notificationElement) => {
-          notificationElement.addEventListener('click', () => {
+          notificationElement.addEventListener('click', async () => {
             const postId = notificationElement.getAttribute('data-post-id');
             if (postId) {
-              // Set the post ID in the detail page
-              document.getElementById('post-id-value').textContent = postId;
               // Slide in the detail page
               document.getElementById('detail-page').classList.add('active');
+        
+              // Render the post in the detail page
+              await renderPostInDetailPage(postId);
             } else {
               alert('No Post ID associated with this notification.');
             }
           });
+        });
+        
+        // Add event listener for the back button
+        document.getElementById('back-button').addEventListener('click', () => {
+          document.getElementById('detail-page').classList.remove('active');
+          // Clear the detail page content when closing
+          document.getElementById('detail-post-container').innerHTML = '';
         });
         
         // Add event listener for the back button
@@ -635,6 +845,570 @@
       const colors = ['#8B8E6F', '#E2725B', '#A7A98C', '#FFD700', '#6B8E23'];
       const index = name.charCodeAt(0) % colors.length;
       return colors[index];
+    }
+
+    // Function to get the author's profile picture
+    function getAuthorPicture(authorId, authorName) {
+      return db.collection('users').doc(authorId).get().then((userDoc) => {
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          const profilePictureURL = userData.profilePictureURL;
+          if (profilePictureURL) {
+            return `<img src="${profilePictureURL}" alt="Profile Picture" class="detail-post-author-picture">`;
+          } else {
+            // Use initials fallback
+            const firstLetter = authorName.charAt(0).toUpperCase();
+            const pastelColors = ['#FFD1DC', '#FFE4B5', '#B5EAD7', '#C7CEEA', '#E2F0CB', '#FFB7B2'];
+            const colorIndex = authorName.charCodeAt(0) % pastelColors.length;
+            const backgroundColor = pastelColors[colorIndex];
+            return `
+              <div style="
+                width: 40px;
+                height: 40px;
+                border-radius: 15%;
+                background-color: ${backgroundColor};
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #333;
+                font-weight: bold;
+                font-size: 20px;
+                margin-right: 10px;
+              ">
+                ${firstLetter}
+              </div>
+            `;
+          }
+        } else {
+          // Default fallback
+          const firstLetter = authorName.charAt(0).toUpperCase();
+          const pastelColors = ['#FFD1DC', '#FFE4B5', '#B5EAD7', '#C7CEEA', '#E2F0CB', '#FFB7B2'];
+          const colorIndex = authorName.charCodeAt(0) % pastelColors.length;
+          const backgroundColor = pastelColors[colorIndex];
+          return `
+            <div style="
+              width: 40px;
+              height: 40px;
+              border-radius: 15%;
+              background-color: ${backgroundColor};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #333;
+              font-weight: bold;
+              font-size: 20px;
+              margin-right: 10px;
+            ">
+              ${firstLetter}
+            </div>
+          `;
+        }
+      }).catch(() => {
+        // Error fallback
+        const firstLetter = authorName.charAt(0).toUpperCase();
+        const pastelColors = ['#FFD1DC', '#FFE4B5', '#B5EAD7', '#C7CEEA', '#E2F0CB', '#FFB7B2'];
+        const colorIndex = authorName.charCodeAt(0) % pastelColors.length;
+        const backgroundColor = pastelColors[colorIndex];
+        return `
+          <div style="
+            width: 40px;
+            height: 40px;
+            border-radius: 15%;
+            background-color: ${backgroundColor};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 10px;
+          ">
+            ${firstLetter}
+          </div>
+        `;
+      });
+    }
+    
+    // Function to format timestamp
+    function formatTimestamp(timestamp) {
+      const date = timestamp instanceof firebase.firestore.Timestamp
+        ? timestamp.toDate()
+        : new Date(timestamp);
+    
+      return date.toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    // Function to render a post in the detail page
+    async function renderPostInDetailPage(postId) {
+      try {
+        const postDoc = await db.collection('posts').doc(postId).get();
+        if (!postDoc.exists) {
+          document.getElementById('detail-post-container').innerHTML = '<p>Post not found.</p>';
+          return;
+        }
+    
+        const post = postDoc.data();
+        const user = auth.currentUser;
+    
+        // Get author profile picture
+        const profilePictureHTML = await getAuthorPicture(post.authorId, post.authorName);
+    
+        // Get current user's reaction
+        const userReaction = post.reactions && post.reactions[user.uid];
+        const likeClass = userReaction && userReaction.type === 'like' ? 'selected' : '';
+        const loveClass = userReaction && userReaction.type === 'love' ? 'selected' : '';
+        const laughClass = userReaction && userReaction.type === 'laugh' ? 'selected' : '';
+    
+        // Count reactions
+        const reactions = post.reactions || {};
+        let likeCount = 0, loveCount = 0, laughCount = 0;
+        Object.values(reactions).forEach(reaction => {
+          if (reaction.type === 'like') likeCount++;
+          if (reaction.type === 'love') loveCount++;
+          if (reaction.type === 'laugh') laughCount++;
+        });
+    
+        const isAuthor = user && user.uid === post.authorId;
+        const likeCountHTML = isAuthor ? `<span class="reaction-count">${likeCount}</span>` : '';
+        const loveCountHTML = isAuthor ? `<span class="reaction-count">${loveCount}</span>` : '';
+        const laughCountHTML = isAuthor ? `<span class="reaction-count">${laughCount}</span>` : '';
+    
+        // Media HTML
+        let mediaHTML = '';
+        if (post.photoURL) {
+          const orientation = post.mediaOrientation || 'horizontal';
+          mediaHTML = `
+            <div class="media-container media-${orientation}">
+              <img src="${post.photoURL}" class="post-media">
+            </div>
+          `;
+        } else if (post.videoURL) {
+          const orientation = post.mediaOrientation || 'horizontal';
+          mediaHTML = `
+            <div class="media-container media-${orientation}">
+              <video controls class="post-media" playsinline webkit-playsinline preload="none" poster="${post.thumbnailURL || ''}">
+                <source src="${post.videoURL}" type="video/mp4">
+              </video>
+            </div>
+          `;
+        }
+    
+        // Check if post has comments
+        const commentsSnapshot = await db.collection('posts').doc(postId).collection('comments')
+          .orderBy('timestamp', 'asc')
+          .get();
+    
+        const hasComments = !commentsSnapshot.empty;
+    
+        // Post HTML
+        const postHTML = `
+          <div class="detail-post" data-post-id="${postId}">
+            <div class="detail-post-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center;">
+                ${profilePictureHTML}
+                <h4 class="detail-post-author-name">${post.authorName}</h4>
+              </div>
+              <span class="detail-post-timestamp">${formatTimestamp(post.timestamp)}</span>
+            </div>
+            <p>${post.content}</p>
+            <button class="translate-button" data-post-id="${postId}" data-i18n="Translate">Translate</button>
+            ${mediaHTML}
+            <div class="post-actions">
+              <div class="reactions">
+                <button class="reaction-button ${likeClass}" data-post-id="${postId}" data-reaction="like">👍${likeCountHTML}</button>
+                <button class="reaction-button ${loveClass}" data-post-id="${postId}" data-reaction="love">❤️${loveCountHTML}</button>
+                <button class="reaction-button ${laughClass}" data-post-id="${postId}" data-reaction="laugh">😂${laughCountHTML}</button>
+              </div>
+            </div>
+            <div class="comments-section">
+              <div class="comment-form">
+                <div
+                  class="comment-input"
+                  contenteditable="true"
+                  data-placeholder="Write a comment..."
+                  data-post-id="${postId}"
+                ></div>
+                <button class="comment-button" data-post-id="${postId}">Post</button>
+              </div>
+              ${hasComments ? `
+                <button class="see-comments-button" data-post-id="${postId}" data-i18n="See comments">See comments</button>
+                <div class="comments-list" id="comments-${postId}" data-loaded="false"></div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+    
+        document.getElementById('detail-post-container').innerHTML = postHTML;
+        updatePageLanguage(userLanguage);
+    
+        // Add event listeners for the rendered post
+        setupDetailPageEventListeners(postId);
+    
+      } catch (error) {
+        console.error("Error rendering post in detail page:", error);
+        document.getElementById('detail-post-container').innerHTML = '<p>Error loading post.</p>';
+      }
+    }
+    
+    // Function to setup event listeners for the detail page
+    function setupDetailPageEventListeners(postId) {
+      // Reaction buttons
+      document.querySelectorAll('.reaction-button').forEach(button => {
+        button.addEventListener('click', () => {
+          const postId = button.getAttribute('data-post-id');
+          const reaction = button.getAttribute('data-reaction');
+          const user = auth.currentUser;
+          if (!user) return;
+    
+          const postElement = document.querySelector(`.detail-post[data-post-id="${postId}"]`);
+          const postAuthorId = postElement.getAttribute('data-author-id');
+    
+          if (postAuthorId === user.uid) {
+            // For now, just show an alert - you can implement the popup later
+            alert("This is your post. Reactions from others will appear here.");
+            return;
+          }
+    
+          // Optimistic UI update
+          const likeButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="like"]`);
+          const loveButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="love"]`);
+          const laughButton = document.querySelector(`.reaction-button[data-post-id="${postId}"][data-reaction="laugh"]`);
+    
+          const wasSelected = button.classList.contains('selected');
+    
+          // Reset all buttons
+          if (likeButton) likeButton.classList.remove('selected');
+          if (loveButton) loveButton.classList.remove('selected');
+          if (laughButton) laughButton.classList.remove('selected');
+    
+          // Select the clicked button (unless it was already selected)
+          if (!wasSelected) {
+            button.classList.add('selected');
+          }
+    
+          // Update in Firestore
+          const postRef = db.collection('posts').doc(postId);
+          db.runTransaction((transaction) => {
+            return transaction.get(postRef).then((doc) => {
+              if (!doc.exists) throw "Post does not exist!";
+              const postData = doc.data();
+              const reactions = postData.reactions || {};
+              const userReaction = reactions[user.uid];
+    
+              if (userReaction && userReaction.type === reaction) {
+                delete reactions[user.uid];
+              } else {
+                reactions[user.uid] = {
+                  type: reaction,
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                  username: user.displayName || "Unknown User"
+                };
+              }
+    
+              transaction.update(postRef, { reactions });
+              return postData;
+            });
+          }).then((post) => {
+            if (post.authorId !== user.uid) {
+              // Add notification for the post author
+              addReactionNotification(
+                post.authorId,
+                postId,
+                user.uid,
+                user.displayName || "Unknown User",
+                reaction,
+                firebase.firestore.FieldValue.serverTimestamp()
+              );
+            }
+          }).catch((error) => {
+            console.error("Transaction failed: ", error);
+            // Revert UI on failure
+            if (likeButton) likeButton.classList.remove('selected');
+            if (loveButton) loveButton.classList.remove('selected');
+            if (laughButton) laughButton.classList.remove('selected');
+            if (!wasSelected) {
+              if (reaction === 'like' && likeButton) likeButton.classList.add('selected');
+              if (reaction === 'love' && loveButton) loveButton.classList.add('selected');
+              if (reaction === 'laugh' && laughButton) laughButton.classList.add('selected');
+            }
+          });
+        });
+      });
+    
+      // Comment button
+      const commentButton = document.querySelector(`.comment-button[data-post-id="${postId}"]`);
+      if (commentButton) {
+        commentButton.addEventListener('click', () => {
+          const postId = commentButton.getAttribute('data-post-id');
+          const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+          const content = commentInput.innerHTML.trim();
+    
+          if (content && content !== '<br>') {
+            addComment(postId, content);
+            commentInput.innerHTML = '';
+          }
+        });
+      }
+    
+      // See comments button
+      const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
+      if (seeCommentsButton) {
+        seeCommentsButton.addEventListener('click', () => {
+          const postId = seeCommentsButton.getAttribute('data-post-id');
+          const commentsList = document.getElementById(`comments-${postId}`);
+    
+          if (commentsList.classList.contains('visible')) {
+            commentsList.classList.remove('visible');
+            seeCommentsButton.textContent = translations[userLanguage]["See comments"];
+            seeCommentsButton.setAttribute('data-i18n', 'See comments');
+          } else {
+            commentsList.classList.add('visible');
+            seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+            seeCommentsButton.setAttribute('data-i18n', 'Hide comments');
+            if (commentsList.getAttribute('data-loaded') !== 'true') {
+              loadCommentsInDetailPage(postId);
+            }
+          }
+          updatePageLanguage(userLanguage);
+        });
+      }
+    }
+    
+    // Function to add a comment (similar to your main feed)
+    async function addComment(postId, content) {
+      const user = auth.currentUser;
+      if (!user) return;
+    
+      const textContent = content.replace(/<[^>]*>/g, '');
+      if (textContent.length > 250) {
+        alert("Comment must be 250 characters or less.");
+        return;
+      }
+    
+      try {
+        const comment = {
+          authorId: user.uid,
+          authorName: user.displayName || "Unknown User",
+          content: content,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+    
+        const docRef = await db.collection('posts').doc(postId).collection('comments').add(comment);
+    
+        // Fetch the post to get the author's UID
+        const postDoc = await db.collection('posts').doc(postId).get();
+        if (postDoc.exists) {
+          const post = postDoc.data();
+          if (post.authorId !== user.uid) {
+            await addCommentNotification(
+              post.authorId,
+              postId,
+              user.uid,
+              user.displayName || "Unknown User",
+              content,
+              firebase.firestore.FieldValue.serverTimestamp()
+            );
+          }
+        }
+    
+        // Update UI
+        const commentsList = document.getElementById(`comments-${postId}`);
+        if (commentsList) {
+          commentsList.classList.add('visible');
+          const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
+          if (seeCommentsButton) {
+            seeCommentsButton.setAttribute('data-i18n', 'Hide comments');
+            seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+          }
+          await loadCommentsInDetailPage(postId);
+        }
+    
+      } catch (error) {
+        console.error("Error adding comment:", error);
+        alert("Failed to add comment. Please try again.");
+      }
+    }
+    
+    // Function to load comments in the detail page
+    async function loadCommentsInDetailPage(postId) {
+      const user = auth.currentUser;
+      if (!user) return;
+    
+      const commentsList = document.getElementById(`comments-${postId}`);
+      if (!commentsList) return;
+    
+      // Show loading indicator
+      commentsList.innerHTML = '<div class="comments-loading"><div class="spinner"></div></div>';
+    
+      try {
+        // Get the current user's friends (including themselves)
+        const friendsDoc = await db.collection('friends').doc(user.uid).get();
+        const friends = friendsDoc.data()?.friends || [];
+        const friendIds = friends.map(friend => friend.uid);
+        friendIds.push(user.uid); // Include the current user
+    
+        // Fetch all comments for the post
+        const commentsSnapshot = await db.collection('posts').doc(postId).collection('comments')
+          .orderBy('timestamp', 'asc')
+          .get();
+    
+        commentsList.innerHTML = '';
+    
+        for (const doc of commentsSnapshot.docs) {
+          const comment = doc.data();
+    
+          // Always show comments from the current user
+          if (comment.authorId === user.uid) {
+            const profilePictureHTML = await getAuthorPicture(comment.authorId, comment.authorName);
+            const commentHTML = `
+              <div class="comment" data-comment-id="${doc.id}">
+                <div class="comment-author-picture">
+                  ${profilePictureHTML}
+                </div>
+                <div class="comment-content">
+                  <div class="comment-author-name">${comment.authorName}</div>
+                  <div class="comment-text">${comment.content}</div>
+                  <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
+                </div>
+              </div>
+            `;
+            commentsList.innerHTML += commentHTML;
+          }
+          // For other comments, show if the commenter is a friend
+          else if (friendIds.includes(comment.authorId)) {
+            const profilePictureHTML = await getAuthorPicture(comment.authorId, comment.authorName);
+            const commentHTML = `
+              <div class="comment" data-comment-id="${doc.id}">
+                <div class="comment-author-picture">
+                  ${profilePictureHTML}
+                </div>
+                <div class="comment-content">
+                  <div class="comment-author-name">${comment.authorName}</div>
+                  <div class="comment-text">${comment.content}</div>
+                  <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
+                </div>
+              </div>
+            `;
+            commentsList.innerHTML += commentHTML;
+          }
+        }
+    
+        // Mark comments as loaded
+        commentsList.setAttribute('data-loaded', 'true');
+        updatePageLanguage(userLanguage);
+    
+        // Add event listeners for respond buttons
+        document.querySelectorAll('.respond-button').forEach(button => {
+          button.addEventListener('click', async () => {
+            const authorName = button.getAttribute('data-author-name');
+            const commentContentDiv = button.closest('.comment-content');
+            const postId = commentContentDiv.closest('.comments-section').querySelector('.comment-input').getAttribute('data-post-id');
+            const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+    
+            // Get the UID of the author being responded to
+            const commentElement = button.closest('.comment');
+            const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
+            const commentAuthorUid = await getUidByUsername(commentAuthorName);
+    
+            // Insert @AuthorName into the comment input as a tag
+            const atMention = `@${authorName}`;
+            const tagSpan = `<span class="tag-validated" contenteditable="false" data-uid="${commentAuthorUid}">${atMention}</span> `;
+            commentInput.focus();
+    
+            // Insert the tag span
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+            range.deleteContents();
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = tagSpan;
+            const tagNode = tempDiv.firstChild;
+            range.insertNode(tagNode);
+    
+            // Move cursor to the end of the tag
+            range.setStartAfter(tagNode);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          });
+        });
+    
+      } catch (error) {
+        console.error("Error loading comments:", error);
+        commentsList.innerHTML = '<p>Error loading comments.</p>';
+      }
+    }
+    
+    // Function to get UID by username (for respond functionality)
+    async function getUidByUsername(username) {
+      const user = auth.currentUser;
+      if (!user) return null;
+    
+      try {
+        const friendsDoc = await db.collection('friends').doc(user.uid).get();
+        if (!friendsDoc.exists) return null;
+    
+        const friends = friendsDoc.data()?.friends || [];
+        const friend = friends.find(f => f.name === username);
+        return friend ? friend.uid : null;
+      } catch (error) {
+        console.error("Error getting UID by username:", error);
+        return null;
+      }
+    }
+    
+    // Function to add comment notification
+    async function addCommentNotification(userId, postId, commenterId, commenterName, commentContent, timestamp) {
+      try {
+        const notificationsRef = db.collection(`users/${userId}/notifications`).doc();
+        await notificationsRef.set({
+          type: 'comment',
+          commenterId,
+          commenterName,
+          commentContent,
+          postId,
+          timestamp,
+        });
+    
+        // Increment the NotificationsCounter for the post author
+        const userRef = db.collection('users').doc(userId);
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          const currentCount = userDoc.data()?.NotificationsCounter || 0;
+          transaction.update(userRef, { NotificationsCounter: currentCount + 1 });
+        });
+      } catch (error) {
+        console.error('Error adding comment notification:', error);
+      }
+    }
+    
+    // Function to add reaction notification
+    async function addReactionNotification(userId, postId, reactorId, reactorName, reaction, timestamp) {
+      try {
+        const notificationsRef = db.collection(`users/${userId}/notifications`).doc();
+        await notificationsRef.set({
+          type: 'reaction',
+          reactorId,
+          reactorName,
+          reaction,
+          postId,
+          timestamp,
+        });
+    
+        // Increment the NotificationsCounter for the post author
+        const userRef = db.collection('users').doc(userId);
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          const currentCount = userDoc.data()?.NotificationsCounter || 0;
+          transaction.update(userRef, { NotificationsCounter: currentCount + 1 });
+        });
+      } catch (error) {
+        console.error('Error adding reaction notification:', error);
+      }
     }
 
     // Call updatePageLanguage on page load with the default language
