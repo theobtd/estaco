@@ -814,11 +814,6 @@
           // Clear the detail page content when closing
           document.getElementById('detail-post-container').innerHTML = '';
         });
-        
-        // Add event listener for the back button
-        document.getElementById('back-button').addEventListener('click', () => {
-          document.getElementById('detail-page').classList.remove('active');
-        });
     
         // Show or hide the "Load more" button
         const loadMoreButton = document.getElementById('load-more');
@@ -998,16 +993,9 @@
           `;
         }
     
-        // Check if post has comments
-        const commentsSnapshot = await db.collection('posts').doc(postId).collection('comments')
-          .orderBy('timestamp', 'asc')
-          .get();
-    
-        const hasComments = !commentsSnapshot.empty;
-    
         // Post HTML
         const postHTML = `
-          <div class="detail-post" data-post-id="${postId}">
+          <div class="detail-post" data-post-id="${postId}" data-author-id="${post.authorId}">
             <div class="detail-post-header" style="display: flex; justify-content: space-between; align-items: center;">
               <div style="display: flex; align-items: center;">
                 ${profilePictureHTML}
@@ -1035,16 +1023,16 @@
                 ></div>
                 <button class="comment-button" data-post-id="${postId}">Post</button>
               </div>
-              ${hasComments ? `
-                <button class="see-comments-button" data-post-id="${postId}" data-i18n="See comments">See comments</button>
-                <div class="comments-list" id="comments-${postId}" data-loaded="false"></div>
-              ` : ''}
+              <div class="comments-list" id="comments-${postId}"></div>
             </div>
           </div>
         `;
     
         document.getElementById('detail-post-container').innerHTML = postHTML;
         updatePageLanguage(userLanguage);
+    
+        // Load comments immediately
+        await loadCommentsInDetailPage(postId);
     
         // Add event listeners for the rendered post
         setupDetailPageEventListeners(postId);
@@ -1152,29 +1140,6 @@
             addComment(postId, content);
             commentInput.innerHTML = '';
           }
-        });
-      }
-    
-      // See comments button
-      const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
-      if (seeCommentsButton) {
-        seeCommentsButton.addEventListener('click', () => {
-          const postId = seeCommentsButton.getAttribute('data-post-id');
-          const commentsList = document.getElementById(`comments-${postId}`);
-    
-          if (commentsList.classList.contains('visible')) {
-            commentsList.classList.remove('visible');
-            seeCommentsButton.textContent = translations[userLanguage]["See comments"];
-            seeCommentsButton.setAttribute('data-i18n', 'See comments');
-          } else {
-            commentsList.classList.add('visible');
-            seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
-            seeCommentsButton.setAttribute('data-i18n', 'Hide comments');
-            if (commentsList.getAttribute('data-loaded') !== 'true') {
-              loadCommentsInDetailPage(postId);
-            }
-          }
-          updatePageLanguage(userLanguage);
         });
       }
     }
@@ -1298,8 +1263,6 @@
           }
         }
     
-        // Mark comments as loaded
-        commentsList.setAttribute('data-loaded', 'true');
         updatePageLanguage(userLanguage);
     
         // Add event listeners for respond buttons
