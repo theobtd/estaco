@@ -1710,34 +1710,39 @@
             // Focus the comment input
             commentInput.focus();
         
-            // Get current cursor position
-            const selection = window.getSelection();
-            const range = selection.getRangeAt(0);
+            // Create the tag with space
+            const tagWithSpace = `@${authorName} `;
+        
+            // Create a temporary div to parse the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = commentInput.innerHTML;
         
             // Create the tag span
-            const atMention = `@${authorName}`;
             const tagSpan = document.createElement('span');
             tagSpan.className = 'tag-validated';
-            tagSpan.textContent = atMention;
+            tagSpan.textContent = `@${authorName}`;
             tagSpan.setAttribute('contenteditable', 'false');
             tagSpan.setAttribute('data-uid', commentAuthorUid);
         
-            // Insert the tag at cursor position
+            // Get current selection
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+        
+            // Insert the tag span
             range.insertNode(tagSpan);
         
-            // Add a space after the tag
-            const spaceText = document.createTextNode(' ');
-            range.insertNode(spaceText);
+            // Insert a space after the tag
+            const spaceNode = document.createTextNode(' ');
+            range.insertNode(spaceNode);
         
-            // Move cursor to the end of the inserted content
-            range.setStartAfter(spaceText);
+            // Move cursor to the end of the space
+            range.setStartAfter(spaceNode);
             range.collapse(true);
             selection.removeAllRanges();
             selection.addRange(range);
         
-            // Trigger input event to update any listeners
-            const event = new Event('input', { bubbles: true });
-            commentInput.dispatchEvent(event);
+            // Trigger input event
+            commentInput.dispatchEvent(new Event('input', { bubbles: true }));
           });
         });
     
