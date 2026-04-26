@@ -147,34 +147,93 @@
       font-family: 'Inter', sans-serif;
       font-size: 14px;
     }
+    /* Slide transition styles */
+    body {
+      overflow-x: hidden; /* Prevent horizontal scrolling */
+      position: relative;
+    }
+    
+    .page {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.3s ease-in-out;
+      background-color: var(--estaco-background);
+    }
+    
+    #notifications-page {
+      transform: translateX(0);
+    }
+    
+    #post-detail-page {
+      transform: translateX(100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    #post-detail-page.active {
+      transform: translateX(0);
+    }
+    
+    #notifications-page.hidden {
+      transform: translateX(-100%);
+    }
+    
+    /* Back button for post detail page */
+    #back-button {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--estaco-primary);
+      z-index: 101;
+    }
   </style>
 </head>
 <body>
-  <div id="top-nav-bar">
-    <h1 data-i18n="Notifications">Notifications</h1>
-  </div>
-
-  <div class="notifications-container">
-    <div id="notifications">
-      <h3 data-i18n="Your Notifications">Your Notifications</h3>
-      <div id="notifications-list"></div>
-      <button id="load-more" style="display: none;" data-i18n="Load more">Load more</button>
+  <div id="notifications-page" class="page">
+    <div id="top-nav-bar">
+      <h1 data-i18n="Notifications">Notifications</h1>
+    </div>
+  
+    <div class="notifications-container">
+      <div id="notifications">
+        <h3 data-i18n="Your Notifications">Your Notifications</h3>
+        <div id="notifications-list"></div>
+        <button id="load-more" style="display: none;" data-i18n="Load more">Load more</button>
+      </div>
+    </div>
+  
+    <div id="bottom-nav-bar">
+      <button class="nav-button" id="home-button">
+        <span class="icon">🏠</span>
+        <span class="label" data-i18n="Feed">Feed</span>
+      </button>
+      <button class="nav-button" id="notifications-button">
+        <span class="icon">🔔</span>
+        <span class="label" data-i18n="Notifications">Notifications</span>
+      </button>
+      <button class="nav-button" id="profile-button">
+        <span class="icon">👤</span>
+        <span class="label" data-i18n="Profile">Profile</span>
+      </button>
     </div>
   </div>
-
-  <div id="bottom-nav-bar">
-    <button class="nav-button" id="home-button">
-      <span class="icon">🏠</span>
-      <span class="label" data-i18n="Feed">Feed</span>
-    </button>
-    <button class="nav-button" id="notifications-button">
-      <span class="icon">🔔</span>
-      <span class="label" data-i18n="Notifications">Notifications</span>
-    </button>
-    <button class="nav-button" id="profile-button">
-      <span class="icon">👤</span>
-      <span class="label" data-i18n="Profile">Profile</span>
-    </button>
+  
+  <!-- Post Detail Page (initially hidden) -->
+  <div id="post-detail-page" class="page">
+    <button id="back-button">←</button>
+    <h2>Post Detail</h2>
+    <p id="post-id-display"></p>
   </div>
 
   <script>
@@ -528,11 +587,20 @@
           notificationElement.addEventListener('click', () => {
             const postId = notificationElement.getAttribute('data-post-id');
             if (postId) {
-              alert(`Post ID: ${postId}`);
-            } else {
-              alert('No Post ID associated with this notification.');
+              // Set the post ID in the detail page
+              document.getElementById('post-id-display').textContent = `Post ID: ${postId}`;
+        
+              // Slide to the post detail page
+              document.getElementById('notifications-page').classList.add('hidden');
+              document.getElementById('post-detail-page').classList.add('active');
             }
           });
+        });
+        
+        // Add event listener for the back button
+        document.getElementById('back-button').addEventListener('click', () => {
+          document.getElementById('notifications-page').classList.remove('hidden');
+          document.getElementById('post-detail-page').classList.remove('active');
         });
     
         // Show or hide the "Load more" button
