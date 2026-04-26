@@ -558,6 +558,31 @@
       justify-content: center;
       align-items: center;
     }
+    .tag-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 5px;
+      min-height: 20px; /* Ensure space for tags */
+    }
+    
+    .tag-preview .tag-validated {
+      background-color: var(--estaco-primary-light);
+      color: var(--estaco-text);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .tag-preview .tag-validated::after {
+      content: "×";
+      cursor: pointer;
+      font-size: 10px;
+      color: var(--estaco-text-light);
+    }
   </style>
 </head>
 <body>
@@ -1216,12 +1241,17 @@
             </div>
             <div class="comments-section">
               <div class="comment-form">
+                <!-- Container for tags (visually above the input) -->
+                <div class="tag-preview" id="tag-preview-${postId}"></div>
+              
+                <!-- Main input (no tags here) -->
                 <div
                   class="comment-input"
                   contenteditable="true"
                   data-placeholder="Write a comment..."
                   data-post-id="${postId}"
                 ></div>
+              
                 <button class="comment-button" data-post-id="${postId}">Post</button>
               </div>
               <div class="comments-list" id="comments-${postId}"></div>
@@ -1381,6 +1411,19 @@
             }
           });
         });
+      });
+
+      commentButton.addEventListener('click', () => {
+        const postId = commentButton.getAttribute('data-post-id');
+        const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+        const tagPreview = document.getElementById(`tag-preview-${postId}`);
+        const content = commentInput.innerHTML.trim();
+      
+        if (content || (tagPreview && tagPreview.children.length > 0)) {
+          addComment(postId, content);
+          commentInput.innerHTML = '';
+          if (tagPreview) tagPreview.innerHTML = '';
+        }
       });
     
       // Comment button
@@ -1549,7 +1592,18 @@
       const user = auth.currentUser;
       if (!user) return;
     
-      const textContent = content.replace(/<[^>]*>/g, '');
+      // Get the tag preview container
+      const tagPreview = document.getElementById(`tag-preview-${postId}`);
+      const tags = tagPreview ? Array.from(tagPreview.querySelectorAll('.tag-validated')) : [];
+    
+      // Extract tagged UIDs
+      const taggedUserUids = tags.map(tag => tag.dataset.uid).filter(uid => uid);
+    
+      // Combine tags and input content
+      const tagTexts = tags.map(tag => tag.textContent).join(' ');
+      const fullContent = tagTexts + ' ' + content;
+    
+      const textContent = fullContent.replace(/<[^>]*>/g, '');
       if (textContent.length > 250) {
         alert("Comment must be 250 characters or less.");
         return;
@@ -1559,16 +1613,12 @@
       document.getElementById('loading-overlay').style.display = 'flex';
     
       try {
-        // Extract tagged user UIDs from the content
-        const taggedUserUids = extractTaggedUserUids(content);
-    
         // Add the comment to Firestore
         const comment = {
           authorId: user.uid,
           authorName: user.displayName || "Unknown User",
-          content: content,
+          content: fullContent, // Include tags in the content
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-          // Only include taggedUserUids if there are any
           ...(taggedUserUids.length > 0 && { taggedUserUids })
         };
     
@@ -1578,52 +1628,47 @@
         const postDoc = await db.collection('posts').doc(postId).get();
         if (postDoc.exists) {
           const post = postDoc.data();
-          // Only add a notification if the commenter is not the author
           if (post.authorId !== user.uid) {
             await addCommentNotification(
               post.authorId,
               postId,
               user.uid,
               user.displayName || "Unknown User",
-              content,
+              fullContent,
               firebase.firestore.FieldValue.serverTimestamp()
             );
           }
         }
     
-        // Add tag notifications for each tagged user
+        // Add tag notifications
         if (taggedUserUids.length > 0) {
           for (const taggedUid of taggedUserUids) {
-            // Skip if the tagged user is the comment author (can't tag yourself)
             if (taggedUid !== user.uid) {
               await addCommentTagNotification(
-                taggedUid, // Tagged user's UID
-                postId, // Post ID
-                user.uid, // Current user's UID (commenter)
-                user.displayName || "Unknown User", // Current user's name
+                taggedUid,
+                postId,
+                user.uid,
+                user.displayName || "Unknown User",
                 firebase.firestore.FieldValue.serverTimestamp()
               );
             }
           }
         }
     
-        // Update UI
+        // Clear the input and tag preview
+        const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+        if (commentInput) commentInput.innerHTML = '';
+        if (tagPreview) tagPreview.innerHTML = '';
+    
+        // Reload comments
         const commentsList = document.getElementById(`comments-${postId}`);
         if (commentsList) {
-          commentsList.classList.add('visible');
-          const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
-          if (seeCommentsButton) {
-            seeCommentsButton.setAttribute('data-i18n', 'Hide comments');
-            seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
-          }
           await loadCommentsInDetailPage(postId);
         }
-    
       } catch (error) {
         console.error("Error adding comment:", error);
         alert("Failed to add comment. Please try again.");
       } finally {
-        // Hide loading overlay in both success and error cases
         document.getElementById('loading-overlay').style.display = 'none';
       }
     }
@@ -1699,52 +1744,40 @@
           button.addEventListener('click', async () => {
             const authorName = button.getAttribute('data-author-name');
             const commentInput = button.closest('.comments-section').querySelector('.comment-input');
+            const tagPreview = button.closest('.comments-section').querySelector('.tag-preview');
             const postId = commentInput.getAttribute('data-post-id');
-        
+          
             // Get the UID of the author being responded to
             const commentElement = button.closest('.comment');
             const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
             const commentAuthorUid = await getUidByUsername(commentAuthorName);
-        
+          
             // Focus the comment input
             commentInput.focus();
-        
-            // Create the tag span
-            const tagSpan = document.createElement('span');
-            tagSpan.className = 'tag-validated';
-            tagSpan.textContent = `@${authorName}`;
-            tagSpan.setAttribute('contenteditable', 'false');
-            tagSpan.setAttribute('data-uid', commentAuthorUid);
-        
-            // Create a space text node
-            const spaceNode = document.createTextNode(' ');
-        
-            // Get current selection
-            const selection = window.getSelection();
-            let range;
-        
-            // Check if there's a valid selection
-            if (selection.rangeCount > 0) {
-              range = selection.getRangeAt(0);
-            } else {
-              // If no selection, append to the end
-              range = document.createRange();
-              range.selectNodeContents(commentInput);
-              range.collapse(false);
+          
+            // Check if the tag already exists in the preview
+            const existingTag = tagPreview.querySelector(`.tag-validated[data-uid="${commentAuthorUid}"]`);
+            if (!existingTag) {
+              // Create the tag span for the preview
+              const tagSpan = document.createElement('span');
+              tagSpan.className = 'tag-validated';
+              tagSpan.textContent = `@${authorName}`;
+              tagSpan.setAttribute('data-uid', commentAuthorUid);
+          
+              // Add a remove button (optional)
+              const removeBtn = document.createElement('span');
+              removeBtn.textContent = '×';
+              removeBtn.style.cursor = 'pointer';
+              removeBtn.style.fontSize = '10px';
+              removeBtn.style.marginLeft = '4px';
+              removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                tagPreview.removeChild(tagSpan);
+              });
+          
+              tagSpan.appendChild(removeBtn);
+              tagPreview.appendChild(tagSpan);
             }
-        
-            // Insert the tag and space
-            range.insertNode(tagSpan);
-            range.insertNode(spaceNode);
-        
-            // Move cursor to the end of the space
-            range.setStartAfter(spaceNode);
-            range.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(range);
-        
-            // Trigger input event
-            commentInput.dispatchEvent(new Event('input', { bubbles: true }));
           });
         });
     
@@ -1925,32 +1958,54 @@
     
     // Function to insert the selected user into the input
     function insertTaggedUser(inputElement, username, atPos, uid) {
-      // Get the current selection
+      const postId = inputElement.getAttribute('data-post-id');
+      const tagPreview = document.getElementById(`tag-preview-${postId}`);
+    
+      // Check if the tag already exists
+      const existingTag = tagPreview.querySelector(`.tag-validated[data-uid="${uid}"]`);
+      if (!existingTag) {
+        // Create the tag span for the preview
+        const tagSpan = document.createElement('span');
+        tagSpan.className = 'tag-validated';
+        tagSpan.textContent = `@${username}`;
+        tagSpan.setAttribute('data-uid', uid);
+    
+        // Add a remove button
+        const removeBtn = document.createElement('span');
+        removeBtn.textContent = '×';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.style.fontSize = '10px';
+        removeBtn.style.marginLeft = '4px';
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          tagPreview.removeChild(tagSpan);
+        });
+    
+        tagSpan.appendChild(removeBtn);
+        tagPreview.appendChild(tagSpan);
+      }
+    
+      // Clear the @-mention from the input
       const selection = window.getSelection();
       const range = selection.getRangeAt(0);
+      const textNode = range.startContainer;
+      const text = textNode.textContent;
+      const beforeCursor = text.substring(0, range.startOffset);
+      const afterCursor = text.substring(range.startOffset);
     
-      // Create the tag span
-      const tagSpan = document.createElement('span');
-      tagSpan.className = 'tag-validated';
-      tagSpan.textContent = `@${username}`;
-      tagSpan.setAttribute('contenteditable', 'false');
-      tagSpan.setAttribute('data-uid', uid);
+      // Remove the @-mention text
+      const atIndex = beforeCursor.lastIndexOf('@');
+      if (atIndex !== -1) {
+        const newText = beforeCursor.substring(0, atIndex) + afterCursor;
+        textNode.textContent = newText;
+        range.setStart(textNode, atIndex);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
     
-      // Create a space text node
-      const spaceNode = document.createTextNode(' ');
-    
-      // Insert the tag and space at the cursor position
-      range.insertNode(tagSpan);
-      range.insertNode(spaceNode);
-    
-      // Move cursor to the end of the space (after the tag)
-      range.setStartAfter(spaceNode);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    
-      // Trigger input event
-      inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+      // Hide the dropdown
+      hideUserTagDropdown();
     }
     
     // Hide dropdown when clicking outside
