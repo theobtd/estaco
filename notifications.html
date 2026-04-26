@@ -1922,16 +1922,13 @@
       const selection = window.getSelection();
       const range = selection.getRangeAt(0);
     
-      // Create the tag span
-      const tag = `@${username}`;
+      // Create the tag span with space
+      const tag = `@${username} `;
       const tagSpan = document.createElement('span');
       tagSpan.className = 'tag-validated';
-      tagSpan.textContent = tag;
+      tagSpan.textContent = `@${username}`;
       tagSpan.setAttribute('contenteditable', 'false');
       tagSpan.setAttribute('data-uid', uid);
-    
-      // Create a space text node
-      const spaceText = document.createTextNode(' ');
     
       // Find the text node that contains the @ position
       let targetNode = null;
@@ -1953,7 +1950,7 @@
         const beforeText = targetNode.textContent.substring(0, atPos - charCount);
         const afterText = targetNode.textContent.substring(atPos - charCount + currentQuery.length + 1);
     
-        // Replace the text node with before text, tag span, space, and after text
+        // Replace the text node with before text, tag span, and after text
         const parent = targetNode.parentNode;
         const index = Array.from(parent.childNodes).indexOf(targetNode);
     
@@ -1969,7 +1966,7 @@
         parent.insertBefore(tagSpan, parent.childNodes[index + (beforeText ? 1 : 0)]);
     
         // Insert a space after the tag
-        parent.insertBefore(spaceText, parent.childNodes[index + (beforeText ? 2 : 1)]);
+        parent.insertBefore(document.createTextNode(' '), parent.childNodes[index + (beforeText ? 2 : 1)]);
     
         // Insert after text if it's not empty
         if (afterText) {
@@ -1977,14 +1974,29 @@
         }
     
         // Move cursor to the end of the space (after the tag)
+        // Use setTimeout to ensure DOM is updated
+        setTimeout(() => {
+          const newRange = document.createRange();
+          const spaceNode = parent.childNodes[index + (beforeText ? 2 : 1)];
+          newRange.setStartAfter(spaceNode);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+          inputElement.focus();
+        }, 0);
+      } else {
+        // If we can't find the target node, just append to the end
+        inputElement.appendChild(tagSpan);
+        inputElement.appendChild(document.createTextNode(' '));
+    
+        // Move cursor to the end
         const newRange = document.createRange();
-        newRange.setStartAfter(spaceText);
-        newRange.collapse(true);
+        newRange.selectNodeContents(inputElement);
+        newRange.collapse(false);
         selection.removeAllRanges();
         selection.addRange(newRange);
+        inputElement.focus();
       }
-    
-      inputElement.focus();
     }
     
     // Hide dropdown when clicking outside
