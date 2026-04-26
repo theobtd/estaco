@@ -768,41 +768,6 @@
     async function loadNotifications(userId, loadMore = false) {
       if (isLoading) return;
       isLoading = true;
-
-      // For reaction notifications
-      return `
-        <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
-          <!-- existing content -->
-        </div>
-      `;
-      
-      // For comment notifications
-      return `
-        <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
-          <!-- existing content -->
-        </div>
-      `;
-      
-      // For tag notifications
-      return `
-        <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
-          <!-- existing content -->
-        </div>
-      `;
-      
-      // For comment_tag notifications
-      return `
-        <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
-          <!-- existing content -->
-        </div>
-      `;
-      
-      // For friend_request notifications
-      return `
-        <div class="notification" data-post-id="${notification.postId || ''}" data-notification-type="${notification.type}">
-          <!-- existing content -->
-        </div>
-      `;
     
       try {
         let query = db.collection(`users/${userId}/notifications`)
@@ -857,7 +822,7 @@
         const newNotificationsHTML = notifications.map(notification => {
           if (notification.type === 'reaction') {
             return `
-              <div class="notification" data-post-id="${notification.postId}">
+              <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
                     ${notification.reactorName.charAt(0).toUpperCase()}
@@ -880,7 +845,7 @@
             `;
           } else if (notification.type === 'comment') {
             return `
-              <div class="notification" data-post-id="${notification.postId}">
+              <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
                     ${notification.reactorName.charAt(0).toUpperCase()}
@@ -901,7 +866,7 @@
             `;
           } else if (notification.type === 'tag') {
             return `
-              <div class="notification" data-post-id="${notification.postId}">
+              <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
                     ${notification.reactorName.charAt(0).toUpperCase()}
@@ -919,7 +884,7 @@
             `;
           } else if (notification.type === 'comment_tag') {
             return `
-              <div class="notification" data-post-id="${notification.postId}">
+              <div class="notification" data-post-id="${notification.postId}" data-notification-type="${notification.type}">
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
                     ${notification.reactorName.charAt(0).toUpperCase()}
@@ -937,7 +902,7 @@
             `;
           } else if (notification.type === 'friend_request') {
             return `
-              <div class="notification" data-post-id="${notification.postId || ''}">
+              <div class="notification" data-post-id="${notification.postId || ''}" data-notification-type="${notification.type}">
                 <div class="notification-header">
                   <div class="notification-author-picture" style="background-color: ${getColorFromName(notification.reactorName)};">
                     ${notification.reactorName.charAt(0).toUpperCase()}
