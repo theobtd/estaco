@@ -1706,38 +1706,45 @@
             const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
             const commentAuthorUid = await getUidByUsername(commentAuthorName);
         
-            // Focus the comment input first
+            // Focus the comment input
             commentInput.focus();
         
-            // Use setTimeout to ensure focus is complete
-            setTimeout(() => {
-              // Get the current selection after focus
-              const selection = window.getSelection();
-              const range = selection.getRangeAt(0);
+            // Create the tag span
+            const tagSpan = document.createElement('span');
+            tagSpan.className = 'tag-validated';
+            tagSpan.textContent = `@${authorName}`;
+            tagSpan.setAttribute('contenteditable', 'false');
+            tagSpan.setAttribute('data-uid', commentAuthorUid);
         
-              // Create the tag span
-              const tagSpan = document.createElement('span');
-              tagSpan.className = 'tag-validated';
-              tagSpan.textContent = `@${authorName}`;
-              tagSpan.setAttribute('contenteditable', 'false');
-              tagSpan.setAttribute('data-uid', commentAuthorUid);
+            // Create a space text node
+            const spaceNode = document.createTextNode(' ');
         
-              // Create a space text node
-              const spaceNode = document.createTextNode(' ');
+            // Get current selection
+            const selection = window.getSelection();
+            let range;
         
-              // Insert the tag and space
-              range.insertNode(tagSpan);
-              range.insertNode(spaceNode);
+            // Check if there's a valid selection
+            if (selection.rangeCount > 0) {
+              range = selection.getRangeAt(0);
+            } else {
+              // If no selection, append to the end
+              range = document.createRange();
+              range.selectNodeContents(commentInput);
+              range.collapse(false);
+            }
         
-              // Move cursor to the end of the space
-              range.setStartAfter(spaceNode);
-              range.collapse(true);
-              selection.removeAllRanges();
-              selection.addRange(range);
+            // Insert the tag and space
+            range.insertNode(tagSpan);
+            range.insertNode(spaceNode);
         
-              // Trigger input event
-              commentInput.dispatchEvent(new Event('input', { bubbles: true }));
-            }, 0);
+            // Move cursor to the end of the space
+            range.setStartAfter(spaceNode);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        
+            // Trigger input event
+            commentInput.dispatchEvent(new Event('input', { bubbles: true }));
           });
         });
     
