@@ -546,6 +546,18 @@
       width: 200px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
+    #loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
   </style>
 </head>
 <body>
@@ -598,6 +610,11 @@
   </div>
 
   <div id="user-tag-dropdown"></div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="spinner"></div>
+  </div>
   
   <script>
     // Disable IndexedDB so Firebase Auth falls back to localStorage (fixes WKWebView/Median.co persistence)
@@ -1538,6 +1555,9 @@
         return;
       }
     
+      // Show loading overlay
+      document.getElementById('loading-overlay').style.display = 'flex';
+    
       try {
         // Extract tagged user UIDs from the content
         const taggedUserUids = extractTaggedUserUids(content);
@@ -1602,6 +1622,9 @@
       } catch (error) {
         console.error("Error adding comment:", error);
         alert("Failed to add comment. Please try again.");
+      } finally {
+        // Hide loading overlay in both success and error cases
+        document.getElementById('loading-overlay').style.display = 'none';
       }
     }
     
