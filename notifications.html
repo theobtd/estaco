@@ -558,31 +558,6 @@
       justify-content: center;
       align-items: center;
     }
-    .tag-preview {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-bottom: 5px;
-      min-height: 20px; /* Ensure space for tags */
-    }
-    
-    .tag-preview .tag-validated {
-      background-color: var(--estaco-primary-light);
-      color: var(--estaco-text);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .tag-preview {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-bottom: 5px;
-      min-height: 20px; /* Ensure space for tags */
-    }
     
     .tag-validated {
       background-color: var(--estaco-primary-light);
@@ -594,20 +569,33 @@
       align-items: center;
       gap: 4px;
     }
-    /* Add this to your <style> section */
-    .tag-preview {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-bottom: 8px; /* Space between tags and input */
-      padding-left: 10px; /* Align with input */
-      min-height: 20px; /* Ensure space for tags */
+    
+    .tag-validated {
+      background-color: var(--estaco-primary-light);
+      color: var(--estaco-text);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      contenteditable: false;
+      user-select: none;
     }
     
     .comment-form {
       display: flex;
       margin-bottom: 10px;
       align-items: flex-end; /* Align button with input baseline */
+    }
+    .tag-preview {
+      display: none; /* Hidden by default (no tags) */
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px; /* Space between tags and input */
+      padding-left: 10px; /* Align with input */
     }
     
     .comment-input {
@@ -2038,10 +2026,16 @@
         removeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           tagPreview.removeChild(tagSpan);
+          // Hide the tag preview if it's now empty
+          if (tagPreview.children.length === 0) {
+            tagPreview.style.display = 'none';
+          }
         });
     
         tagSpan.appendChild(removeBtn);
         tagPreview.appendChild(tagSpan);
+        // Show the tag preview if it was hidden
+        tagPreview.style.display = 'flex';
       }
     
       // Clear the @-mention from the input
