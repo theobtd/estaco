@@ -584,7 +584,7 @@
       min-height: 20px; /* Ensure space for tags */
     }
     
-    .tag-preview .tag-validated {
+    .tag-validated {
       background-color: var(--estaco-primary-light);
       color: var(--estaco-text);
       padding: 2px 6px;
@@ -593,6 +593,30 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
+    }
+    /* Add this to your <style> section */
+    .tag-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px; /* Space between tags and input */
+      padding-left: 10px; /* Align with input */
+      min-height: 20px; /* Ensure space for tags */
+    }
+    
+    .comment-form {
+      display: flex;
+      margin-bottom: 10px;
+      align-items: flex-end; /* Align button with input baseline */
+    }
+    
+    .comment-input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      min-height: 40px;
+      outline: none;
     }
   </style>
 </head>
@@ -1251,18 +1275,17 @@
               </div>
             </div>
             <div class="comments-section">
+              <!-- Tag preview (now outside the flex container) -->
+              <div class="tag-preview" id="tag-preview-${postId}"></div>
+            
+              <!-- Comment form (flex container for input + button) -->
               <div class="comment-form">
-                <!-- Container for tags (visually above the input) -->
-                <div class="tag-preview" id="tag-preview-${postId}"></div>
-              
-                <!-- Main input (no tags here) -->
                 <div
                   class="comment-input"
                   contenteditable="true"
                   data-placeholder="Write a comment..."
                   data-post-id="${postId}"
                 ></div>
-              
                 <button class="comment-button" data-post-id="${postId}">Post</button>
               </div>
               <div class="comments-list" id="comments-${postId}"></div>
