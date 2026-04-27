@@ -2493,7 +2493,7 @@
           </div>
           <div class="comments-section">
             <!-- Tag preview (now outside the flex container) -->
-            <div class="tag-preview" id="tag-preview-${postId}"></div>
+            <div class="tag-preview" id="tag-preview-${post.id}"></div>
           
             <!-- Comment form (flex container for input + button) -->
             <div class="comment-form">
@@ -2501,11 +2501,11 @@
                 class="comment-input"
                 contenteditable="true"
                 data-placeholder="Write a comment..."
-                data-post-id="${postId}"
+                data-post-id="${post.id}"
               ></div>
-              <button class="comment-button" data-post-id="${postId}">Post</button>
+              <button class="comment-button" data-post-id="${post.id}">Post</button>
             </div>
-            <div class="comments-list" id="comments-${postId}"></div>
+            <div class="comments-list" id="comments-${post.id}"></div>
           </div>
         </div>
       `;
