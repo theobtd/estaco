@@ -596,6 +596,14 @@
       gap: 5px;
       margin-bottom: 8px; /* Space between tags and input */
       padding-left: 10px; /* Align with input */
+      align-items: center; /* Align label and tags vertically */
+    }
+    
+    .tag-preview-label {
+      color: var(--estaco-text-light);
+      font-size: 12px;
+      margin-right: 8px; /* Space between label and tags */
+      user-select: none;
     }
     
     .comment-input {
@@ -2021,12 +2029,20 @@
       // Check if the tag already exists
       const existingTag = tagPreview.querySelector(`.tag-validated[data-uid="${uid}"]`);
       if (!existingTag) {
+        // Add the "Tagged users:" label if it doesn't exist and this is the first tag
+        if (tagPreview.children.length === 0) {
+          const label = document.createElement('span');
+          label.className = 'tag-preview-label';
+          label.textContent = 'Tagged users:';
+          tagPreview.appendChild(label);
+        }
+      
         // Create the tag span for the preview
         const tagSpan = document.createElement('span');
         tagSpan.className = 'tag-validated';
-        tagSpan.textContent = `@${username}`;
-        tagSpan.setAttribute('data-uid', uid);
-    
+        tagSpan.textContent = `@${authorName}`;
+        tagSpan.setAttribute('data-uid', commentAuthorUid);
+      
         // Add a remove button
         const removeBtn = document.createElement('span');
         removeBtn.textContent = '×';
@@ -2036,12 +2052,16 @@
         removeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           tagPreview.removeChild(tagSpan);
+          // Remove the label if no tags are left
+          if (tagPreview.children.length === 1) { // Only label remains
+            tagPreview.removeChild(tagPreview.querySelector('.tag-preview-label'));
+          }
           // Hide the tag preview if it's now empty
           if (tagPreview.children.length === 0) {
             tagPreview.style.display = 'none';
           }
         });
-    
+      
         tagSpan.appendChild(removeBtn);
         tagPreview.appendChild(tagSpan);
         // Show the tag preview if it was hidden
