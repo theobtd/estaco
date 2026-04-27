@@ -1701,11 +1701,15 @@
             }
           }
         }
-    
+
         // Clear the input and tag preview
         const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
         if (commentInput) commentInput.innerHTML = '';
-        if (tagPreview) tagPreview.innerHTML = '';
+        if (tagPreview) {
+          tagPreview.innerHTML = '';
+          // Hide the tag preview if it's now empty
+          tagPreview.style.display = 'none';
+        }
     
         // Reload comments
         const commentsList = document.getElementById(`comments-${postId}`);
@@ -1820,10 +1824,16 @@
               removeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 tagPreview.removeChild(tagSpan);
+                // Hide the tag preview if it's now empty
+                if (tagPreview.children.length === 0) {
+                  tagPreview.style.display = 'none';
+                }
               });
         
               tagSpan.appendChild(removeBtn);
               tagPreview.appendChild(tagSpan);
+              // Show the tag preview if it was hidden
+              tagPreview.style.display = 'flex';
             }
           });
         });
