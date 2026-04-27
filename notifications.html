@@ -2048,23 +2048,54 @@
         tagPreview.style.display = 'flex';
       }
     
-      // Clear the @-mention from the input
+      // Remove the "@" and any text after it from the input
       const selection = window.getSelection();
       const range = selection.getRangeAt(0);
       const textNode = range.startContainer;
-      const text = textNode.textContent;
-      const beforeCursor = text.substring(0, range.startOffset);
-      const afterCursor = text.substring(range.startOffset);
     
-      // Remove the @-mention text
-      const atIndex = beforeCursor.lastIndexOf('@');
-      if (atIndex !== -1) {
-        const newText = beforeCursor.substring(0, atIndex) + afterCursor;
-        textNode.textContent = newText;
-        range.setStart(textNode, atIndex);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
+      // If the cursor is inside a text node
+      if (textNode.nodeType === Node.TEXT_NODE) {
+        const text = textNode.textContent;
+        const beforeCursor = text.substring(0, range.startOffset);
+        const afterCursor = text.substring(range.startOffset);
+    
+        // Find the last "@" before the cursor
+        const atIndex = beforeCursor.lastIndexOf('@');
+    
+        if (atIndex !== -1) {
+          // Remove everything from "@" to the cursor
+          const newText = beforeCursor.substring(0, atIndex) + afterCursor;
+          textNode.textContent = newText;
+    
+          // Move the cursor to where the "@" was
+          const newRange = document.createRange();
+          newRange.setStart(textNode, atIndex);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
+      }
+      // If the cursor is at the end of the input (empty text node)
+      else if (textNode.nodeType === Node.ELEMENT_NODE && range.startOffset === textNode.childNodes.length) {
+        // Check the last child node (likely a text node)
+        const lastChild = textNode.lastChild;
+        if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
+          const text = lastChild.textContent;
+          const atIndex = text.lastIndexOf('@');
+    
+          if (atIndex !== -1) {
+            // Remove the "@" and any text after it
+            const newText = text.substring(0, atIndex);
+            lastChild.textContent = newText;
+    
+            // Move the cursor to the end of the new text
+            const newRange = document.createRange();
+            newRange.setStart(lastChild, newText.length);
+            newRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+          }
+        }
       }
     
       // Hide the dropdown
