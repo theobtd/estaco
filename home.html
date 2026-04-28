@@ -3079,7 +3079,9 @@
     
           const commentsList = document.getElementById(`comments-${postId}`);
           commentsList.innerHTML = '';
-          const commentPromises = [];
+    
+          // Collect all comment HTML strings in an array (to preserve order)
+          const commentHTMLs = [];
     
           // Process each comment in order
           for (const doc of commentsSnapshot.docs) {
@@ -3108,41 +3110,37 @@
               );
             }
     
-            // If the comment should be shown, render it
+            // If the comment should be shown, add its HTML to the array
             if (shouldShow) {
-              const promise = getCommentAuthorPicture(comment.authorId, comment.authorName)
-                .then((profilePictureHTML) => {
-                  const commentHTML = `
-                    <div class="comment" data-comment-id="${doc.id}">
-                      <div class="comment-author-picture">
-                        ${profilePictureHTML}
-                      </div>
-                      <div class="comment-content">
-                        <div class="comment-author-name">${comment.authorName}</div>
-                        <div class="comment-text">${comment.content}</div>
-                        <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
-                        <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
-                      </div>
-                    </div>
-                  `;
-                  commentsList.innerHTML += commentHTML;
-                  updatePageLanguage(userLanguage);
-                });
-              commentPromises.push(promise);
+              const profilePictureHTML = await getCommentAuthorPicture(comment.authorId, comment.authorName);
+              const commentHTML = `
+                <div class="comment" data-comment-id="${doc.id}">
+                  <div class="comment-author-picture">
+                    ${profilePictureHTML}
+                  </div>
+                  <div class="comment-content">
+                    <div class="comment-author-name">${comment.authorName}</div>
+                    <div class="comment-text">${comment.content}</div>
+                    <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
+                    <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
+                  </div>
+                </div>
+              `;
+              commentHTMLs.push(commentHTML);
             }
           }
     
-          // Wait for all promises to resolve
-          return Promise.all(commentPromises);
+          // Render all comments at once (preserves order)
+          commentsList.innerHTML = commentHTMLs.join('');
+          updatePageLanguage(userLanguage);
+    
+          // Hide loading indicator and mark comments as loaded
+          commentsLoading.style.display = 'none';
+          commentsList.setAttribute('data-loaded', 'true');
         })
         .catch((error) => {
           console.error("Error loading comments: ", error);
-        })
-        .finally(() => {
-          // Hide loading indicator and mark comments as loaded
           commentsLoading.style.display = 'none';
-          const commentsList = document.getElementById(`comments-${postId}`);
-          commentsList.setAttribute('data-loaded', 'true');
         });
     }
     
