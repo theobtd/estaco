@@ -509,13 +509,27 @@
       cursor: pointer;
     }
 
+    .tag-preview {
+      display: none; /* Hidden by default (no tags) */
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px; /* Space between tags and input */
+      padding-left: 10px; /* Align with input */
+    }
+    
     .tag-validated {
       background-color: var(--estaco-primary-light);
       color: var(--estaco-text);
-      padding: 2px 4px;
+      padding: 2px 6px;
       border-radius: 4px;
+      font-size: 12px;
       font-weight: 500;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      contenteditable: false;
+      user-select: none;
     }
 
     #post-content:empty::before {
@@ -2398,6 +2412,10 @@
             </div>
           </div>
           <div class="comments-section">
+            <!-- NEW: Tag Preview Container -->
+            <div class="tag-preview" id="tag-preview-${post.id}" style="display: none;"></div>
+          
+            <!-- Existing Comment Form -->
             <div class="comment-form">
               <div
                 class="comment-input"
@@ -2732,37 +2750,71 @@
     });
 
     // respond to comment
-    document.addEventListener('click', async (e) => { // <-- Add 'async' here
+    document.addEventListener('click', async (e) => {
       if (e.target.classList.contains('respond-button')) {
         const authorName = e.target.getAttribute('data-author-name');
         const commentContentDiv = e.target.closest('.comment-content');
         const postId = commentContentDiv.closest('.comments-section').querySelector('.comment-input').getAttribute('data-post-id');
         const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+        const tagPreview = document.getElementById(`tag-preview-${postId}`);
     
         // Get the UID of the author being responded to
         const commentElement = e.target.closest('.comment');
         const commentAuthorName = commentElement.querySelector('.comment-author-name').textContent;
-        const commentAuthorUid = await getUidByUsername(commentAuthorName); // Now 'await' works
+        const commentAuthorUid = await getUidByUsername(commentAuthorName);
     
-        // Insert @AuthorName into the comment input as a tag-validated span WITH data-uid
-        const atMention = `@${authorName}`;
-        const tagSpan = `<span class="tag-validated" contenteditable="false" data-uid="${commentAuthorUid}">${atMention}</span> `;
+        // Focus the comment input
         commentInput.focus();
     
-        // Insert the tag span
+        // Check if the tag already exists in the preview
+        const existingTag = tagPreview.querySelector(`.tag-validated[data-uid="${commentAuthorUid}"]`);
+        if (!existingTag) {
+          // Create the tag span for the preview
+          const tagSpan = document.createElement('span');
+          tagSpan.className = 'tag-validated';
+          tagSpan.textContent = `@${authorName}`;
+          tagSpan.setAttribute('data-uid', commentAuthorUid);
+    
+          // Add a remove button
+          const removeBtn = document.createElement('span');
+          removeBtn.textContent = '×';
+          removeBtn.style.cursor = 'pointer';
+          removeBtn.style.fontSize = '10px';
+          removeBtn.style.marginLeft = '4px';
+          removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tagPreview.removeChild(tagSpan);
+            // Hide the tag preview if it's now empty
+            if (tagPreview.children.length === 0) {
+              tagPreview.style.display = 'none';
+            }
+          });
+    
+          tagSpan.appendChild(removeBtn);
+          tagPreview.appendChild(tagSpan);
+          // Show the tag preview if it was hidden
+          tagPreview.style.display = 'flex';
+        }
+    
+        // Remove the "@" from the input (if it exists)
         const selection = window.getSelection();
         const range = selection.getRangeAt(0);
-        range.deleteContents();
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = tagSpan;
-        const tagNode = tempDiv.firstChild;
-        range.insertNode(tagNode);
+        const text = commentInput.textContent;
+        const cursorPos = range.startOffset;
+        const lastAtPos = text.lastIndexOf('@', cursorPos - 1);
     
-        // Move cursor to the end of the tag
-        range.setStartAfter(tagNode);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
+        if (lastAtPos !== -1) {
+          const beforeAt = text.substring(0, lastAtPos);
+          const afterAt = text.substring(cursorPos);
+          commentInput.textContent = beforeAt + afterAt;
+    
+          // Move cursor to where the "@" was
+          const newRange = document.createRange();
+          newRange.setStart(commentInput.firstChild, lastAtPos);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+        }
       }
     });
     
@@ -2771,13 +2823,35 @@
       const user = auth.currentUser;
       if (!user) return;
     
-      const textContent = content.replace(/<[^>]*>/g, ''); // Strip HTML tags for accurate length
+      // Get the tag preview container for this post
+      const tagPreview = document.getElementById(`tag-preview-${postId}`);
+      const tags = tagPreview ? Array.from(tagPreview.querySelectorAll('.tag-validated')) : [];
+    
+      // Extract tagged UIDs and clean tag texts (remove the "×" button)
+      const taggedUserUids = [];
+      const tagTexts = [];
+    
+      tags.forEach(tag => {
+        const uid = tag.dataset.uid;
+        if (uid) {
+          taggedUserUids.push(uid);
+          // Get the tag text without the "×" button
+          const tagText = Array.from(tag.childNodes)
+            .filter(node => node.nodeType === Node.TEXT_NODE)
+            .map(node => node.textContent)
+            .join('');
+          tagTexts.push(tagText);
+        }
+      });
+    
+      // Combine tags and input content
+      const fullContent = tagTexts.join(' ') + ' ' + content;
+    
+      const textContent = fullContent.replace(/<[^>]*>/g, ''); // Strip HTML tags for accurate length
       if (textContent.length > 250) {
         alert("Comment must be 250 characters or less.");
         return;
       }
-    
-      const taggedUserUids = extractTaggedUserUids(content);
     
       // Show the loader overlay
       document.getElementById('upload-overlay').style.display = 'flex';
@@ -2807,7 +2881,7 @@
           const comment = {
             authorId: user.uid,
             authorName: user.displayName || "Unknown User",
-            content: content,
+            content: fullContent, // Use combined content (tags + input)
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             taggedUserUids: taggedUserUids,
           };
@@ -2824,7 +2898,7 @@
                 postId,
                 user.uid, // Current user (commenter)
                 user.displayName || "Unknown User",
-                content,
+                fullContent, // Use combined content for notification
                 firebase.firestore.FieldValue.serverTimestamp()
               );
             }
@@ -2845,7 +2919,7 @@
           const comment = {
             authorId: user.uid,
             authorName: user.displayName || "Unknown User",
-            content: content,
+            content: fullContent, // Use combined content (even if no tags)
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           };
           const docRef = await db.collection('posts').doc(postId).collection('comments').add(comment);
@@ -2861,7 +2935,7 @@
                 postId,
                 user.uid, // Current user (commenter)
                 user.displayName || "Unknown User",
-                content,
+                fullContent, // Use combined content for notification
                 firebase.firestore.FieldValue.serverTimestamp()
               );
             }
@@ -2869,6 +2943,14 @@
         }
     
         // --- STEP 3: UI UPDATES ---
+        // Clear the input and tag preview
+        const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+        if (commentInput) commentInput.innerHTML = '';
+        if (tagPreview) {
+          tagPreview.innerHTML = '';
+          tagPreview.style.display = 'none';
+        }
+    
         // Force the "See comments" button to appear and open the comments section
         const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
         if (postElement) {
