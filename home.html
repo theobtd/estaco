@@ -3065,132 +3065,84 @@
     
       // Get the current user's friends (including themselves)
       db.collection('friends').doc(user.uid).get()
-        .then((friendsDoc) => {
+        .then(async (friendsDoc) => {
           const friends = friendsDoc.data()?.friends || [];
           const friendIds = friends.map(friend => friend.uid);
           friendIds.push(user.uid); // Include the current user
     
-          // Fetch all comments for the post
-          db.collection('posts').doc(postId).collection('comments')
-            .orderBy('timestamp', 'asc')
-            .get()
-            .then((querySnapshot) => {
-              const commentsList = document.getElementById(`comments-${postId}`);
-              commentsList.innerHTML = '';
-              const commentPromises = [];
+          // Fetch ALL comments for the post (sorted by timestamp)
+          const commentsSnapshot = await db.collection('posts')
+            .doc(postId)
+            .collection('comments')
+            .orderBy('timestamp', 'asc') // Sort by timestamp (oldest first)
+            .get();
     
-              querySnapshot.forEach((doc) => {
-                const comment = doc.data();
-                const taggedUserUids = comment.taggedUserUids || [];
+          const commentsList = document.getElementById(`comments-${postId}`);
+          commentsList.innerHTML = '';
+          const commentPromises = [];
     
-                // Always show comments from the current user
-                if (comment.authorId === user.uid) {
-                  const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
-                    const commentHTML = `
-                      <div class="comment" data-comment-id="${doc.id}">
-                        <div class="comment-author-picture">
-                          ${profilePictureHTML}
-                        </div>
-                        <div class="comment-content">
-                          <div class="comment-author-name">${comment.authorName}</div>
-                          <div class="comment-text">${comment.content}</div>
-                          <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
-                          <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
-                        </div>
+          // Process each comment in order
+          for (const doc of commentsSnapshot.docs) {
+            const comment = doc.data();
+            const taggedUserUids = comment.taggedUserUids || [];
+            let shouldShow = false;
+    
+            // Always show comments from the current user
+            if (comment.authorId === user.uid) {
+              shouldShow = true;
+            }
+            // Show if the current user is tagged
+            else if (taggedUserUids.includes(user.uid)) {
+              shouldShow = true;
+            }
+            // Show if the commenter is a friend
+            else if (friendIds.includes(comment.authorId)) {
+              shouldShow = true;
+            }
+            // For comments with tagged users, check mutual friendship
+            else if (taggedUserUids.length > 0) {
+              shouldShow = await isMutualFriendForComment(
+                user.uid,
+                comment.authorId,
+                taggedUserUids
+              );
+            }
+    
+            // If the comment should be shown, render it
+            if (shouldShow) {
+              const promise = getCommentAuthorPicture(comment.authorId, comment.authorName)
+                .then((profilePictureHTML) => {
+                  const commentHTML = `
+                    <div class="comment" data-comment-id="${doc.id}">
+                      <div class="comment-author-picture">
+                        ${profilePictureHTML}
                       </div>
-                    `;
-                    commentsList.innerHTML += commentHTML;
-                    updatePageLanguage(userLanguage);
-                  });
-                  commentPromises.push(promise);
-                }
-                // For comments with tagged users, check mutual friendship
-                else if (taggedUserUids.length > 0) {
-                  // Check if the current user is one of the tagged users
-                  if (taggedUserUids.includes(user.uid)) {
-                    // Always show the comment if the current user is tagged
-                    getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
-                      const commentHTML = `
-                        <div class="comment" data-comment-id="${doc.id}">
-                          <div class="comment-author-picture">
-                            ${profilePictureHTML}
-                          </div>
-                          <div class="comment-content">
-                            <div class="comment-author-name">${comment.authorName}</div>
-                            <div class="comment-text">${comment.content}</div>
-                            <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
-                            <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
-                          </div>
-                        </div>
-                      `;
-                      commentsList.innerHTML += commentHTML;
-                      updatePageLanguage(userLanguage);
-                    });
-                  } else {
-                    // Otherwise, check if the current user is a mutual friend
-                    isMutualFriendForComment(user.uid, comment.authorId, taggedUserUids)
-                      .then((isMutualFriend) => {
-                        if (isMutualFriend) {
-                          getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
-                            const commentHTML = `
-                              <div class="comment" data-comment-id="${doc.id}">
-                                <div class="comment-author-picture">
-                                  ${profilePictureHTML}
-                                </div>
-                                <div class="comment-content">
-                                  <div class="comment-author-name">${comment.authorName}</div>
-                                  <div class="comment-text">${comment.content}</div>
-                                  <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
-                                  <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
-                                </div>
-                              </div>
-                            `;
-                            commentsList.innerHTML += commentHTML;
-                            updatePageLanguage(userLanguage);
-                          });
-                        }
-                      });
-                  }
-                }
-                // For comments without tagged users, show if the commenter is a friend
-                else if (friendIds.includes(comment.authorId)) {
-                  const promise = getCommentAuthorPicture(comment.authorId, comment.authorName).then((profilePictureHTML) => {
-                    const commentHTML = `
-                      <div class="comment" data-comment-id="${doc.id}">
-                        <div class="comment-author-picture">
-                          ${profilePictureHTML}
-                        </div>
-                        <div class="comment-content">
-                          <div class="comment-author-name">${comment.authorName}</div>
-                          <div class="comment-text">${comment.content}</div>
-                          <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
-                          <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
-                        </div>
+                      <div class="comment-content">
+                        <div class="comment-author-name">${comment.authorName}</div>
+                        <div class="comment-text">${comment.content}</div>
+                        <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
+                        <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
                       </div>
-                    `;
-                    commentsList.innerHTML += commentHTML;
-                    updatePageLanguage(userLanguage);
-                  });
-                  commentPromises.push(promise);
-                }
-              });
+                    </div>
+                  `;
+                  commentsList.innerHTML += commentHTML;
+                  updatePageLanguage(userLanguage);
+                });
+              commentPromises.push(promise);
+            }
+          }
     
-              return Promise.all(commentPromises);
-            })
-            .catch((error) => {
-              console.error("Error loading comments: ", error);
-            })
-            .finally(() => {
-              // Hide loading indicator and mark comments as loaded
-              commentsLoading.style.display = 'none';
-              const commentsList = document.getElementById(`comments-${postId}`);
-              commentsList.setAttribute('data-loaded', 'true');
-            });
+          // Wait for all promises to resolve
+          return Promise.all(commentPromises);
         })
         .catch((error) => {
-          console.error("Error fetching friends: ", error);
-          // Hide loading indicator
+          console.error("Error loading comments: ", error);
+        })
+        .finally(() => {
+          // Hide loading indicator and mark comments as loaded
           commentsLoading.style.display = 'none';
+          const commentsList = document.getElementById(`comments-${postId}`);
+          commentsList.setAttribute('data-loaded', 'true');
         });
     }
     
