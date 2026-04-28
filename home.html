@@ -509,6 +509,7 @@
       cursor: pointer;
     }
 
+    /* Tag Preview Container */
     .tag-preview {
       display: none; /* Hidden by default (no tags) */
       flex-wrap: wrap;
@@ -517,6 +518,7 @@
       padding-left: 10px; /* Align with input */
     }
     
+    /* Tag Styling */
     .tag-validated {
       background-color: var(--estaco-primary-light);
       color: var(--estaco-text);
@@ -1517,26 +1519,92 @@
       document.getElementById('user-tag-dropdown').style.display = 'none';
     }
     
-    // Function to insert the selected user into the textarea
+    // Function to insert the selected user into the input (UPDATED)
     function insertTaggedUser(inputElement, username, atPos, uid) {
-      const text = inputElement.textContent;
-      const before = text.substring(0, atPos);
-      const after = text.substring(atPos + currentQuery.length + 1);
-      const tag = `@${username}`;
-      const highlightedTag = `<span class="tag-validated" contenteditable="false" data-uid="${uid}">${tag}</span>`;
+      const postId = inputElement.getAttribute('data-post-id');
+      const tagPreview = document.getElementById(`tag-preview-${postId}`);
     
-      inputElement.innerHTML = before + highlightedTag + ' ' + after;
+      // Check if the tag already exists
+      const existingTag = tagPreview.querySelector(`.tag-validated[data-uid="${uid}"]`);
+      if (!existingTag) {
+        // Create the tag span for the preview
+        const tagSpan = document.createElement('span');
+        tagSpan.className = 'tag-validated';
+        tagSpan.textContent = `@${username}`;
+        tagSpan.setAttribute('data-uid', uid);
     
-      // Move the cursor to the end of the tag
-      const range = document.createRange();
+        // Add a remove button
+        const removeBtn = document.createElement('span');
+        removeBtn.textContent = '×';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.style.fontSize = '10px';
+        removeBtn.style.marginLeft = '4px';
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          tagPreview.removeChild(tagSpan);
+          // Hide the tag preview if it's now empty
+          if (tagPreview.children.length === 0) {
+            tagPreview.style.display = 'none';
+          }
+        });
+    
+        tagSpan.appendChild(removeBtn);
+        tagPreview.appendChild(tagSpan);
+        // Show the tag preview if it was hidden
+        tagPreview.style.display = 'flex';
+      }
+    
+      // Remove the "@" and any text after it from the input
       const selection = window.getSelection();
-      const lastChild = inputElement.lastChild;
-      range.setStartAfter(lastChild);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
+      const range = selection.getRangeAt(0);
     
-      inputElement.focus();
+      // Get all text nodes in the input
+      const textNodes = [];
+      const walker = document.createTreeWalker(
+        inputElement,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+      );
+    
+      let node;
+      while (node = walker.nextNode()) {
+        textNodes.push(node);
+      }
+    
+      // Find the text node containing the "@"
+      let targetNode = null;
+      let atIndex = -1;
+    
+      for (const textNode of textNodes) {
+        const text = textNode.textContent;
+        const index = text.lastIndexOf('@');
+    
+        if (index !== -1) {
+          targetNode = textNode;
+          atIndex = index;
+          break;
+        }
+      }
+    
+      if (targetNode && atIndex !== -1) {
+        const text = targetNode.textContent;
+        const beforeAt = text.substring(0, atIndex);
+        const afterAt = text.substring(atIndex + 1);
+    
+        // Remove the "@" and any text after it
+        targetNode.textContent = beforeAt;
+    
+        // Move the cursor to where the "@" was
+        const newRange = document.createRange();
+        newRange.setStart(targetNode, beforeAt.length);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    
+      // Hide the dropdown
+      hideUserTagDropdown();
     }
     
     // Listen for @ in the post-content div
