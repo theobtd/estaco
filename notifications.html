@@ -1863,38 +1863,32 @@
         const friendIds = friends.map(friend => friend.uid);
         friendIds.push(user.uid); // Include the current user
     
-        // Fetch all comments for the post
-        const commentsSnapshot = await db.collection('posts').doc(postId).collection('comments')
+        // Fetch all comments for the post (sorted by timestamp)
+        const commentsSnapshot = await db.collection('posts')
+          .doc(postId)
+          .collection('comments')
           .orderBy('timestamp', 'asc')
           .get();
     
-        commentsList.innerHTML = '';
+        // Collect all comment HTML strings in an array (to preserve order)
+        const commentHTMLs = [];
     
+        // Process each comment in order
         for (const doc of commentsSnapshot.docs) {
           const comment = doc.data();
+          let shouldShow = false;
     
           // Always show comments from the current user
           if (comment.authorId === user.uid) {
-            const profilePictureHTML = await getAuthorPicture(comment.authorId, comment.authorName);
-            const commentHTML = `
-              <div class="comment" data-comment-id="${doc.id}">
-                <div class="comment-author-picture">
-                  ${profilePictureHTML}
-                </div>
-                <div class="comment-content">
-                  <div class="comment-author-name">${comment.authorName}</div>
-                  <div class="comment-text">${comment.content}</div>
-                  <div class="comment-actions">
-                    <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
-                    <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
-                  </div>
-                </div>
-              </div>
-            `;
-            commentsList.innerHTML += commentHTML;
+            shouldShow = true;
           }
           // For other comments, show if the commenter is a friend
           else if (friendIds.includes(comment.authorId)) {
+            shouldShow = true;
+          }
+    
+          // If the comment should be shown, add its HTML to the array
+          if (shouldShow) {
             const profilePictureHTML = await getAuthorPicture(comment.authorId, comment.authorName);
             const commentHTML = `
               <div class="comment" data-comment-id="${doc.id}">
@@ -1911,10 +1905,12 @@
                 </div>
               </div>
             `;
-            commentsList.innerHTML += commentHTML;
+            commentHTMLs.push(commentHTML);
           }
         }
     
+        // Render all comments at once (preserves order)
+        commentsList.innerHTML = commentHTMLs.join('');
         updatePageLanguage(userLanguage);
     
         // Add event listeners for respond buttons
