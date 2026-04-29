@@ -970,7 +970,7 @@
                   <p>${notification.postContent}</p>
                 </div>
                 <div class="notification-post">
-                  ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                  ${formatTimestamp(notification.timestamp)}
                 </div>
               </div>
             `;
@@ -991,7 +991,7 @@
                   </div>
                 </div>
                 <div class="notification-post">
-                  ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                  ${formatTimestamp(notification.timestamp)}
                 </div>
               </div>
             `;
@@ -1009,7 +1009,7 @@
                   <p>${notification.postContent}</p>
                 </div>
                 <div class="notification-post">
-                  ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                  ${formatTimestamp(notification.timestamp)}
                 </div>
               </div>
             `;
@@ -1027,7 +1027,7 @@
                   <p>${notification.postContent}</p>
                 </div>
                 <div class="notification-post">
-                  ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                  ${formatTimestamp(notification.timestamp)}
                 </div>
               </div>
             `;
@@ -1045,7 +1045,7 @@
                   <p>${translations[userLanguage]["Would you like to accept?"]}</p>
                 </div>
                 <div class="notification-post">
-                  ${new Date(notification.timestamp.toDate()).toLocaleString()}
+                  ${formatTimestamp(notification.timestamp)}
                 </div>
               </div>
             `;
