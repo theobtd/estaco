@@ -279,13 +279,6 @@
       </p>
       <button id="close-about-modal" style="background-color: var(--estaco-accent); color: var(--estaco-text); border: none; border-radius: 8px; padding: 10px; font-weight: 500; cursor: pointer; margin-top: 10px;" data-i18n="Close">Close</button>
   </div>
-    
-  <div id="contact-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 10000; justify-content: center; align-items: center;">
-    <div style="background: white; padding: 20px; border-radius: 10px; max-width: 350px; margin: 0 auto; text-align: center;">
-      <p>Hola!</p>
-      <button id="close-contact-modal" style="background-color: var(--estaco-accent); color: var(--estaco-text); border: none; border-radius: 8px; padding: 10px; font-weight: 500; cursor: pointer; margin-top: 10px;" data-i18n="Close">Close</button>
-    </div>
-  </div>
   
   <script>
     // Force Firebase Auth to use localStorage by making IDB fail immediately.
@@ -475,25 +468,6 @@
         });
     });
 
-    const showContact = document.getElementById('show-contact');
-    const contactModal = document.getElementById('contact-modal');
-    const closeContactModal = document.getElementById('close-contact-modal');
-    
-    showContact.addEventListener('click', () => {
-      contactModal.style.display = 'flex';
-    });
-    
-    closeContactModal.addEventListener('click', () => {
-      contactModal.style.display = 'none';
-    });
-    
-    // Close the modal when clicking outside the popup content
-    contactModal.addEventListener('click', (event) => {
-      if (event.target === contactModal) {
-        contactModal.style.display = 'none';
-      }
-    });
-
     signinButton.addEventListener('click', () => {
       console.log("here")
       const email = document.getElementById('signin-email').value;
@@ -567,6 +541,11 @@
       }
     });
 
+    const showContact = document.getElementById('show-contact');
+    showContact.addEventListener('click', () => {
+      window.location.href = 'ContactUs.html';
+    });
+
     const installGuide = document.getElementById('install-guide');
 
     let userLanguage = "English"; // Define globally
@@ -613,7 +592,6 @@
         "About Us": "About Us",
         "This is us!": "This is us!",
         "Close": "Close",
-        "Contact Us": "Contact Us",
       },
       French: {
         "Create Account": "Créer un compte",
@@ -654,7 +632,6 @@
         "Cancel": "Annuler",
         "This is us!": "AAAAAH",
         "Close": "Fermer",
-        "Contact Us": "Contactez-nous",
       },
       Korean: {
         "Create Account": "계정 만들기",
@@ -696,7 +673,6 @@
         "About Us": "About Us",
         "This is us!": "This is us!",
         "Close": "Close",
-        "Contact Us": "문의하기",
       }
     };
     
