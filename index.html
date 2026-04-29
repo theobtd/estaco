@@ -279,25 +279,12 @@
       <button id="close-about-modal" style="background-color: var(--estaco-accent); color: var(--estaco-text); border: none; border-radius: 8px; padding: 10px; font-weight: 500; cursor: pointer; margin-top: 10px;" data-i18n="Close">Close</button>
   </div>
 
-  <!-- Add this button below the "About Us" button -->
   <button id="show-contact" style="width: 100%; margin: 10px 0; background-color: var(--estaco-accent); color: var(--estaco-text); border: none; border-radius: 8px; padding: 12px; font-weight: 500; cursor: pointer;" data-i18n="Contact Us">Contact Us</button>
-  
-  <!-- Add this modal for the Contact Us form -->
+
   <div id="contact-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 10000; align-items: center; justify-content: center;">
     <div style="background: white; padding: 20px; border-radius: 10px; max-width: 350px; margin: 0 auto; text-align: center;">
-      <h3 data-i18n="Contact Us">Contact Us</h3>
-      <div class="form-group">
-        <label for="contact-email" data-i18n="Email">Email</label>
-        <input type="email" id="contact-email" placeholder="Your Email" required>
-      </div>
-      <div class="form-group">
-        <label for="contact-message" data-i18n="Message">Message (max 500 characters)</label>
-        <textarea id="contact-message" placeholder="Your Message" maxlength="500" style="width: 100%; padding: 12px; border: 1px solid var(--estaco-border); border-radius: 8px; box-sizing: border-box; font-family: inherit; resize: vertical; min-height: 100px;" required></textarea>
-        <p id="char-count" style="font-size: 12px; color: var(--estaco-text-light); text-align: right;">0/500</p>
-      </div>
-      <button id="submit-contact" style="background-color: var(--estaco-accent); color: var(--estaco-text); border: none; border-radius: 8px; padding: 10px; font-weight: 500; cursor: pointer; width: 100%;" data-i18n="Submit">Submit</button>
-      <p id="contact-error-message" style="color: var(--estaco-error); font-size: 14px; margin-top: 10px;"></p>
-      <button id="close-contact-modal" style="background-color: var(--estaco-border); color: var(--estaco-text); border: none; border-radius: 8px; padding: 10px; font-weight: 500; cursor: pointer; margin-top: 10px;" data-i18n="Cancel">Cancel</button>
+      <p>Hola!</p>
+      <button id="close-contact-modal" style="background-color: var(--estaco-accent); color: var(--estaco-text); border: none; border-radius: 8px; padding: 10px; font-weight: 500; cursor: pointer; margin-top: 10px;" data-i18n="Close">Close</button>
     </div>
   </div>
   
@@ -389,69 +376,6 @@
     showSignin.addEventListener('click', () => {
       signinForm.style.display = 'block';
       signupForm.style.display = 'none';
-    });
-
-    // Add these variables at the top of your script (with other DOM element declarations)
-    const showContact = document.getElementById('show-contact');
-    const contactModal = document.getElementById('contact-modal');
-    const closeContactModal = document.getElementById('close-contact-modal');
-    const submitContact = document.getElementById('submit-contact');
-    const contactEmail = document.getElementById('contact-email');
-    const contactMessage = document.getElementById('contact-message');
-    const charCount = document.getElementById('char-count');
-    const contactErrorMessage = document.getElementById('contact-error-message');
-    
-    // Add character counter for the message
-    contactMessage.addEventListener('input', () => {
-      charCount.textContent = `${contactMessage.value.length}/500`;
-    });
-    
-    // Show the contact modal
-    showContact.addEventListener('click', () => {
-      contactModal.style.display = 'flex';
-      contactEmail.value = '';
-      contactMessage.value = '';
-      charCount.textContent = '0/500';
-      contactErrorMessage.textContent = '';
-    });
-    
-    // Close the contact modal
-    closeContactModal.addEventListener('click', () => {
-      contactModal.style.display = 'none';
-    });
-    
-    // Close the modal when clicking outside
-    contactModal.addEventListener('click', (event) => {
-      if (event.target === contactModal) {
-        contactModal.style.display = 'none';
-      }
-    });
-    
-    // Handle form submission
-    submitContact.addEventListener('click', () => {
-      const email = contactEmail.value;
-      const message = contactMessage.value;
-    
-      if (!email || !message) {
-        contactErrorMessage.textContent = translations[userLanguage]["Please fill in all fields."];
-        return;
-      }
-    
-      // Save to Firestore
-      db.collection('ContactRequests').add({
-        email: email,
-        message: message,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then(() => {
-        contactErrorMessage.textContent = '';
-        alert(translations[userLanguage]["Thank you! Your message has been sent."]);
-        contactModal.style.display = 'none';
-      })
-      .catch((error) => {
-        contactErrorMessage.textContent = translations[userLanguage]["Error sending message. Please try again."];
-        console.error("Error saving contact request: ", error);
-      });
     });
 
     signupButton.addEventListener('click', () => {
@@ -550,6 +474,25 @@
           signupLoading.style.display = 'none';
           errorMessage.textContent = 'Error checking username: ' + error.message;
         });
+    });
+
+    const showContact = document.getElementById('show-contact');
+    const contactModal = document.getElementById('contact-modal');
+    const closeContactModal = document.getElementById('close-contact-modal');
+    
+    showContact.addEventListener('click', () => {
+      contactModal.style.display = 'flex';
+    });
+    
+    closeContactModal.addEventListener('click', () => {
+      contactModal.style.display = 'none';
+    });
+    
+    // Close the modal when clicking outside the popup content
+    contactModal.addEventListener('click', (event) => {
+      if (event.target === contactModal) {
+        contactModal.style.display = 'none';
+      }
     });
 
     signinButton.addEventListener('click', () => {
@@ -671,12 +614,6 @@
         "About Us": "About Us",
         "This is us!": "This is us!",
         "Close": "Close",
-        "Contact Us": "Contact Us",
-        "Message": "Message (max 500 characters)",
-        "Submit": "Submit",
-        "Please fill in all fields.": "Please fill in all fields.",
-        "Thank you! Your message has been sent.": "Thank you! Your message has been sent.",
-        "Error sending message. Please try again.": "Error sending message. Please try again.",
       },
       French: {
         "Create Account": "Créer un compte",
@@ -715,14 +652,8 @@
         "Send Reset Link": "Envoyer lien de reinitialisation",
         "Password reset email sent! Check your inbox.": "lien de reinitialisation envoyé",
         "Cancel": "Annuler",
-        "This is us!": "This is us!",
+        "This is us!": "AAAAAH",
         "Close": "Fermer",
-        "Contact Us": "Nous Contacter",
-        "Message": "Message (max 500 characters)",
-        "Submit": "Envoyer",
-        "Please fill in all fields.": "Veuillez tout remplir",
-        "Thank you! Your message has been sent.": "Merci ! Votre message a ete envoye",
-        "Error sending message. Please try again.": "Erreur",
       },
       Korean: {
         "Create Account": "계정 만들기",
@@ -764,12 +695,6 @@
         "About Us": "About Us",
         "This is us!": "This is us!",
         "Close": "Close",
-        "Contact Us": "문의하기",
-        "Message": "메시지 (최대 500자)",
-        "Submit": "제출하다",
-        "Please fill in all fields.": "모든 항목을 입력해 주세요.",
-        "Thank you! Your message has been sent.": "감사합니다! 메시지가 전송되었습니다.",
-        "Error sending message. Please try again.": "메시지 전송에 오류가 발생했습니다. 다시 시도해 주세요.",
       }
     };
     
