@@ -1728,21 +1728,24 @@
       }
     });
 
-    // Add swipe-to-close functionality for the detail page
-    const detailPage = document.getElementById('detail-page');
+    // Add these variables at the top of your script (with other global variables)
     let touchStartX = 0;
     let touchEndX = 0;
     
-    detailPage.addEventListener('touchstart', (e) => {
+    // Add these event listeners (e.g., after `auth.onAuthStateChanged`)
+    document.addEventListener('touchstart', (e) => {
       touchStartX = e.changedTouches[0].screenX;
     }, { passive: true });
     
-    detailPage.addEventListener('touchend', (e) => {
+    document.addEventListener('touchend', (e) => {
       touchEndX = e.changedTouches[0].screenX;
       handleSwipe();
     }, { passive: true });
     
     function handleSwipe() {
+      const detailPage = document.getElementById('detail-page');
+      if (!detailPage.classList.contains('active')) return; // Only handle swipe if detail page is open
+    
       const swipeThreshold = 50; // Minimum distance (in pixels) to consider it a swipe
       const diff = touchStartX - touchEndX;
     
