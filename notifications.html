@@ -1746,7 +1746,7 @@
       const detailPage = document.getElementById('detail-page');
       if (!detailPage.classList.contains('active')) return; // Only handle swipe if detail page is open
     
-      const swipeThreshold = 50; // Minimum distance (in pixels) to consider it a swipe
+      const swipeThreshold = 70; // Minimum distance (in pixels) to consider it a swipe
       const diff = touchEndX - touchStartX;
     
       // If swipe left (diff > 0) and distance is greater than threshold
