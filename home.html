@@ -1252,6 +1252,7 @@
         "Comment deleted successfully!": "Comment deleted successfully!",
         "Failed to delete comment. Please try again.": "Failed to delete comment. Please try again.",
         "You must be logged in to delete a comment.": "You must be logged in to delete a comment.",
+        "Delete comment": "Delete comment",
       },
       French: {
         "Create a Post": "Créer une publication",
@@ -1308,6 +1309,7 @@
         "Comment deleted successfully!": "Commentaire supprimé avec succès !",
         "Failed to delete comment. Please try again.": "Échec de la suppression du commentaire. Veuillez réessayer.",
         "You must be logged in to delete a comment.": "Vous devez être connecté pour supprimer un commentaire.",
+        "Delete comment": "Supprimer le commentaire",
       },
       Korean: {
         "Create a Post": "게시물 작성",
@@ -1364,6 +1366,7 @@
         "Comment deleted successfully!": "댓글이 성공적으로 삭제되었습니다!",
         "Failed to delete comment. Please try again.": "댓글 삭제에 실패했습니다. 다시 시도해 주세요.",
         "You must be logged in to delete a comment.": "댓글을 삭제하려면 로그인해야 합니다.",
+        "Delete comment": "댓글 삭제",
       }
     };
 
@@ -3427,7 +3430,6 @@
         const commentHeader = commentElement.querySelector('.comment-header');
         commentHeader.appendChild(dropdown);
         dropdown.classList.add('show');
-        updatePageLanguage(userLanguage);
     
         // Close dropdown when clicking outside
         setTimeout(() => {
