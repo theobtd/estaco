@@ -2703,61 +2703,132 @@
       }
     });
     
-    // Function to add a comment to Firestore (via Worker)
+    // Function to add a comment to Firestore
     async function addComment(postId, content) {
       const user = auth.currentUser;
       if (!user) return;
     
-      // Extract tagged UIDs from the tag preview
+      // Get the tag preview container for this post
       const tagPreview = document.getElementById(`tag-preview-${postId}`);
-      const taggedUserUids = tagPreview
-        ? Array.from(tagPreview.querySelectorAll('.tag-validated'))
-            .map(tag => tag.dataset.uid)
-            .filter(Boolean)
-        : [];
+      const tags = tagPreview ? Array.from(tagPreview.querySelectorAll('.tag-validated')) : [];
     
-      // Combine tags and input content
-      const tagTexts = Array.from(tagPreview?.querySelectorAll('.tag-validated') || [])
-        .map(tag => {
+      // Extract tagged UIDs and clean tag texts (remove the "×" button)
+      const taggedUserUids = [];
+      const tagTexts = [];
+    
+      tags.forEach(tag => {
+        const uid = tag.dataset.uid;
+        if (uid) {
+          taggedUserUids.push(uid);
+          // Get the tag text without the "×" button
           const tagText = Array.from(tag.childNodes)
             .filter(node => node.nodeType === Node.TEXT_NODE)
             .map(node => node.textContent)
             .join('');
-          return tagText;
-        });
+          tagTexts.push(tagText);
+        }
+      });
+    
+      // Combine tags and input content
       const fullContent = tagTexts.join(' ') + ' ' + content;
     
-      // Validate length
-      const textContent = fullContent.replace(/<[^>]*>/g, '');
+      const textContent = fullContent.replace(/<[^>]*>/g, ''); // Strip HTML tags for accurate length
       if (textContent.length > 250) {
         alert("Comment must be 250 characters or less.");
         return;
       }
     
-      // Show loader
+      // Show the loader overlay
       document.getElementById('upload-overlay').style.display = 'flex';
     
+      // --- STEP 1: SET COMMENTSVISIBLE FLAG FIRST ---
       try {
-        const idToken = await user.getIdToken();
-        const response = await fetch('https://estaco-comments.tdgbertrand.workers.dev', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${idToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            postId,
-            content: fullContent,
-            taggedUserUids,
-          }),
-        });
+        if (taggedUserUids.length > 0) {
+          // Get mutual friends for each tagged user
+          const mutualFriendUids = await getMutualFriendUidsForComment(user.uid, taggedUserUids);
+          // Update the CommentsVisible flag for mutual friends
+          await updateCommentsVisibleForComment(postId, user.uid, taggedUserUids, mutualFriendUids);
+        } else {
+          // No tagged users, update for all friends
+          await updateCommentsVisibleForPost(postId, user.uid);
+        }
+      } catch (error) {
+        console.error("Error setting CommentsVisible flag:", error);
+        alert("Failed to prepare comment visibility. Please try again.");
+        document.getElementById('upload-overlay').style.display = 'none';
+        return;
+      }
     
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Failed to add comment');
+      // --- STEP 2: ADD THE COMMENT ---
+      try {
+        if (taggedUserUids.length > 0) {
+          // Add the comment to Firestore with taggedUserUids
+          const comment = {
+            authorId: user.uid,
+            authorName: user.displayName || "Unknown User",
+            content: fullContent, // Use combined content (tags + input)
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            taggedUserUids: taggedUserUids,
+          };
+          const docRef = await db.collection('posts').doc(postId).collection('comments').add(comment);
+    
+          // Fetch the post to get the author's UID
+          const postDoc = await db.collection('posts').doc(postId).get();
+          if (postDoc.exists) {
+            const post = postDoc.data();
+            // Only add a notification if the commenter is not the author
+            if (post.authorId !== user.uid) {
+              await addCommentNotification(
+                post.authorId, // Author of the post
+                postId,
+                user.uid, // Current user (commenter)
+                user.displayName || "Unknown User",
+                fullContent, // Use combined content for notification
+                firebase.firestore.FieldValue.serverTimestamp()
+              );
+            }
+          }
+    
+          // Add tag notifications for each tagged user
+          for (const taggedUid of taggedUserUids) {
+            await addCommentTagNotification(
+              taggedUid, // Tagged user's UID
+              postId, // Post ID
+              user.uid, // Current user's UID (commenter)
+              user.displayName || "Unknown User", // Current user's name
+              firebase.firestore.FieldValue.serverTimestamp()
+            );
+          }
+        } else {
+          // No tagged users, add comment normally
+          const comment = {
+            authorId: user.uid,
+            authorName: user.displayName || "Unknown User",
+            content: fullContent, // Use combined content (even if no tags)
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          };
+          const docRef = await db.collection('posts').doc(postId).collection('comments').add(comment);
+    
+          // Fetch the post to get the author's UID
+          const postDoc = await db.collection('posts').doc(postId).get();
+          if (postDoc.exists) {
+            const post = postDoc.data();
+            // Only add a notification if the commenter is not the author
+            if (post.authorId !== user.uid) {
+              await addCommentNotification(
+                post.authorId, // Author of the post
+                postId,
+                user.uid, // Current user (commenter)
+                user.displayName || "Unknown User",
+                fullContent, // Use combined content for notification
+                firebase.firestore.FieldValue.serverTimestamp()
+              );
+            }
+          }
         }
     
-        // Clear UI
+        // --- STEP 3: UI UPDATES ---
+        // Clear the input and tag preview
         const commentInput = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
         if (commentInput) commentInput.innerHTML = '';
         if (tagPreview) {
@@ -2765,21 +2836,25 @@
           tagPreview.style.display = 'none';
         }
     
-        // Force show comments
+        // Force the "See comments" button to appear and open the comments section
         const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
         if (postElement) {
           const seeCommentsButton = postElement.querySelector('.see-comments-button');
           const commentsList = postElement.querySelector('.comments-list');
-          if (seeCommentsButton) seeCommentsButton.style.display = 'block';
+          if (seeCommentsButton) {
+            seeCommentsButton.style.display = 'block';
+          }
           if (commentsList) {
             commentsList.classList.add('visible');
-            await loadComments(postId); // Reload comments
+            // Load comments and hide the loader only after this completes
+            await loadComments(postId);
           }
-          // Update button text
+          // Update the button text and language
           if (seeCommentsButton && commentsList) {
             if (commentsList.classList.contains('visible')) {
               seeCommentsButton.setAttribute('data-i18n', 'Hide comments');
               seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
+              updatePageLanguage(userLanguage);
             } else {
               seeCommentsButton.setAttribute('data-i18n', 'See comments');
               seeCommentsButton.textContent = translations[userLanguage]["See comments"];
@@ -2788,9 +2863,10 @@
           updatePageLanguage(userLanguage);
         }
       } catch (error) {
-        console.error('Error adding comment:', error);
-        alert('Failed to add comment. Please try again.');
+        console.error("Error adding comment:", error);
+        alert("Failed to add comment. Please try again.");
       } finally {
+        // Hide the loader overlay
         document.getElementById('upload-overlay').style.display = 'none';
       }
     }
@@ -3734,6 +3810,63 @@
 
     // Set default visibility button text
     document.getElementById('visibility-button').textContent = translations[userLanguage]["Visibility: all friends"];
+
+    /**
+     * Adds a comment tag notification to a user's notifications sub-collection.
+     * @param {string} taggedUid - The tagged user's UID.
+     * @param {string} postId - The post's ID.
+     * @param {string} commenterId - The UID of the user who commented and tagged.
+     * @param {string} commenterName - The name of the user who commented and tagged.
+     * @param {Date} timestamp - The timestamp of the comment.
+     */
+    async function addCommentTagNotification(taggedUid, postId, commenterId, commenterName, timestamp) {
+      try {
+        // Fetch the post to get its caption
+        const postDoc = await db.collection('posts').doc(postId).get();
+        let postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
+        // Limit postCaption to 80 characters
+        postCaption = postCaption.length > 80 ? postCaption.substring(0, 80) + "..." : postCaption;
+    
+        const notificationsRef = db.collection(`users/${taggedUid}/notifications`);
+        // Query for existing notifications
+        const querySnapshot = await notificationsRef
+          .where('type', '==', 'comment_tag')
+          .where('postId', '==', postId)
+          .where('commenterId', '==', commenterId)
+          .get();
+    
+        if (!querySnapshot.empty) {
+          // Update existing notification
+          querySnapshot.forEach((doc) => {
+            doc.ref.update({
+              timestamp,
+              message: `${commenterName} tagged you again in a comment.`,
+              postCaption: postCaption, // Add the post's caption here (limited to 80 chars)
+            });
+          });
+        } else {
+          // Create new notification
+          await notificationsRef.add({
+            type: "comment_tag",
+            commenterId,
+            commenterName,
+            postId,
+            postCaption: postCaption, // Add the post's caption here (limited to 80 chars)
+            timestamp,
+            message: `${commenterName} tagged you in a comment.`
+          });
+        }
+        // Increment the NotificationsCounter for the tagged user
+        const userRef = db.collection('users').doc(taggedUid);
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          const currentCount = userDoc.data()?.NotificationsCounter || 0;
+          transaction.update(userRef, { NotificationsCounter: currentCount + 1 });
+        });
+      } catch (error) {
+        console.error("Error adding/updating comment tag notification:", error);
+      }
+    }
     
     /**
      * Adds a tag notification to a user's notifications sub-collection.
@@ -3872,6 +4005,174 @@
         await batch.commit();
       } catch (error) {
         console.error('Error deleting old reaction notifications:', error);
+      }
+    }
+
+    /**
+     * Adds a comment notification to a user's notifications sub-collection.
+     * @param {string} userId - The user's UID (post author).
+     * @param {string} postId - The post's ID.
+     * @param {string} commenterId - The UID of the user who commented.
+     * @param {string} commenterName - The name of the user who commented.
+     * @param {string} commentContent - The content of the comment.
+     * @param {Date} timestamp - The timestamp of the comment.
+     */
+    async function addCommentNotification(userId, postId, commenterId, commenterName, commentContent, timestamp) {
+      try {
+        // Fetch the post to get its caption
+        const postDoc = await db.collection('posts').doc(postId).get();
+        let postCaption = postDoc.exists ? postDoc.data().content : "Post not found";
+        // Limit postCaption to 80 characters
+        postCaption = postCaption.length > 80 ? postCaption.substring(0, 80) + "..." : postCaption;
+    
+        const notificationsRef = db.collection(`users/${userId}/notifications`).doc();
+        await notificationsRef.set({
+          type: 'comment',
+          reactorId: commenterId,
+          reactorName: commenterName,
+          commentContent: commentContent,
+          postId: postId,
+          postCaption: postCaption, // Add the post's caption here (limited to 80 chars)
+          timestamp: timestamp,
+        });
+        // Increment the NotificationsCounter for the post author
+        const userRef = db.collection('users').doc(userId);
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          const currentCount = userDoc.data()?.NotificationsCounter || 0;
+          transaction.update(userRef, { NotificationsCounter: currentCount + 1 });
+        });
+      } catch (error) {
+        console.error('Error adding comment notification:', error);
+      }
+    }
+
+    /**
+     * Updates the CommentsVisible flag for all users who have the post in their feed and are friends with the commenter.
+     * @param {string} postId - The ID of the post.
+     * @param {string} commenterId - The UID of the user who commented.
+     */
+    async function updateCommentsVisibleForPost(postId, commenterId) {
+      try {
+        // 1. Get the post to find the author
+        const postDoc = await db.collection('posts').doc(postId).get();
+        if (!postDoc.exists) {
+          console.log('Post does not exist.');
+          return;
+        }
+        const post = postDoc.data();
+        const authorId = post.authorId;
+    
+        // 2. Create a batch for updates
+        const batch = db.batch();
+    
+        // 3. Always update the CommentsVisible flag for the post author
+        const authorFeedDocRef = db.collection(`users/${authorId}/feed`).doc(postId);
+        batch.update(authorFeedDocRef, { CommentsVisible: true });
+    
+        // 4. Always update the CommentsVisible flag for the commenter
+        const commenterFeedDocRef = db.collection(`users/${commenterId}/feed`).doc(postId);
+        batch.update(commenterFeedDocRef, { CommentsVisible: true });
+    
+        // 5. Get the author's friends (including the author)
+        const friendsDoc = await db.collection('friends').doc(authorId).get();
+        const friends = friendsDoc.exists ? friendsDoc.data()?.friends || [] : [];
+        const friendIds = friends.map(friend => friend.uid);
+        friendIds.push(authorId); // Include the author
+    
+        // 6. For each friend, check if they have the post in their feed
+        for (const userId of friendIds) {
+          if (userId === authorId || userId === commenterId) continue; // Skip author and commenter, already handled
+    
+          const feedDocRef = db.collection(`users/${userId}/feed`).doc(postId);
+          const feedDoc = await feedDocRef.get();
+          if (feedDoc.exists) {
+            // 7. Check if the commenter is a friend of this user
+            const userFriendsDoc = await db.collection('friends').doc(userId).get();
+            if (userFriendsDoc.exists) {
+              const userFriends = userFriendsDoc.data()?.friends || [];
+              const userFriendIds = userFriends.map(friend => friend.uid);
+              userFriendIds.push(userId); // Include the user themselves
+    
+              if (userFriendIds.includes(commenterId)) {
+                // 8. Update the CommentsVisible flag to true
+                batch.update(feedDocRef, { CommentsVisible: true });
+              }
+            }
+          }
+        }
+    
+        // 9. Commit the batch update
+        await batch.commit();
+        console.log('Updated CommentsVisible flag for users who have this post in their feed.');
+      } catch (error) {
+        console.error('Error updating CommentsVisible flag:', error);
+      }
+    }
+
+    /**
+     * Gets mutual friend UIDs for a comment with tagged users.
+     * @param {string} commenterUid - The UID of the commenter.
+     * @param {string[]} taggedUserUids - Array of tagged user UIDs.
+     * @returns {Promise<string[]>} - Array of mutual friend UIDs.
+     */
+    async function getMutualFriendUidsForComment(commenterUid, taggedUserUids) {
+      if (taggedUserUids.length === 0) return [];
+    
+      let mutualFriendUids = await getMutualFriendUids(commenterUid, taggedUserUids[0]);
+    
+      for (let i = 1; i < taggedUserUids.length; i++) {
+        const mutuals = await getMutualFriendUids(commenterUid, taggedUserUids[i]);
+        mutualFriendUids = mutualFriendUids.filter(uid => mutuals.includes(uid));
+      }
+    
+      return mutualFriendUids;
+    }
+    
+    /**
+     * Checks if the current user is a mutual friend of the commenter and all tagged users.
+     * @param {string} currentUserUid - The UID of the current user.
+     * @param {string} commenterUid - The UID of the commenter.
+     * @param {string[]} taggedUserUids - Array of tagged user UIDs.
+     * @returns {Promise<boolean>} - True if the current user is a mutual friend.
+     */
+    async function isMutualFriendForComment(currentUserUid, commenterUid, taggedUserUids) {
+      if (taggedUserUids.length === 0) return true;
+    
+      const mutualFriendUids = await getMutualFriendUidsForComment(commenterUid, taggedUserUids);
+      return mutualFriendUids.includes(currentUserUid);
+    }
+    
+    /**
+     * Updates the CommentsVisible flag for a comment with tagged users.
+     * @param {string} postId - The ID of the post.
+     * @param {string} commenterId - The UID of the commenter.
+     * @param {string[]} taggedUserUids - Array of tagged user UIDs.
+     * @param {string[]} mutualFriendUids - Array of mutual friend UIDs.
+     */
+    async function updateCommentsVisibleForComment(postId, commenterId, taggedUserUids, mutualFriendUids) {
+      try {
+        const batch = db.batch();
+    
+        // Update CommentsVisible flag for mutual friends
+        for (const uid of mutualFriendUids) {
+          const feedDocRef = db.collection(`users/${uid}/feed`).doc(postId);
+          batch.update(feedDocRef, { CommentsVisible: true });
+        }
+    
+        // Update CommentsVisible flag for the commenter
+        const commenterFeedDocRef = db.collection(`users/${commenterId}/feed`).doc(postId);
+        batch.update(commenterFeedDocRef, { CommentsVisible: true });
+    
+        // Update CommentsVisible flag for each tagged user
+        for (const uid of taggedUserUids) {
+          const taggedUserFeedDocRef = db.collection(`users/${uid}/feed`).doc(postId);
+          batch.update(taggedUserFeedDocRef, { CommentsVisible: true });
+        }
+    
+        await batch.commit();
+      } catch (error) {
+        console.error('Error updating CommentsVisible flag for comment:', error);
       }
     }
 
