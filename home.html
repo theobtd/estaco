@@ -928,6 +928,52 @@
       transition: background-color 0.2s;
       margin: 0; /* Remove any margins */
     }
+    /* Reuse existing styles for comment options */
+    .comment-options-button {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--estaco-text-light);
+      margin-left: 5px;
+      padding: 0 5px;
+      border-radius: 50%;
+      transition: background-color 0.2s;
+    }
+  
+    .comment-options-dropdown {
+      display: none;
+      position: absolute;
+      background: white;
+      border: 1px solid var(--estaco-border);
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      min-width: 120px;
+    }
+  
+    .comment-options-dropdown.show {
+      display: block;
+    }
+  
+    .comment-options-dropdown button {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--estaco-text);
+      font-size: 14px;
+    }
+  
+    /* Ensure the comment header is positioned correctly for the dropdown */
+    .comment-header {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
 
   </style>
 </head>
@@ -2933,7 +2979,11 @@
     
               // Check if the comment author is the current user
               const isCurrentUser = comment.authorId === user.uid;
-              const authorNameDisplay = isCurrentUser ? `${comment.authorName} *` : comment.authorName;
+    
+              // Add the comment options button if it's the current user's comment
+              const commentOptionsButton = isCurrentUser
+                ? `<button class="comment-options-button" data-comment-id="${doc.id}" data-post-id="${postId}">...</button>`
+                : '';
     
               const commentHTML = `
                 <div class="comment" data-comment-id="${doc.id}">
@@ -2941,7 +2991,10 @@
                     ${profilePictureHTML}
                   </div>
                   <div class="comment-content">
-                    <div class="comment-author-name">${authorNameDisplay}</div>
+                    <div class="comment-header">
+                      <div class="comment-author-name">${comment.authorName}</div>
+                      ${commentOptionsButton}
+                    </div>
                     <div class="comment-text">${comment.content}</div>
                     <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
                     <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
@@ -3336,6 +3389,39 @@
         if (confirmDelete) {
           deletePost(postId);
         }
+      }
+    });
+
+    // Handle comment options button clicks
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('comment-options-button')) {
+        const commentId = e.target.getAttribute('data-comment-id');
+        const postId = e.target.getAttribute('data-post-id');
+        const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
+    
+        // Remove any existing dropdowns
+        const existingDropdowns = document.querySelectorAll('.comment-options-dropdown.show');
+        existingDropdowns.forEach(dropdown => dropdown.remove());
+    
+        // Create the dropdown
+        const dropdown = document.createElement('div');
+        dropdown.className = 'comment-options-dropdown';
+        dropdown.innerHTML = `
+          <button data-action="delete-comment" data-comment-id="${commentId}" data-post-id="${postId}" data-i18n="Delete">Delete comment</button>
+        `;
+    
+        // Append the dropdown to the comment
+        commentElement.querySelector('.comment-header').appendChild(dropdown);
+        dropdown.classList.add('show');
+    
+        // Close dropdown when clicking outside
+        setTimeout(() => {
+          document.addEventListener('click', (closeEvent) => {
+            if (!closeEvent.target.closest('.comment-options-button') && !closeEvent.target.closest('.comment-options-dropdown')) {
+              dropdown.remove();
+            }
+          }, { once: true });
+        }, 0);
       }
     });
     
