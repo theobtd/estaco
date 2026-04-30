@@ -3427,6 +3427,7 @@
         const commentHeader = commentElement.querySelector('.comment-header');
         commentHeader.appendChild(dropdown);
         dropdown.classList.add('show');
+        updatePageLanguage(userLanguage);
     
         // Close dropdown when clicking outside
         setTimeout(() => {
