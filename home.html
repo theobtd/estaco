@@ -2930,13 +2930,18 @@
             // If the comment should be shown, add its HTML to the array
             if (shouldShow) {
               const profilePictureHTML = await getCommentAuthorPicture(comment.authorId, comment.authorName);
+    
+              // Check if the comment author is the current user
+              const isCurrentUser = comment.authorId === user.uid;
+              const authorNameDisplay = isCurrentUser ? `${comment.authorName} *` : comment.authorName;
+    
               const commentHTML = `
                 <div class="comment" data-comment-id="${doc.id}">
                   <div class="comment-author-picture">
                     ${profilePictureHTML}
                   </div>
                   <div class="comment-content">
-                    <div class="comment-author-name">${comment.authorName}</div>
+                    <div class="comment-author-name">${authorNameDisplay}</div>
                     <div class="comment-text">${comment.content}</div>
                     <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
                     <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
