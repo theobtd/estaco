@@ -1248,11 +1248,6 @@
         "Translate": "Translate",
         "Show Original": "Show Original",
         "Translating...": "Translating...",
-        "Are you sure you want to delete this comment?": "Are you sure you want to delete this comment?",
-        "Comment deleted successfully!": "Comment deleted successfully!",
-        "Failed to delete comment. Please try again.": "Failed to delete comment. Please try again.",
-        "You must be logged in to delete a comment.": "You must be logged in to delete a comment.",
-        "Delete comment": "Delete comment",
       },
       French: {
         "Create a Post": "Créer une publication",
@@ -1305,11 +1300,6 @@
         "Translate": "Traduire",
         "Show Original": "Afficher l'original",
         "Translating...": "Traduction en cours...",
-        "Are you sure you want to delete this comment?": "Êtes-vous sûr de vouloir supprimer ce commentaire ?",
-        "Comment deleted successfully!": "Commentaire supprimé avec succès !",
-        "Failed to delete comment. Please try again.": "Échec de la suppression du commentaire. Veuillez réessayer.",
-        "You must be logged in to delete a comment.": "Vous devez être connecté pour supprimer un commentaire.",
-        "Delete comment": "Supprimer le commentaire",
       },
       Korean: {
         "Create a Post": "게시물 작성",
@@ -1362,11 +1352,6 @@
         "Translate": "번역",
         "Show Original": "원본 보기",
         "Translating...": "번역 중...",
-        "Are you sure you want to delete this comment?": "이 댓글을 삭제하시겠습니까?",
-        "Comment deleted successfully!": "댓글이 성공적으로 삭제되었습니다!",
-        "Failed to delete comment. Please try again.": "댓글 삭제에 실패했습니다. 다시 시도해 주세요.",
-        "You must be logged in to delete a comment.": "댓글을 삭제하려면 로그인해야 합니다.",
-        "Delete comment": "댓글 삭제",
       }
     };
 
@@ -3409,7 +3394,6 @@
 
     // Handle comment options button clicks
     document.addEventListener('click', (e) => {
-      // Handle comment options button
       if (e.target.classList.contains('comment-options-button')) {
         const commentId = e.target.getAttribute('data-comment-id');
         const postId = e.target.getAttribute('data-post-id');
@@ -3426,9 +3410,8 @@
           <button data-action="delete-comment" data-comment-id="${commentId}" data-post-id="${postId}" data-i18n="Delete">Delete comment</button>
         `;
     
-        // Append the dropdown to the comment header
-        const commentHeader = commentElement.querySelector('.comment-header');
-        commentHeader.appendChild(dropdown);
+        // Append the dropdown to the comment
+        commentElement.querySelector('.comment-header').appendChild(dropdown);
         dropdown.classList.add('show');
     
         // Close dropdown when clicking outside
@@ -3439,19 +3422,6 @@
             }
           }, { once: true });
         }, 0);
-      }
-    
-      // Handle delete comment action
-      if (e.target.getAttribute('data-action') === 'delete-comment') {
-        const commentId = e.target.getAttribute('data-comment-id');
-        const postId = e.target.getAttribute('data-post-id');
-        const confirmDelete = confirm(translations[userLanguage]["Are you sure you want to delete this comment?"]);
-        if (confirmDelete) {
-          deleteComment(postId, commentId);
-        }
-        // Close the dropdown
-        const dropdowns = document.querySelectorAll('.comment-options-dropdown.show');
-        dropdowns.forEach(dropdown => dropdown.remove());
       }
     });
     
@@ -3522,52 +3492,6 @@
         alert(translations[userLanguage]["Failed to delete post. Please try again."]);
       } finally {
         // Hide the overlay
-        document.getElementById('upload-overlay').style.display = 'none';
-      }
-    }
-
-    // Function to delete a comment
-    async function deleteComment(postId, commentId) {
-      const user = auth.currentUser;
-      if (!user) {
-        alert(translations[userLanguage]["You must be logged in to delete a comment."]);
-        return;
-      }
-    
-      try {
-        // Show loading overlay
-        document.getElementById('upload-overlay').style.display = 'flex';
-    
-        // Delete the comment from Firestore
-        const commentRef = db.collection('posts').doc(postId).collection('comments').doc(commentId);
-        await commentRef.delete();
-    
-        // Remove the comment from the UI
-        const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
-        if (commentElement) {
-          commentElement.remove();
-        }
-    
-        // Check if there are no comments left
-        const commentsList = document.getElementById(`comments-${postId}`);
-        if (commentsList && commentsList.children.length === 0) {
-          // Hide the comments list and reset the "See comments" button
-          commentsList.classList.remove('visible');
-          commentsList.setAttribute('data-loaded', 'false');
-          const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
-          if (seeCommentsButton) {
-            seeCommentsButton.textContent = translations[userLanguage]["See comments"];
-            seeCommentsButton.setAttribute('data-i18n', 'See comments');
-            updatePageLanguage(userLanguage);
-          }
-        }
-    
-        alert(translations[userLanguage]["Comment deleted successfully!"]);
-      } catch (error) {
-        console.error('Error deleting comment:', error);
-        alert(translations[userLanguage]["Failed to delete comment. Please try again."]);
-      } finally {
-        // Hide loading overlay
         document.getElementById('upload-overlay').style.display = 'none';
       }
     }
