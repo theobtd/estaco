@@ -2015,8 +2015,8 @@
         // Get the Firebase ID token for authentication
         const idToken = await user.getIdToken();
         const authorName = user.displayName || "Unknown User";
-    
-        // Prepare FormData for the request
+
+        // In your postButton click handler:
         const formData = new FormData();
         formData.append('content', content);
         formData.append('authorId', user.uid);
@@ -2024,15 +2024,19 @@
         formData.append('visibility', isVisibilityAll ? 'all' : 'limited');
         formData.append('selectedFriendUids', JSON.stringify(Array.from(selectedFriendUids)));
         formData.append('taggedUserUids', JSON.stringify(taggedUserUids));
-    
-        // Append media file if it exists
+        
         if (mediaFile) {
           formData.append('media', mediaFile);
           formData.append('mediaType', postMedia.getAttribute('data-type'));
           formData.append('mediaOrientation', postMedia.getAttribute('data-orientation') || 'horizontal');
+        
+          // If this is a video and we have a pending thumbnail, include it
+          if (mediaFile.type.startsWith('video/') && pendingThumbnailBlob) {
+            formData.append('thumbnail', pendingThumbnailBlob, 'thumbnail.jpg');
+          }
         }
     
-        // Call the Cloudflare Worker
+        // In your postButton click handler:
         const response = await fetch('https://estaco-post.tdgbertrand.workers.dev/', {
           method: 'POST',
           headers: {
@@ -2040,15 +2044,15 @@
           },
           body: formData,
         });
-    
+        
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to create post');
         }
-    
+        
         const result = await response.json();
-    
-        // Render the new post immediately (optimistic UI)
+        
+        // Render the new post with the thumbnail URL from the Worker
         const newPost = {
           id: result.postId,
           authorId: user.uid,
@@ -2058,7 +2062,7 @@
           reactions: {},
           photoURL: mediaFile && mediaFile.type.startsWith('image/') ? URL.createObjectURL(mediaFile) : null,
           videoURL: mediaFile && mediaFile.type.startsWith('video/') ? URL.createObjectURL(mediaFile) : null,
-          thumbnailURL: result.thumbnailURL || null,
+          thumbnailURL: result.thumbnailURL || null, // Use the thumbnail URL from the Worker
           mediaOrientation: postMedia.getAttribute('data-orientation') || 'horizontal',
         };
         renderNewPost(newPost);
