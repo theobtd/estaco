@@ -2735,7 +2735,7 @@
         const idToken = await user.getIdToken();
         
         // CALL THE CLOUDFLARE WORKER
-        const response = await fetch('https://estaco-comment.workers.dev', {
+        const response = await fetch('https://estaco-comment.tdgbertrand.workers.dev', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${idToken}`,
