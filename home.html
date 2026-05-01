@@ -3959,69 +3959,6 @@
     }
 
     /**
-     * Updates the CommentsVisible flag for all users who have the post in their feed and are friends with the commenter.
-     * @param {string} postId - The ID of the post.
-     * @param {string} commenterId - The UID of the user who commented.
-     */
-    async function updateCommentsVisibleForPost(postId, commenterId) {
-      try {
-        // 1. Get the post to find the author
-        const postDoc = await db.collection('posts').doc(postId).get();
-        if (!postDoc.exists) {
-          console.log('Post does not exist.');
-          return;
-        }
-        const post = postDoc.data();
-        const authorId = post.authorId;
-    
-        // 2. Create a batch for updates
-        const batch = db.batch();
-    
-        // 3. Always update the CommentsVisible flag for the post author
-        const authorFeedDocRef = db.collection(`users/${authorId}/feed`).doc(postId);
-        batch.update(authorFeedDocRef, { CommentsVisible: true });
-    
-        // 4. Always update the CommentsVisible flag for the commenter
-        const commenterFeedDocRef = db.collection(`users/${commenterId}/feed`).doc(postId);
-        batch.update(commenterFeedDocRef, { CommentsVisible: true });
-    
-        // 5. Get the author's friends (including the author)
-        const friendsDoc = await db.collection('friends').doc(authorId).get();
-        const friends = friendsDoc.exists ? friendsDoc.data()?.friends || [] : [];
-        const friendIds = friends.map(friend => friend.uid);
-        friendIds.push(authorId); // Include the author
-    
-        // 6. For each friend, check if they have the post in their feed
-        for (const userId of friendIds) {
-          if (userId === authorId || userId === commenterId) continue; // Skip author and commenter, already handled
-    
-          const feedDocRef = db.collection(`users/${userId}/feed`).doc(postId);
-          const feedDoc = await feedDocRef.get();
-          if (feedDoc.exists) {
-            // 7. Check if the commenter is a friend of this user
-            const userFriendsDoc = await db.collection('friends').doc(userId).get();
-            if (userFriendsDoc.exists) {
-              const userFriends = userFriendsDoc.data()?.friends || [];
-              const userFriendIds = userFriends.map(friend => friend.uid);
-              userFriendIds.push(userId); // Include the user themselves
-    
-              if (userFriendIds.includes(commenterId)) {
-                // 8. Update the CommentsVisible flag to true
-                batch.update(feedDocRef, { CommentsVisible: true });
-              }
-            }
-          }
-        }
-    
-        // 9. Commit the batch update
-        await batch.commit();
-        console.log('Updated CommentsVisible flag for users who have this post in their feed.');
-      } catch (error) {
-        console.error('Error updating CommentsVisible flag:', error);
-      }
-    }
-
-    /**
      * Gets mutual friend UIDs for a comment with tagged users.
      * @param {string} commenterUid - The UID of the commenter.
      * @param {string[]} taggedUserUids - Array of tagged user UIDs.
