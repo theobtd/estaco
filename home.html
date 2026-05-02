@@ -1948,38 +1948,6 @@
       }
     });
 
-    function extractTaggedUserUids(content) {
-      // If tags are stored in the data-uid attribute of spans
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = content;
-      const tags = tempDiv.querySelectorAll('.tag-validated');
-      return Array.from(tags).map(tag => tag.getAttribute('data-uid')).filter(uid => uid);
-    }
-    
-    async function getFriendUidsForUser(targetUid) {
-      try {
-        const doc = await db.collection('friends').doc(targetUid).get();
-        if (!doc.exists) return [];
-        const friends = doc.data().friends || [];
-        return friends.map(f => f.uid);
-      } catch (e) {
-        console.error("Error fetching friends for validation", e);
-        return [];
-      }
-    }
-    
-    // Add this helper for logging activity (referenced in your auth listener)
-    async function logFeedLoadActivity(userId) {
-      return db.collection('users').doc(userId).update({
-        lastFeedLoad: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(() => {}); // Ignore if field doesn't exist
-    }
-    
-    // Add this helper for friend debugging (referenced in your auth listener)
-    function logUserFriendsWithPosts(userId) {
-      console.log("Feed sync initiated for user:", userId);
-    }
-
     let originalImageFile = null;
     let lastCropOrientation = 'horizontal';
     let pendingThumbnailBlob = null; // thumbnail generated at file-selection time
@@ -2138,39 +2106,34 @@
     }
     
     async function loadPosts() {
-        if (isLoading) return;
+        if (isLoading) return; // Prevent multiple simultaneous loads
         isLoading = true;
     
         const user = auth.currentUser;
         if (!user) {
-            isLoading = true;
+            isLoading = false;
             return;
         }
     
         try {
-            const idToken = await user.getIdToken();
-            const currentLimit = isFirstLoad ? 1 : postLimit;
-            
-            // Call your Cloudflare Worker instead of Firestore SDK directly
-            const workerUrl = new URL('https://estaco-feed.tdgbertrand.workers.dev');
-            workerUrl.searchParams.append('userId', user.uid);
-            workerUrl.searchParams.append('limit', currentLimit);
+            // 1. Get the user's feed sub-collection
+            const feedRef = db.collection(`users/${user.uid}/feed`);
+            let query = feedRef.orderBy('postTimestamp', 'desc');
+    
             if (lastVisiblePost) {
-                workerUrl.searchParams.append('lastTimestamp', lastVisiblePost);
+                query = query.startAfter(lastVisiblePost.data().postTimestamp);
             }
     
-            const response = await fetch(workerUrl, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${idToken}`
-                }
-            });
+            // Load only 1 post on the first load, otherwise load postLimit
+            if (isFirstLoad) {
+                query = query.limit(1);
+            } else {
+                query = query.limit(postLimit);
+            }
     
-            if (!response.ok) throw new Error('Failed to fetch feed from Worker');
+            const feedSnapshot = await query.get();
     
-            const data = await response.json();
-    
-            if (data.posts.length === 0) {
+            if (feedSnapshot.empty) {
                 if (!feed.querySelector('.post')) {
                     feed.innerHTML = `<p data-i18n="No posts yet. Create one!">${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
                 } else {
@@ -2180,26 +2143,71 @@
                 return;
             }
     
-            // Update pagination token
-            lastVisiblePost = data.nextPageToken;
+            // 2. Fetch the actual post data for each post ID in the feed
+            const postIds = feedSnapshot.docs.map(doc => doc.data().postId);
+            const postsSnapshot = await db.collection('posts')
+                .where(firebase.firestore.FieldPath.documentId(), 'in', postIds)
+                .get();
     
-            // Render the posts received from the worker
-            await renderPosts(data.posts);
+            const postsData = [];
+            const feedData = feedSnapshot.docs.map(doc => ({
+                postId: doc.data().postId,
+                CommentsVisible: doc.data().CommentsVisible || false,
+            }));
     
+            postsSnapshot.forEach((doc) => {
+                const post = doc.data();
+                post.id = doc.id;
+                // Find the corresponding feed data
+                const feedDoc = feedData.find(fd => fd.postId === post.id);
+                if (feedDoc) {
+                    post.CommentsVisible = feedDoc.CommentsVisible;
+                }
+                postsData.push(post);
+            });
+    
+            // Sort postsData to match the feed order
+            postsData.sort((a, b) => {
+                const aFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === a.id);
+                const bFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === b.id);
+                return bFeedDoc.data().postTimestamp - aFeedDoc.data().postTimestamp;
+            });
+    
+            // Update lastVisiblePost for pagination
+            lastVisiblePost = feedSnapshot.docs[feedSnapshot.docs.length - 1];
+    
+            // Filter out posts from non-friends
+            const filteredPosts = await Promise.all(
+                postsData.map(async (post) => {
+                    const user = auth.currentUser;
+                    // Always include your own posts
+                    if (post.authorId === user.uid) {
+                        return post;
+                    }
+                    // For others, check if they are friends
+                    const isFriend = await isFriendWithCurrentUser(post.authorId);
+                    return isFriend ? post : null;
+                })
+            ).then(posts => posts.filter(post => post !== null));
+    
+            // NEW CHECK: If this is the first load and no posts are found, try again with more posts
+            if (isFirstLoad && filteredPosts.length === 0) {
+                isFirstLoad = false;
+                isLoading = false;
+                loadPosts(); // Try again with more posts
+                return;
+            }
+    
+            await renderPosts(filteredPosts);
+    
+            // After the first load, set the flag to false and load more posts
             if (isFirstLoad) {
                 isFirstLoad = false;
-                // If the worker returned nothing (due to filtering), try loading more immediately
-                if (data.posts.length === 0) {
-                    isLoading = false;
-                    loadPosts();
-                    return;
-                }
             }
     
             isLoading = false;
         } catch (error) {
-            console.error("Feed Loading Error:", error);
-            errorMessage.textContent = "Error loading feed. Please refresh.";
+            errorMessage.textContent = error.message;
             isLoading = false;
         }
     }
@@ -2217,20 +2225,7 @@
         if (document.querySelector(`.post[data-post-id="${post.id}"]`)) continue;
     
         // Await the profile picture for the post author
-        const profilePictureHTML = await getCommentAuthorPicture(comment.authorId, comment.authorName);
-        const commentHTML = `
-          <div class="comment" data-comment-id="${doc.id}">
-            <div class="comment-author-picture">
-              ${profilePictureHTML}
-            </div>
-            <div class="comment-content">
-              <div class="comment-author-name">${comment.authorName}</div>
-              <div class="comment-text">${comment.content}</div>
-              <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
-              <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
-            </div>
-          </div>`;
-        commentsList.insertAdjacentHTML('beforeend', commentHTML);
+        const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
     
         // Process post content for @username tags
         let processedContent = post.content;
