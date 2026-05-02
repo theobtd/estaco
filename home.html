@@ -2105,8 +2105,11 @@
         return friends.some(friend => friend.uid === authorId);
     }
     
+    let lastVisibleTimestamp = null; // Changed from lastVisiblePost (DocumentSnapshot)
+    const WORKER_URL = 'https://estaco-feed.tdgbertrand.workers.dev'; // Replace with your actual Worker URL
+    
     async function loadPosts() {
-        if (isLoading) return; // Prevent multiple simultaneous loads
+        if (isLoading) return;
         isLoading = true;
     
         const user = auth.currentUser;
@@ -2116,105 +2119,62 @@
         }
     
         try {
-            // 1. Get the user's feed sub-collection
-            const feedRef = db.collection(`users/${user.uid}/feed`);
-            let query = feedRef.orderBy('postTimestamp', 'desc');
+            // 1. Get the Firebase ID Token
+            const idToken = await user.getIdToken();
     
-            if (lastVisiblePost) {
-                query = query.startAfter(lastVisiblePost.data().postTimestamp);
+            // 2. Construct the URL with pagination if necessary
+            let url = new URL(WORKER_URL);
+            if (lastVisibleTimestamp) {
+                url.searchParams.append('lastVisible', lastVisibleTimestamp);
             }
     
-            // Load only 1 post on the first load, otherwise load postLimit
-            if (isFirstLoad) {
-                query = query.limit(1);
-            } else {
-                query = query.limit(postLimit);
+            // 3. Call the Cloudflare Worker
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+    
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Worker Error: ${errorText}`);
             }
     
-            const feedSnapshot = await query.get();
+            const data = await response.json();
     
-            if (feedSnapshot.empty) {
+            // 4. Handle Empty State
+            if (!data.posts || data.posts.length === 0) {
                 if (!feed.querySelector('.post')) {
                     feed.innerHTML = `<p data-i18n="No posts yet. Create one!">${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
                 } else {
-                    feed.innerHTML += `<p data-i18n="No more posts to load.">${translations[userLanguage]["No more posts to load."]}</p>`;
-                }
-                isLoading = false;
-                return;
-            }
-    
-            // 2. Fetch the actual post data for each post ID in the feed
-            const postIds = feedSnapshot.docs.map(doc => doc.data().postId);
-            const postsSnapshot = await db.collection('posts')
-                .where(firebase.firestore.FieldPath.documentId(), 'in', postIds)
-                .get();
-    
-            const postsData = [];
-            const feedData = feedSnapshot.docs.map(doc => ({
-                postId: doc.data().postId,
-                CommentsVisible: doc.data().CommentsVisible || false,
-            }));
-    
-            postsSnapshot.forEach((doc) => {
-                const post = doc.data();
-                post.id = doc.id;
-                // Find the corresponding feed data
-                const feedDoc = feedData.find(fd => fd.postId === post.id);
-                if (feedDoc) {
-                    post.CommentsVisible = feedDoc.CommentsVisible;
-                }
-                postsData.push(post);
-            });
-    
-            // Sort postsData to match the feed order
-            postsData.sort((a, b) => {
-                const aFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === a.id);
-                const bFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === b.id);
-                return bFeedDoc.data().postTimestamp - aFeedDoc.data().postTimestamp;
-            });
-    
-            // Update lastVisiblePost for pagination
-            lastVisiblePost = feedSnapshot.docs[feedSnapshot.docs.length - 1];
-    
-            // Filter out posts from non-friends
-            const filteredPosts = await Promise.all(
-                postsData.map(async (post) => {
-                    const user = auth.currentUser;
-                    // Always include your own posts
-                    if (post.authorId === user.uid) {
-                        return post;
+                    // Remove the intersection observer to stop trying to load more
+                    if (window.feedObserver) window.feedObserver.disconnect();
+                    if (!feed.innerHTML.includes(translations[userLanguage]["No more posts to load."])) {
+                        feed.insertAdjacentHTML('beforeend', `<p style="text-align:center; padding: 20px;" data-i18n="No more posts to load.">${translations[userLanguage]["No more posts to load."]}</p>`);
                     }
-                    // For others, check if they are friends
-                    const isFriend = await isFriendWithCurrentUser(post.authorId);
-                    return isFriend ? post : null;
-                })
-            ).then(posts => posts.filter(post => post !== null));
-    
-            // NEW CHECK: If this is the first load and no posts are found, try again with more posts
-            if (isFirstLoad && filteredPosts.length === 0) {
-                isFirstLoad = false;
+                }
                 isLoading = false;
-                loadPosts(); // Try again with more posts
                 return;
             }
     
-            await renderPosts(filteredPosts);
+            // 5. Update pagination state
+            lastVisibleTimestamp = data.lastVisible;
     
-            // After the first load, set the flag to false and load more posts
-            if (isFirstLoad) {
-                isFirstLoad = false;
-            }
+            // 6. Render the posts
+            await renderPosts(data.posts);
     
             isLoading = false;
         } catch (error) {
-            errorMessage.textContent = error.message;
+            console.error("Error loading feed via Worker:", error);
+            errorMessage.textContent = "Failed to load feed. Please try again.";
             isLoading = false;
         }
     }
 
     async function forceReloadFeed() {
-        isFirstLoad = false;
-        lastVisiblePost = null;
+        lastVisibleTimestamp = null; // Reset the timestamp string
         feed.innerHTML = '';
         await loadPosts();
     }
