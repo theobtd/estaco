@@ -88,7 +88,7 @@
 </head>
 <body>
 
-  <h1>Estaco</h1>
+  <h1 data-i18n="Estaco">Estaco</h1>
   
   <div id="referral-banner">
     <span id="welcome-msg">Join your friend on Estaco!</span>
@@ -99,59 +99,43 @@
   </div>
 
   <div id="signup-form">
-    <h2 style="margin-top:0">Create Account</h2>
+    <h2 style="margin-top:0" data-i18n="Create Account">Create Account</h2>
     
     <div class="form-group">
-      <label for="signup-name">Username</label>
+      <label for="signup-name" data-i18n="Username">Username</label>
       <input type="text" id="signup-name" placeholder="Choose your username" required>
     </div>
   
     <div class="form-group">
-      <label for="signup-language">Language</label>
+      <label for="signup-language" data-i18n="Language">Language</label>
       <select id="signup-language">
-        <option value="English" selected>English</option>
-        <option value="French">Français</option>
-        <option value="Korean">한국어</option>
+        <option value="English" selected data-i18n="English">English</option>
+        <option value="French" data-i18n="French">Français</option>
+        <option value="Korean" data-i18n="Korean">한국어</option>
       </select>
     </div>
   
     <div class="form-group">
-      <label for="signup-email">Email</label>
+      <label for="signup-email" data-i18n="Email">Email</label>
       <input type="email" id="signup-email" placeholder="Email" required>
     </div>
   
-    <!-- Added Confirm Email -->
     <div class="form-group">
-      <label for="signup-email-confirm">Confirm Email</label>
+      <label for="signup-email-confirm" data-i18n="Confirm Email">Confirm Email</label>
       <input type="email" id="signup-email-confirm" placeholder="Confirm Email" required>
     </div>
   
     <div class="form-group">
-      <label for="signup-password">Password</label>
-      <div style="position: relative;">
-        <input type="password" id="signup-password" placeholder="Password" required>
-        <button type="button" class="toggle-password" data-target="signup-password">👁️</button>
-      </div>
-    </div>
-  
-    <!-- Added Confirm Password -->
-    <div class="form-group">
-      <label for="signup-password-confirm">Confirm Password</label>
-      <div style="position: relative;">
-        <input type="password" id="signup-password-confirm" placeholder="Confirm Password" required>
-        <button type="button" class="toggle-password" data-target="signup-password-confirm">👁️</button>
-      </div>
+      <label for="signup-password" data-i18n="Password">Password</label>
+      <input type="password" id="signup-password" placeholder="Password" required>
     </div>
   
     <div class="form-group">
-      <label>
-        <input type="checkbox" id="accept-terms" required>
-        <span>I accept the <a href="TermsOfUse.html" target="_blank">terms of use</a></span>
-      </label>
+      <label for="signup-password-confirm" data-i18n="Confirm Password">Confirm Password</label>
+      <input type="password" id="signup-password-confirm" placeholder="Confirm Password" required>
     </div>
   
-    <button id="signup-button">Sign Up & Connect</button>
-    <p id="error-message"></p>
+    <button id="signup-button" data-i18n="Sign Up & Connect">Sign Up & Connect</button>
   </div>
 
   <div id="signup-loading" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
@@ -159,6 +143,14 @@
     <p style="margin-top:16px;">Creating account and connecting with friend...</p>
   </div>
   <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+  <div style="position: fixed; top: 10px; right: 10px; z-index: 1000;">
+    <select id="language-select">
+      <option value="English" selected>EN</option>
+      <option value="French">FR</option>
+      <option value="Korean">KR</option>
+    </select>
+  </div>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
@@ -196,6 +188,84 @@
     } else {
       document.getElementById('debug-referrer-uid').innerText = "No ID found in URL";
     }
+
+    let userLanguage = "English";
+
+    // 1. The Dictionary (matches your index.html)
+    const translations = {
+      English: {
+        "Estaco": "Estaco",
+        "Create Account": "Create Account",
+        "Username": "Username",
+        "Language": "Language",
+        "Email": "Email",
+        "Confirm Email": "Confirm Email",
+        "Password": "Password",
+        "Confirm Password": "Confirm Password",
+        "Sign Up & Connect": "Sign Up & Connect",
+        "English": "English",
+        "French": "Français",
+        "Korean": "한국어",
+        "Emails do not match.": "Emails do not match.",
+        "Passwords do not match.": "Passwords do not match.",
+        "Invalid referral link.": "Invalid referral link."
+      },
+      French: {
+        "Estaco": "Estaco",
+        "Create Account": "Créer un compte",
+        "Username": "Nom d'utilisateur",
+        "Language": "Langue",
+        "Email": "Email",
+        "Confirm Email": "Confirmer l'email",
+        "Password": "Mot de passe",
+        "Confirm Password": "Confirmer le mot de passe",
+        "Sign Up & Connect": "S'inscrire et se connecter",
+        "English": "Anglais",
+        "French": "Français",
+        "Korean": "Coréen",
+        "Emails do not match.": "Les emails ne correspondent pas.",
+        "Passwords do not match.": "Les mots de passe ne correspondent pas.",
+        "Invalid referral link.": "Lien de parrainage invalide."
+      },
+      Korean: {
+        "Estaco": "에스타코",
+        "Create Account": "계정 만들기",
+        "Username": "사용자 이름",
+        "Language": "언어",
+        "Email": "이메일",
+        "Confirm Email": "이메일 확인",
+        "Password": "비밀번호",
+        "Confirm Password": "비밀번호 확인",
+        "Sign Up & Connect": "가입 및 연결",
+        "English": "영어",
+        "French": "프랑스어",
+        "Korean": "한국어",
+        "Emails do not match.": "이메일이 일치하지 않습니다.",
+        "Passwords do not match.": "비밀번호가 일치하지 않습니다.",
+        "Invalid referral link.": "유효하지 않은 추천 링크입니다."
+      }
+    };
+    
+    // 2. The function to swap text
+    function updatePageLanguage(language) {
+      const lang = translations[language] || translations["English"];
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        const key = element.getAttribute("data-i18n");
+        if (lang[key]) {
+          element.textContent = lang[key];
+        }
+      });
+    }
+    
+    // 3. Event Listener for the top-right menu
+    const languageSelect = document.getElementById('language-select');
+    languageSelect.addEventListener('change', (event) => {
+      userLanguage = event.target.value;
+      updatePageLanguage(userLanguage);
+    });
+    
+    // Initialize on load
+    updatePageLanguage(userLanguage);
 
     document.getElementById('signup-button').addEventListener('click', async () => {
       const name = document.getElementById('signup-name').value;
