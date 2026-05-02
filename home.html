@@ -2131,23 +2131,33 @@
     
         const data = await response.json();
     
+        // Check if posts exists and has items
         if (data.posts && data.posts.length > 0) {
-          // Clear the "No posts yet" message if this is the first load
-          if (!lastVisibleTimestamp) feedElement.innerHTML = '';
+          // Clear the "No posts yet" message only on the initial load
+          if (!lastVisibleTimestamp) {
+            feedElement.innerHTML = '';
+          }
     
           data.posts.forEach(post => {
+            // Ensure createPostElement handles the fields your Worker sends
             const postHtml = createPostElement(post);
             feedElement.appendChild(postHtml);
           });
     
-          // Update pagination tracker
+          // Update pagination tracker with the timestamp from the Worker response
           lastVisibleTimestamp = data.lastVisible;
-        } else if (!lastVisibleTimestamp) {
-          feedElement.innerHTML = `<p>${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
+        } else {
+          // If no posts are returned and it's the first page, show the "empty" message
+          if (!lastVisibleTimestamp) {
+            feedElement.innerHTML = `<p>${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
+          }
+          // If it's a subsequent page (pagination), we just don't add more posts
         }
       } catch (error) {
         console.error("Error loading feed:", error);
-        feedElement.innerHTML = "<p>Error loading feed. Please try again later.</p>";
+        if (!lastVisibleTimestamp) {
+          feedElement.innerHTML = "<p>Error loading feed. Please try again later.</p>";
+        }
       }
     }
 
