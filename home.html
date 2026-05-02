@@ -2110,54 +2110,37 @@
     async function loadPosts() {
       const feedElement = document.getElementById('feed');
       const user = firebase.auth().currentUser;
-      
-      if (!user) return;
+      if (!user || isLoading) return;
+    
+      isLoading = true;
     
       try {
-        // Get the JWT token from Firebase to authenticate with your Worker
         const idToken = await user.getIdToken();
-    
-        // Construct URL with pagination if necessary
         let url = 'https://estaco-feed.tdgbertrand.workers.dev/';
         if (lastVisibleTimestamp) {
           url += `?lastVisible=${encodeURIComponent(lastVisibleTimestamp)}`;
         }
     
         const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${idToken}`
-          }
+          headers: { 'Authorization': `Bearer ${idToken}` }
         });
     
         const data = await response.json();
     
-        // Check if posts exists and has items
         if (data.posts && data.posts.length > 0) {
-          // Clear the "No posts yet" message only on the initial load
-          if (!lastVisibleTimestamp) {
-            feedElement.innerHTML = '';
-          }
-    
-          data.posts.forEach(post => {
-            // Ensure createPostElement handles the fields your Worker sends
-            const postHtml = createPostElement(post);
-            feedElement.appendChild(postHtml);
-          });
-    
-          // Update pagination tracker with the timestamp from the Worker response
+          if (!lastVisibleTimestamp) feedElement.innerHTML = '';
+          
+          // Use your sophisticated renderPosts function instead of createPostElement
+          await renderPosts(data.posts);
+          
           lastVisibleTimestamp = data.lastVisible;
-        } else {
-          // If no posts are returned and it's the first page, show the "empty" message
-          if (!lastVisibleTimestamp) {
-            feedElement.innerHTML = `<p>${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
-          }
-          // If it's a subsequent page (pagination), we just don't add more posts
+        } else if (!lastVisibleTimestamp) {
+          feedElement.innerHTML = `<p>${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
         }
       } catch (error) {
-        console.error("Error loading feed:", error);
-        if (!lastVisibleTimestamp) {
-          feedElement.innerHTML = "<p>Error loading feed. Please try again later.</p>";
-        }
+        console.error("Feed Error:", error);
+      } finally {
+        isLoading = false;
       }
     }
 
