@@ -515,6 +515,37 @@
           border: 1.5px solid white;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
+        .referral-container {
+          background: var(--estaco-surface);
+          padding: 16px;
+          border-radius: 12px;
+          border: 1px solid var(--estaco-accent);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+          margin-bottom: 16px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        .referral-container p {
+          margin: 0 0 12px 0;
+          font-size: 14px;
+          color: var(--estaco-text-light);
+        }
+        
+        .referral-input-group {
+          display: flex;
+          gap: 8px;
+        }
+        
+        .referral-input-group input {
+          flex: 1;
+          padding: 10px;
+          border: 1px solid var(--estaco-border);
+          border-radius: 8px;
+          font-size: 14px;
+          background-color: white;
+          color: var(--estaco-text-light);
+        }
         
     </style>
 
@@ -543,6 +574,16 @@
                 <span></span>
               </button>
             </div>
+
+        <!-- Referral Section -->
+        <div class="referral-container">
+          <h3 style="margin-top:0; font-size:18px; color:var(--estaco-primary);" data-i18n="Referral Link">Referral Link</h3>
+          <p data-i18n="Invite-description">Invite your friends to join Estaco and automatically connect with them.</p>
+          <div class="referral-input-group">
+            <input type="text" id="referral-link-input" readonly placeholder="Link will appear here...">
+            <button id="generate-link-button" class="button" data-i18n="Generate Link">Generate Link</button>
+          </div>
+        </div>
     
         <div class="section">
           <h3 data-i18n="Platform Rules">Platform Rules</h3>
@@ -1674,7 +1715,10 @@
             "You must be logged in to delete your account.": "You must be logged in to delete your account.",
             "Account Deletion Initiated": "Account Deletion Initiated",
             "You already have a pending friend request to this user.": "You already have a pending friend request to this user.",
-            "You can't send a friend request to users who are already your friends.": "You can't send a friend request to users who are already your friends."
+            "You can't send a friend request to users who are already your friends.": "You can't send a friend request to users who are already your friends.",
+            "Referral Link": "Referral Link",
+            "Invite-description": "Invite your friends to join Estaco and automatically connect with them.",
+            "Generate Link": "Generate Link",
               // ... rest of your translations
           },
           French: {
@@ -1739,7 +1783,10 @@
             "Account Deletion Initiated": "Suppression du compte initiée",
             "You have reached the maximum number of friends (15).": "Vous avez atteint le nombre maximum d'amis (15).",
             "You already have a pending friend request to this user.": "Vous avez déjà envoyé une demande d'ami à cet utilisateur.",
-            "You can't send a friend request to users who are already your friends.": "Vous ne pouvez pas envoyer une demande d'ami à un utilisateur qui est déjà votre ami."
+            "You can't send a friend request to users who are already your friends.": "Vous ne pouvez pas envoyer une demande d'ami à un utilisateur qui est déjà votre ami.",
+            "Referral Link": "Lien de parrainage",
+            "Invite-description": "Invitez vos amis à rejoindre Estaco pour vous connecter automatiquement avec eux.",
+            "Generate Link": "Générer le lien",
               // ... rest of your translations
           },
           Korean: {
@@ -1804,7 +1851,10 @@
             "Account Deletion Initiated": "계정 삭제가 시작되었습니다",
             "You have reached the maximum number of friends (15).": "최대 친구 수(15명)에 도달했습니다.",
             "You already have a pending friend request to this user.": "이 사용자에게 이미 친구 요청을 보냈습니다.",
-            "You can't send a friend request to users who are already your friends.": "이미 친구인 사용자에게 친구 요청을 보낼 수 없습니다."
+            "You can't send a friend request to users who are already your friends.": "이미 친구인 사용자에게 친구 요청을 보낼 수 없습니다.",
+            "Referral Link": "추천 링크",
+            "Invite-description": "친구를 Estaco에 초대하고 자동으로 친구를 맺으세요.",
+            "Generate Link": "링크 생성",
               // ... rest of your translations
           }
         };
