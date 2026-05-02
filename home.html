@@ -2104,64 +2104,112 @@
         const friends = friendsDoc.data()?.friends || [];
         return friends.some(friend => friend.uid === authorId);
     }
-
-    let lastVisibleTimestamp = null;
     
     async function loadPosts() {
-      const feedElement = document.getElementById('feed');
-      const user = firebase.auth().currentUser;
-      if (!user || isLoading) return;
+        if (isLoading) return; // Prevent multiple simultaneous loads
+        isLoading = true;
     
-      isLoading = true;
-    
-      try {
-        const idToken = await user.getIdToken();
-        let url = 'https://estaco-feed.tdgbertrand.workers.dev/';
-        if (lastVisibleTimestamp) {
-          url += `?lastVisible=${encodeURIComponent(lastVisibleTimestamp)}`;
+        const user = auth.currentUser;
+        if (!user) {
+            isLoading = false;
+            return;
         }
     
-        const response = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${idToken}` }
-        });
+        try {
+            // 1. Get the user's feed sub-collection
+            const feedRef = db.collection(`users/${user.uid}/feed`);
+            let query = feedRef.orderBy('postTimestamp', 'desc');
     
-        const data = await response.json();
+            if (lastVisiblePost) {
+                query = query.startAfter(lastVisiblePost.data().postTimestamp);
+            }
     
-        if (data.posts && data.posts.length > 0) {
-          if (!lastVisibleTimestamp) feedElement.innerHTML = '';
-          
-          // Use your sophisticated renderPosts function instead of createPostElement
-          await renderPosts(data.posts);
-          
-          lastVisibleTimestamp = data.lastVisible;
-        } else if (!lastVisibleTimestamp) {
-          feedElement.innerHTML = `<p>${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
+            // Load only 1 post on the first load, otherwise load postLimit
+            if (isFirstLoad) {
+                query = query.limit(1);
+            } else {
+                query = query.limit(postLimit);
+            }
+    
+            const feedSnapshot = await query.get();
+    
+            if (feedSnapshot.empty) {
+                if (!feed.querySelector('.post')) {
+                    feed.innerHTML = `<p data-i18n="No posts yet. Create one!">${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
+                } else {
+                    feed.innerHTML += `<p data-i18n="No more posts to load.">${translations[userLanguage]["No more posts to load."]}</p>`;
+                }
+                isLoading = false;
+                return;
+            }
+    
+            // 2. Fetch the actual post data for each post ID in the feed
+            const postIds = feedSnapshot.docs.map(doc => doc.data().postId);
+            const postsSnapshot = await db.collection('posts')
+                .where(firebase.firestore.FieldPath.documentId(), 'in', postIds)
+                .get();
+    
+            const postsData = [];
+            const feedData = feedSnapshot.docs.map(doc => ({
+                postId: doc.data().postId,
+                CommentsVisible: doc.data().CommentsVisible || false,
+            }));
+    
+            postsSnapshot.forEach((doc) => {
+                const post = doc.data();
+                post.id = doc.id;
+                // Find the corresponding feed data
+                const feedDoc = feedData.find(fd => fd.postId === post.id);
+                if (feedDoc) {
+                    post.CommentsVisible = feedDoc.CommentsVisible;
+                }
+                postsData.push(post);
+            });
+    
+            // Sort postsData to match the feed order
+            postsData.sort((a, b) => {
+                const aFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === a.id);
+                const bFeedDoc = feedSnapshot.docs.find(doc => doc.data().postId === b.id);
+                return bFeedDoc.data().postTimestamp - aFeedDoc.data().postTimestamp;
+            });
+    
+            // Update lastVisiblePost for pagination
+            lastVisiblePost = feedSnapshot.docs[feedSnapshot.docs.length - 1];
+    
+            // Filter out posts from non-friends
+            const filteredPosts = await Promise.all(
+                postsData.map(async (post) => {
+                    const user = auth.currentUser;
+                    // Always include your own posts
+                    if (post.authorId === user.uid) {
+                        return post;
+                    }
+                    // For others, check if they are friends
+                    const isFriend = await isFriendWithCurrentUser(post.authorId);
+                    return isFriend ? post : null;
+                })
+            ).then(posts => posts.filter(post => post !== null));
+    
+            // NEW CHECK: If this is the first load and no posts are found, try again with more posts
+            if (isFirstLoad && filteredPosts.length === 0) {
+                isFirstLoad = false;
+                isLoading = false;
+                loadPosts(); // Try again with more posts
+                return;
+            }
+    
+            await renderPosts(filteredPosts);
+    
+            // After the first load, set the flag to false and load more posts
+            if (isFirstLoad) {
+                isFirstLoad = false;
+            }
+    
+            isLoading = false;
+        } catch (error) {
+            errorMessage.textContent = error.message;
+            isLoading = false;
         }
-      } catch (error) {
-        console.error("Feed Error:", error);
-      } finally {
-        isLoading = false;
-      }
-    }
-
-    // Helper to build the Post HTML
-    function createPostElement(post) {
-      const div = document.createElement('div');
-      div.className = 'post';
-      // Use the fields your Worker actually maps
-      div.innerHTML = `
-        <div class="post-header">
-          <h4 style="margin: 0;">${post.authorName || 'Unknown'}</h4>
-        </div>
-        <div class="post-content">
-          <p>${post.content}</p>
-        </div>
-        ${post.photoURL ? `<div class="media-container"><img src="${post.photoURL}" style="width:100%"></div>` : ''}
-        <div class="post-timestamp" style="text-align:left; margin-top:10px;">
-          ${formatTimestamp(post.timestamp)}
-        </div>
-      `;
-      return div;
     }
 
     async function forceReloadFeed() {
