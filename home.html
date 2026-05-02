@@ -1948,6 +1948,38 @@
       }
     });
 
+    function extractTaggedUserUids(content) {
+      // If tags are stored in the data-uid attribute of spans
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      const tags = tempDiv.querySelectorAll('.tag-validated');
+      return Array.from(tags).map(tag => tag.getAttribute('data-uid')).filter(uid => uid);
+    }
+    
+    async function getFriendUidsForUser(targetUid) {
+      try {
+        const doc = await db.collection('friends').doc(targetUid).get();
+        if (!doc.exists) return [];
+        const friends = doc.data().friends || [];
+        return friends.map(f => f.uid);
+      } catch (e) {
+        console.error("Error fetching friends for validation", e);
+        return [];
+      }
+    }
+    
+    // Add this helper for logging activity (referenced in your auth listener)
+    async function logFeedLoadActivity(userId) {
+      return db.collection('users').doc(userId).update({
+        lastFeedLoad: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(() => {}); // Ignore if field doesn't exist
+    }
+    
+    // Add this helper for friend debugging (referenced in your auth listener)
+    function logUserFriendsWithPosts(userId) {
+      console.log("Feed sync initiated for user:", userId);
+    }
+
     let originalImageFile = null;
     let lastCropOrientation = 'horizontal';
     let pendingThumbnailBlob = null; // thumbnail generated at file-selection time
