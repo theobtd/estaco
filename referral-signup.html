@@ -92,6 +92,10 @@
   
   <div id="referral-banner">
     <span id="welcome-msg">Join your friend on Estaco!</span>
+    <!-- Added this line below -->
+    <p style="font-size: 10px; color: var(--estaco-text-light); margin-top: 8px;">
+      Inviter ID: <span id="debug-referrer-uid">None</span>
+    </p>
   </div>
 
   <div id="signup-form">
@@ -165,11 +169,17 @@
 
     // Display referrer name if possible
     if (referrerUid) {
+      // Display the raw UID immediately for your sanity check
+      document.getElementById('debug-referrer-uid').innerText = referrerUid;
+    
+      // Existing logic to fetch the friendly name
       db.collection('usernames').doc(referrerUid).get().then(doc => {
         if (doc.exists) {
           document.getElementById('welcome-msg').innerText = `Join ${doc.data().name} on Estaco!`;
         }
       });
+    } else {
+      document.getElementById('debug-referrer-uid').innerText = "No ID found in URL";
     }
 
     document.getElementById('signup-button').addEventListener('click', async () => {
