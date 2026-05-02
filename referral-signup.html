@@ -91,10 +91,9 @@
   <h1 data-i18n="Estaco">Estaco</h1>
   
   <div id="referral-banner">
-    <span id="welcome-msg">Join your friend on Estaco!</span>
-    <!-- Added this line below -->
+    <span id="welcome-msg" data-i18n="Join your friend on Estaco!" data-referrer-name="your friend">Join your friend on Estaco!</span>
     <p style="font-size: 10px; color: var(--estaco-text-light); margin-top: 8px;">
-      Inviter ID: <span id="debug-referrer-uid">None</span>
+      <span data-i18n="Inviter ID">Inviter ID</span>: <span id="debug-referrer-uid">None</span>
     </p>
   </div>
 
@@ -103,7 +102,7 @@
     
     <div class="form-group">
       <label for="signup-name" data-i18n="Username">Username</label>
-      <input type="text" id="signup-name" placeholder="Choose your username" required>
+      <input type="text" id="signup-name" data-i18n-placeholder="Choose your username" placeholder="Choose your username" required>
     </div>
   
     <div class="form-group">
@@ -117,22 +116,22 @@
   
     <div class="form-group">
       <label for="signup-email" data-i18n="Email">Email</label>
-      <input type="email" id="signup-email" placeholder="Email" required>
+      <input type="email" id="signup-email" data-i18n-placeholder="Email" placeholder="Email" required>
     </div>
   
     <div class="form-group">
       <label for="signup-email-confirm" data-i18n="Confirm Email">Confirm Email</label>
-      <input type="email" id="signup-email-confirm" placeholder="Confirm Email" required>
+      <input type="email" id="signup-email-confirm" data-i18n-placeholder="Confirm Email" placeholder="Confirm Email" required>
     </div>
   
     <div class="form-group">
       <label for="signup-password" data-i18n="Password">Password</label>
-      <input type="password" id="signup-password" placeholder="Password" required>
+      <input type="password" id="signup-password" data-i18n-placeholder="Password" placeholder="Password" required>
     </div>
   
     <div class="form-group">
       <label for="signup-password-confirm" data-i18n="Confirm Password">Confirm Password</label>
-      <input type="password" id="signup-password-confirm" placeholder="Confirm Password" required>
+      <input type="password" id="signup-password-confirm" data-i18n-placeholder="Confirm Password" placeholder="Confirm Password" required>
     </div>
   
     <button id="signup-button" data-i18n="Sign Up & Connect">Sign Up & Connect</button>
@@ -176,13 +175,16 @@
 
     // Display referrer name if possible
     if (referrerUid) {
-      // Display the raw UID immediately for your sanity check
       document.getElementById('debug-referrer-uid').innerText = referrerUid;
     
-      // Existing logic to fetch the friendly name
       db.collection('usernames').doc(referrerUid).get().then(doc => {
         if (doc.exists) {
-          document.getElementById('welcome-msg').innerText = `Join ${doc.data().name} on Estaco!`;
+          const name = doc.data().name;
+          const welcomeMsg = document.getElementById('welcome-msg');
+          // Store the name in the attribute so translation function sees it
+          welcomeMsg.setAttribute('data-referrer-name', name);
+          // Trigger a language update to refresh the banner text
+          updatePageLanguage(userLanguage);
         }
       });
     } else {
@@ -208,7 +210,17 @@
         "Korean": "한국어",
         "Emails do not match.": "Emails do not match.",
         "Passwords do not match.": "Passwords do not match.",
-        "Invalid referral link.": "Invalid referral link."
+        "Invalid referral link.": "Invalid referral link.",
+        "Join your friend on Estaco!": "Join your friend on Estaco!",
+        "Join {name} on Estaco!": "Join {name} on Estaco!",
+        "Inviter ID": "Inviter ID",
+        "Choose your username": "Choose your username",
+        "Email": "Email",
+        "Confirm Email": "Confirm Email",
+        "Password": "Password",
+        "Confirm Password": "Confirm Password",
+        "Username cannot contain spaces.": "Username cannot contain spaces.",
+        "You must accept the terms of use to proceed.": "You must accept the terms of use to proceed.",
       },
       French: {
         "Estaco": "Estaco",
@@ -225,7 +237,17 @@
         "Korean": "Coréen",
         "Emails do not match.": "Les emails ne correspondent pas.",
         "Passwords do not match.": "Les mots de passe ne correspondent pas.",
-        "Invalid referral link.": "Lien de parrainage invalide."
+        "Invalid referral link.": "Lien de parrainage invalide.",
+        "Join your friend on Estaco!": "Rejoignez votre ami sur Estaco !",
+        "Join {name} on Estaco!": "Rejoignez {name} sur Estaco !",
+        "Inviter ID": "ID de l'invitant",
+        "Choose your username": "Choisissez votre nom d'utilisateur",
+        "Email": "E-mail",
+        "Confirm Email": "Confirmer l'e-mail",
+        "Password": "Mot de passe",
+        "Confirm Password": "Confirmer le mot de passe",
+        "Username cannot contain spaces.": "Le nom d'utilisateur ne peut pas contenir d'espaces.",
+        "You must accept the terms of use to proceed.": "Vous devez accepter les conditions d'utilisation pour continuer.",
       },
       Korean: {
         "Estaco": "에스타코",
@@ -242,19 +264,47 @@
         "Korean": "한국어",
         "Emails do not match.": "이메일이 일치하지 않습니다.",
         "Passwords do not match.": "비밀번호가 일치하지 않습니다.",
-        "Invalid referral link.": "유효하지 않은 추천 링크입니다."
+        "Invalid referral link.": "유효하지 않은 추천 링크입니다.",
+        "Join your friend on Estaco!": "Estaco에서 친구와 함께하세요!",
+        "Join {name} on Estaco!": "Estaco에서 {name}님과 함께하세요!",
+        "Inviter ID": "초대자 ID",
+        "Choose your username": "사용자 이름을 선택하세요",
+        "Email": "이메일",
+        "Confirm Email": "이메일 확인",
+        "Password": "비밀번호",
+        "Confirm Password": "비밀번호 확인",
+        "Username cannot contain spaces.": "사용자 이름에 공백을 포함할 수 없습니다.",
+        "You must accept the terms of use to proceed.": "이용 약관에 동의해야 진행할 수 있습니다.",
       }
     };
     
     // 2. The function to swap text
     function updatePageLanguage(language) {
       const lang = translations[language] || translations["English"];
+      
+      // 1. Update standard text
       document.querySelectorAll("[data-i18n]").forEach((element) => {
         const key = element.getAttribute("data-i18n");
-        if (lang[key]) {
-          element.textContent = lang[key];
-        }
+        if (lang[key]) element.textContent = lang[key];
       });
+    
+      // 2. Update placeholders
+      document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+        const key = element.getAttribute("data-i18n-placeholder");
+        if (lang[key]) element.setAttribute("placeholder", lang[key]);
+      });
+    
+      // 3. Update dynamic Referral Banner
+      const welcomeMsg = document.getElementById('welcome-msg');
+      const refName = welcomeMsg.getAttribute('data-referrer-name');
+      
+      if (refName === "your friend") {
+        welcomeMsg.textContent = lang["Join your friend on Estaco!"];
+      } else {
+        // Replace {name} placeholder with the actual name
+        let template = lang["Join {name} on Estaco!"];
+        welcomeMsg.textContent = template.replace("{name}", refName);
+      }
     }
     
     // 3. Event Listener for the top-right menu
