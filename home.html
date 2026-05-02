@@ -2165,15 +2165,17 @@
     function createPostElement(post) {
       const div = document.createElement('div');
       div.className = 'post';
+      // Use the fields your Worker actually maps
       div.innerHTML = `
         <div class="post-header">
-          <strong>User: ${post.authorId}</strong>
+          <h4 style="margin: 0;">${post.authorName || 'Unknown'}</h4>
         </div>
         <div class="post-content">
-          ${post.content}
+          <p>${post.content}</p>
         </div>
-        <div class="post-timestamp">
-          ${new Date(post.timestamp).toLocaleString()}
+        ${post.photoURL ? `<div class="media-container"><img src="${post.photoURL}" style="width:100%"></div>` : ''}
+        <div class="post-timestamp" style="text-align:left; margin-top:10px;">
+          ${formatTimestamp(post.timestamp)}
         </div>
       `;
       return div;
