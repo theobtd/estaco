@@ -2217,7 +2217,20 @@
         if (document.querySelector(`.post[data-post-id="${post.id}"]`)) continue;
     
         // Await the profile picture for the post author
-        const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
+        const profilePictureHTML = await getCommentAuthorPicture(comment.authorId, comment.authorName);
+        const commentHTML = `
+          <div class="comment" data-comment-id="${doc.id}">
+            <div class="comment-author-picture">
+              ${profilePictureHTML}
+            </div>
+            <div class="comment-content">
+              <div class="comment-author-name">${comment.authorName}</div>
+              <div class="comment-text">${comment.content}</div>
+              <button class="translate-comment-button" data-comment-id="${doc.id}" data-post-id="${postId}" data-i18n="Translate">Translate</button>
+              <button class="respond-button" data-author-name="${comment.authorName}" data-i18n="Respond">Respond</button>
+            </div>
+          </div>`;
+        commentsList.insertAdjacentHTML('beforeend', commentHTML);
     
         // Process post content for @username tags
         let processedContent = post.content;
