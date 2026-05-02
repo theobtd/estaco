@@ -993,6 +993,37 @@
             });
         }
 
+        // --- Referral Link Logic ---
+        document.getElementById('generate-link-button').addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                alert("You must be logged in to generate a referral link.");
+                return;
+            }
+        
+            // 1. Get the base URL (e.g., https://estaco-add3c.firebaseapp.com/index.html)
+            // This ensures it works whether you are on a test domain or production.
+            const baseUrl = window.location.origin + '/index.html';
+            
+            // 2. Create the full link with the referral parameter
+            const referralLink = `${baseUrl}?ref=${user.uid}`;
+        
+            // 3. Display it in the input field
+            const linkInput = document.getElementById('referral-link-input');
+            linkInput.value = referralLink;
+        
+            // 4. Copy to clipboard automatically
+            try {
+                await navigator.clipboard.writeText(referralLink);
+                
+                // Use translation for "Link copied to clipboard!" if available, otherwise fallback
+                const msg = translations[userLanguage]?.["Link copied to clipboard!"] || "Link copied to clipboard!";
+                alert(msg);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+            }
+        });
+
         /**
          * Removes a user from the current user's BlockedUsers subcollection.
          * @param {string} userId - The current user's UID.
@@ -1719,6 +1750,7 @@
             "Referral Link": "Referral Link",
             "Invite-description": "Invite your friends to join Estaco and automatically connect with them.",
             "Generate Link": "Generate Link",
+            "Link copied to clipboard!": "Link copied to clipboard!",
               // ... rest of your translations
           },
           French: {
@@ -1787,6 +1819,7 @@
             "Referral Link": "Lien de parrainage",
             "Invite-description": "Invitez vos amis à rejoindre Estaco pour vous connecter automatiquement avec eux.",
             "Generate Link": "Générer le lien",
+            "Link copied to clipboard!": "Lien copié dans le presse-papiers !",
               // ... rest of your translations
           },
           Korean: {
@@ -1855,6 +1888,7 @@
             "Referral Link": "추천 링크",
             "Invite-description": "친구를 Estaco에 초대하고 자동으로 친구를 맺으세요.",
             "Generate Link": "링크 생성",
+            "Link copied to clipboard!": "링크가 클립보드에 복사되었습니다!",
               // ... rest of your translations
           }
         };
