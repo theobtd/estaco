@@ -2104,63 +2104,69 @@
         const friends = friendsDoc.data()?.friends || [];
         return friends.some(friend => friend.uid === authorId);
     }
+
+    let lastVisibleTimestamp = null;
     
     async function loadPosts() {
-        if (isLoading) return; 
-        isLoading = true;
+      const feedElement = document.getElementById('feed');
+      const user = firebase.auth().currentUser;
+      
+      if (!user) return;
     
-        const user = auth.currentUser;
-        if (!user) {
-            isLoading = false;
-            return;
+      try {
+        // Get the JWT token from Firebase to authenticate with your Worker
+        const idToken = await user.getIdToken();
+    
+        // Construct URL with pagination if necessary
+        let url = 'https://estaco-feed.tdgbertrand.workers.dev/';
+        if (lastVisibleTimestamp) {
+          url += `?lastVisible=${encodeURIComponent(lastVisibleTimestamp)}`;
         }
     
-        try {
-            const idToken = await user.getIdToken();
-            
-            // Build the URL, including the pagination cursor if it exists
-            let fetchUrl = 'https://estaco-feed.tdgbertrand.workers.dev/';
-            if (lastVisiblePost) {
-                fetchUrl += `?lastVisible=${lastVisiblePost}`;
-            }
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
     
-            const response = await fetch(fetchUrl, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${idToken}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+        const data = await response.json();
     
-            if (!response.ok) throw new Error('Failed to load feed');
-            
-            const data = await response.json();
+        if (data.posts && data.posts.length > 0) {
+          // Clear the "No posts yet" message if this is the first load
+          if (!lastVisibleTimestamp) feedElement.innerHTML = '';
     
-            if (data.posts.length === 0) {
-                if (!feed.querySelector('.post')) {
-                    feed.innerHTML = `<p data-i18n="No posts yet. Create one!">${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
-                } else {
-                    feed.innerHTML += `<p data-i18n="No more posts to load.">${translations[userLanguage]["No more posts to load."]}</p>`;
-                }
-                isLoading = false;
-                return;
-            }
+          data.posts.forEach(post => {
+            const postHtml = createPostElement(post);
+            feedElement.appendChild(postHtml);
+          });
     
-            // Render the freshly formatted posts
-            await renderPosts(data.posts);
-    
-            // Update the pagination cursor from the server's response
-            lastVisiblePost = data.lastVisible;
-            
-            if (isFirstLoad) {
-                isFirstLoad = false;
-            }
-    
-        } catch (error) {
-            errorMessage.textContent = error.message;
-        } finally {
-            isLoading = false;
+          // Update pagination tracker
+          lastVisibleTimestamp = data.lastVisible;
+        } else if (!lastVisibleTimestamp) {
+          feedElement.innerHTML = `<p>${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
         }
+      } catch (error) {
+        console.error("Error loading feed:", error);
+        feedElement.innerHTML = "<p>Error loading feed. Please try again later.</p>";
+      }
+    }
+
+    // Helper to build the Post HTML
+    function createPostElement(post) {
+      const div = document.createElement('div');
+      div.className = 'post';
+      div.innerHTML = `
+        <div class="post-header">
+          <strong>User: ${post.authorId}</strong>
+        </div>
+        <div class="post-content">
+          ${post.content}
+        </div>
+        <div class="post-timestamp">
+          ${new Date(post.timestamp).toLocaleString()}
+        </div>
+      `;
+      return div;
     }
 
     async function forceReloadFeed() {
