@@ -2095,15 +2095,6 @@
     let lastVisiblePost = null; // To keep track of the last fetched post
     const postLimit = 3; // Number of posts to load at a time
     let isFirstLoad = true; // Add this flag at the top with your other variables
-
-    async function isFriendWithCurrentUser(authorId) {
-        const user = auth.currentUser;
-        if (!user) return false;
-    
-        const friendsDoc = await db.collection('friends').doc(user.uid).get();
-        const friends = friendsDoc.data()?.friends || [];
-        return friends.some(friend => friend.uid === authorId);
-    }
     
     async function loadPosts() {
         if (isLoading) return; 
@@ -2161,13 +2152,6 @@
         } finally {
             isLoading = false;
         }
-    }
-
-    async function forceReloadFeed() {
-        isFirstLoad = false;
-        lastVisiblePost = null;
-        feed.innerHTML = '';
-        await loadPosts();
     }
     
     // Function to render posts
@@ -2978,65 +2962,6 @@
       });
 
     });
-
-    // Function to log the current user's friends and their posts to the console
-    async function logUserFriendsWithPosts(userId) {
-        let friendIds = [];
-        try {
-            // Log the current user and their posts
-            const userPostsSnapshot = await db.collection('posts')
-                .where('authorId', '==', userId)
-                .orderBy('timestamp', 'desc')
-                .get();
-    
-            const userPosts = userPostsSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-    
-            console.log(`- User: ${auth.currentUser.displayName || "Current User"}`);
-            if (userPosts.length > 0) {
-                console.log("  Posts:");
-                userPosts.forEach(post => {
-                    console.log(`  - Post ID: ${post.id}, Content: "${post.content}"`);
-                });
-            } else {
-                console.log("  No posts found.");
-            }
-    
-            // Log the user's friends and their posts
-            const friendsDoc = await db.collection('friends').doc(userId).get();
-            if (friendsDoc.exists) {
-                friendIds = friendsDoc.data()?.friends.map(friend => friend.uid) || [];
-                for (const friend of friendIds) {
-                    const postsSnapshot = await db.collection('posts')
-                        .where('authorId', '==', friend)
-                        .orderBy('timestamp', 'desc')
-                        .get();
-    
-                    const posts = postsSnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-    
-                    console.log(`- Friend: ${friend}`);
-                    if (posts.length > 0) {
-                        console.log("  Posts:");
-                        posts.forEach(post => {
-                            console.log(`  - Post ID: ${post.id}, Content: "${post.content}"`);
-                        });
-                    } else {
-                        console.log("  No posts found.");
-                    }
-                }
-            } else {
-                console.log("No friends document found for this user.");
-            }
-        } catch (error) {
-            console.error("Error fetching user/friends or posts:", error);
-        }
-        return friendIds; // Return the list of friend IDs
-    }
 
     // Throttle function to limit how often the scroll event fires
     function throttle(func, limit) {
