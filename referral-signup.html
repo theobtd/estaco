@@ -105,7 +105,7 @@
       <label for="signup-name">Username</label>
       <input type="text" id="signup-name" placeholder="Choose your username" required>
     </div>
-
+  
     <div class="form-group">
       <label for="signup-language">Language</label>
       <select id="signup-language">
@@ -114,12 +114,18 @@
         <option value="Korean">한국어</option>
       </select>
     </div>
-
+  
     <div class="form-group">
       <label for="signup-email">Email</label>
       <input type="email" id="signup-email" placeholder="Email" required>
     </div>
-
+  
+    <!-- Added Confirm Email -->
+    <div class="form-group">
+      <label for="signup-email-confirm">Confirm Email</label>
+      <input type="email" id="signup-email-confirm" placeholder="Confirm Email" required>
+    </div>
+  
     <div class="form-group">
       <label for="signup-password">Password</label>
       <div style="position: relative;">
@@ -127,14 +133,23 @@
         <button type="button" class="toggle-password" data-target="signup-password">👁️</button>
       </div>
     </div>
-
+  
+    <!-- Added Confirm Password -->
+    <div class="form-group">
+      <label for="signup-password-confirm">Confirm Password</label>
+      <div style="position: relative;">
+        <input type="password" id="signup-password-confirm" placeholder="Confirm Password" required>
+        <button type="button" class="toggle-password" data-target="signup-password-confirm">👁️</button>
+      </div>
+    </div>
+  
     <div class="form-group">
       <label>
         <input type="checkbox" id="accept-terms" required>
         <span>I accept the <a href="TermsOfUse.html" target="_blank">terms of use</a></span>
       </label>
     </div>
-
+  
     <button id="signup-button">Sign Up & Connect</button>
     <p id="error-message"></p>
   </div>
@@ -185,53 +200,69 @@
     document.getElementById('signup-button').addEventListener('click', async () => {
       const name = document.getElementById('signup-name').value;
       const email = document.getElementById('signup-email').value;
+      const emailConfirm = document.getElementById('signup-email-confirm').value; // Added
       const password = document.getElementById('signup-password').value;
+      const passwordConfirm = document.getElementById('signup-password-confirm').value; // Added
       const language = document.getElementById('signup-language').value;
+      const acceptTerms = document.getElementById('accept-terms'); // Added
       const loader = document.getElementById('signup-loading');
       const errorMsg = document.getElementById('error-message');
-
+    
+      // 1. Validation Logic (Matching index.html)
+      if (email !== emailConfirm) {
+        errorMsg.textContent = "Emails do not match.";
+        return;
+      }
+      if (password !== passwordConfirm) {
+        errorMsg.textContent = "Passwords do not match.";
+        return;
+      }
+      if (name.includes(" ")) { // Simple check for spaces to match isValidUsername
+        errorMsg.textContent = "Username cannot contain spaces.";
+        return;
+      }
+      if (!acceptTerms.checked) {
+        errorMsg.textContent = "You must accept the terms of use to proceed.";
+        return;
+      }
       if (!referrerUid) {
         errorMsg.textContent = "Invalid referral link.";
         return;
       }
-
+    
       loader.style.display = 'flex';
-
+    
       try {
-        // Check username uniqueness
+        // 2. Check username uniqueness
         const nameDoc = await db.collection('usernames').where('name', '==', name).get();
         if (!nameDoc.empty) throw new Error("Username already taken.");
-
-        // Create user
+    
+        // 3. Create user
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
         const newUid = user.uid;
-
-        // Atomic Batch Write: Create user profile AND establish friendship
+    
+        // Atomic Batch Write (Profile + Friendship)
         const batch = db.batch();
-        
-        // Profile Setup
         batch.set(db.collection('users').doc(newUid), { name, language, email, profilePictureURL: null });
         batch.set(db.collection('usernames').doc(newUid), { name });
-
-        // Add New User to Referrer's Friend list
+    
         batch.set(db.collection('users').doc(referrerUid).collection('friends').doc(newUid), { 
           uid: newUid, 
           addedAt: firebase.firestore.FieldValue.serverTimestamp() 
         });
-
-        // Add Referrer to New User's Friend list
+    
         batch.set(db.collection('users').doc(newUid).collection('friends').doc(referrerUid), { 
           uid: referrerUid, 
           addedAt: firebase.firestore.FieldValue.serverTimestamp() 
         });
-
+    
         await batch.commit();
         await user.sendEmailVerification();
-
+    
         alert("Account created and friend added! Check your email to verify.");
         window.location.href = 'index.html';
-
+    
       } catch (error) {
         loader.style.display = 'none';
         errorMsg.textContent = error.message;
