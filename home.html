@@ -2155,18 +2155,18 @@
         }
     
         try {
-            const idToken = await user.getIdToken();
-            let workerUrl = `https://estaco-feed.tdgbertrand.workers.dev/?limit=${postLimit}`;
-            
-            // FIX: Send the actual page token instead of a timestamp
-            if (feedNextPageToken) {
-                workerUrl += `&lastTimestamp=${encodeURIComponent(feedNextPageToken)}`;
-            }
-    
-            const response = await fetch(workerUrl, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${idToken}` }
-            });
+                const idToken = await user.getIdToken();
+                let workerUrl = `https://estaco-feed.tdgbertrand.workers.dev/?limit=${postLimit}`;
+                
+                // FIX: Change 'lastTimestamp' to 'pageToken'
+                if (feedNextPageToken) {
+                    workerUrl += `&pageToken=${encodeURIComponent(feedNextPageToken)}`;
+                }
+        
+                const response = await fetch(workerUrl, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${idToken}` }
+                });
     
             if (!response.ok) throw new Error('Failed to fetch feed from worker');
     
