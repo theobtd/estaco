@@ -2183,11 +2183,8 @@
                 isLoading = false;
                 return;
             }
-    
-            feedNextPageToken = data.nextPageToken || null;
-
             await renderPosts(data.posts);
-    
+            feedNextPageToken = data.nextPageToken || null;
             isLoading = false;
         } catch (error) {
             console.error("Feed error:", error);
