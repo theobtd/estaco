@@ -2104,6 +2104,45 @@
         const friends = friendsDoc.data()?.friends || [];
         return friends.some(friend => friend.uid === authorId);
     }
+
+    // Keep track of the observer globally so we can disconnect it when needed
+    let feedObserver = null;
+    
+    function setupIntersectionObserver() {
+      // 1. If an observer already exists, disconnect it so we don't create duplicates
+      if (feedObserver) {
+        feedObserver.disconnect();
+      }
+    
+      // 2. If there is no nextPageToken, we've reached the end of the feed. Stop observing.
+      if (!feedNextPageToken) {
+        return;
+      }
+    
+      // 3. Set up the observer rules
+      const options = {
+        root: null, // use the viewport
+        rootMargin: '100px', // Trigger slightly before the user actually hits the bottom
+        threshold: 0.1 
+      };
+    
+      // 4. Create the observer
+      feedObserver = new IntersectionObserver((entries) => {
+        const lastPostEntry = entries[0];
+        
+        // If the last post is entering the screen AND we aren't currently loading...
+        if (lastPostEntry.isIntersecting && !isLoading) {
+          loadPosts(); // ...fetch the next batch!
+        }
+      }, options);
+    
+      // 5. Find the very last post in the feed and tell the observer to watch it
+      const posts = document.querySelectorAll('.post');
+      if (posts.length > 0) {
+        const lastPost = posts[posts.length - 1];
+        feedObserver.observe(lastPost);
+      }
+    }
     
     async function loadPosts() {
         if (isLoading) return;
