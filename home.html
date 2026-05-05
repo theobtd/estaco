@@ -2172,7 +2172,7 @@
         if (feedNextPageToken) {
           workerUrl += `&pageToken=${encodeURIComponent(feedNextPageToken)}`;
         }
-
+    
         console.log("[LoadPosts] Fetching from Worker URL:", workerUrl);
     
         const response = await fetch(workerUrl, {
@@ -2183,27 +2183,37 @@
         if (!response.ok) throw new Error('Failed to fetch feed from worker');
     
         const data = await response.json();
-
+    
         console.log("[LoadPosts] Raw data received from Worker:", data);
     
+        // --- THE FIX IS HERE ---
         if (!data.posts || data.posts.length === 0) {
-          const feed = document.getElementById('feed');
-          if (!feed.querySelector('.post')) {
-            feed.innerHTML = `<p data-i18n="No posts yet. Create one!">${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
+          if (data.nextPageToken) {
+            // GHOST PAGE: We found deleted posts, but there's more feed to check.
+            console.log("[LoadPosts] Hit a 'ghost page' (deleted posts). Fetching next page automatically...");
+            feedNextPageToken = data.nextPageToken;
+            isLoading = false; 
+            return loadPosts(); // Recursively call immediately to get the next valid batch
           } else {
-            if (!document.getElementById('no-more-posts')) {
-              feed.insertAdjacentHTML('beforeend', `<p id="no-more-posts" data-i18n="No more posts to load.">${translations[userLanguage]["No more posts to load."]}</p>`);
+            // ACTUAL END OF FEED
+            const feed = document.getElementById('feed');
+            if (!feed.querySelector('.post')) {
+              feed.innerHTML = `<p data-i18n="No posts yet. Create one!">${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
+            } else {
+              if (!document.getElementById('no-more-posts')) {
+                feed.insertAdjacentHTML('beforeend', `<p id="no-more-posts" data-i18n="No more posts to load.">${translations[userLanguage]["No more posts to load."]}</p>`);
+              }
             }
+            console.log("[LoadPosts] No posts returned and no token. Reached absolute end of feed.");
+            isLoading = false;
+            return;
           }
-          console.log("[LoadPosts] No posts returned. Reached end of feed.");
-          isLoading = false;
-          return;
         }
     
         // 1. Render new posts first
         await renderPosts(data.posts);
-
-        // 2. Safely update the page token AFTER rendering with fallbacks
+    
+        // 2. Safely update the page token
         feedNextPageToken = data.nextPageToken || data.pageToken || data.cursor || data.lastVisible || null;
         console.log("[LoadPosts] Extracted new feedNextPageToken:", feedNextPageToken);
     
@@ -2214,7 +2224,6 @@
         console.log("[LoadPosts] Finished. isLoading reset to false.");
       } catch (error) {
         console.error("[LoadPosts] Error:", error);
-        console.error("Feed error:", error);
         errorMessage.textContent = "Error loading feed. Please try again.";
         isLoading = false;
       }
