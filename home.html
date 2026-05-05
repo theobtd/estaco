@@ -2109,34 +2109,33 @@
     let feedObserver = null;
     
     function setupIntersectionObserver() {
-      // 1. If an observer already exists, safely disconnect it
-      if (feedObserver) {
-        feedObserver.disconnect();
-      }
-    
-      // 2. If there is no nextPageToken, we've reached the end of the feed.
+      // If there is no nextPageToken, we've reached the end of the feed.
       if (!feedNextPageToken) {
         return;
       }
     
-      // 3. Set up the observer rules
-      const options = {
-        root: null, 
-        rootMargin: '200px', // Trigger slightly before hitting the bottom
-        threshold: 0.1 
-      };
+      // 1. Initialize the observer ONLY ONCE
+      if (!feedObserver) {
+        const options = {
+          root: null, 
+          rootMargin: '200px',
+          threshold: 0.1 
+        };
     
-      // 4. Create the observer
-      feedObserver = new IntersectionObserver((entries) => {
-        const lastPostEntry = entries[0];
-        
-        // If the last post is entering the screen AND we aren't loading...
-        if (lastPostEntry.isIntersecting && !isLoading) {
-          loadPosts(); 
-        }
-      }, options);
+        feedObserver = new IntersectionObserver((entries) => {
+          // Loop through entries to guarantee we catch the intersection
+          entries.forEach(entry => {
+            if (entry.isIntersecting && !isLoading) {
+              loadPosts(); 
+            }
+          });
+        }, options);
+      }
     
-      // 5. Find the very last post in the feed and tell the observer to watch it
+      // 2. Disconnect from any previously observed elements
+      feedObserver.disconnect();
+    
+      // 3. Find the new last post in the feed and observe it
       const posts = document.querySelectorAll('.post');
       if (posts.length > 0) {
         const lastPost = posts[posts.length - 1];
@@ -2186,9 +2185,9 @@
     
         // 1. Render new posts first
         await renderPosts(data.posts);
-    
-        // 2. Safely update the page token AFTER rendering
-        feedNextPageToken = data.nextPageToken || null;
+
+        // 2. Safely update the page token AFTER rendering with fallbacks
+        feedNextPageToken = data.nextPageToken || data.pageToken || data.cursor || data.lastVisible || null;
     
         // 3. Now that the DOM and Token are updated, set up the observer
         setupIntersectionObserver();
