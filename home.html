@@ -2283,11 +2283,15 @@
                 </div>
             `;
         }
+
+        console.log(`[Frontend - Post ${post.id}] Received CommentsVisible flag as:`, post.CommentsVisible);
     
         // Only show the "See comments" button if CommentsVisible is true
         const seeCommentsButtonHTML = `
           <button class="see-comments-button" data-post-id="${post.id}" data-i18n="See comments" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
         `;
+
+        console.log(`[Frontend - Post ${post.id}] Generated Button HTML:`, seeCommentsButtonHTML);
     
       let postHTML = `
         <div class="post" data-post-id="${post.id}" data-author-id="${post.authorId}">
