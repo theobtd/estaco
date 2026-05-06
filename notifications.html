@@ -892,64 +892,50 @@
       }
     });
 
-    // Function to load notifications (reactions, comments, and tags)
-    let lastVisible = null;
+    // Global state for pagination
+    let notificationNextPageToken = null;
     let isLoading = false;
     
     async function loadNotifications(userId, loadMore = false) {
       if (isLoading) return;
+      
+      // If we are loading more but there's no token, we hit the end.
+      if (loadMore && !notificationNextPageToken) return;
+
       isLoading = true;
     
       try {
-        let query = db.collection(`users/${userId}/notifications`)
-          .orderBy('timestamp', 'desc')
-          .limit(5);
-    
-        if (lastVisible && loadMore) {
-          query = query.startAfter(lastVisible);
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const idToken = await user.getIdToken();
+        
+        // REPLACE WITH YOUR ACTUAL WORKER URL
+        let workerUrl = `https://estaco-notifications.tdgbertrand.workers.dev/?limit=5`;
+        
+        if (loadMore && notificationNextPageToken) {
+          workerUrl += `&pageToken=${encodeURIComponent(notificationNextPageToken)}`;
         }
-    
-        const notificationsSnapshot = await query.get();
-    
-        if (notificationsSnapshot.empty) {
+
+        const response = await fetch(workerUrl, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${idToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch notifications from worker');
+
+        const data = await response.json();
+        const notifications = data.notifications || [];
+
+        if (notifications.length === 0) {
           if (!loadMore) {
             notificationsList.innerHTML = `<p data-i18n="No notifications yet.">${translations[userLanguage]["No notifications yet."]}</p>`;
           }
+          isLoading = false;
           return;
         }
-    
-        // Process notifications
-        const notifications = [];
-        for (const notificationDoc of notificationsSnapshot.docs) {
-          const notification = notificationDoc.data();
-          notifications.push({
-            id: notificationDoc.id,
-            type: notification.type,
-            reactorId: notification.reactorId || notification.taggerId || notification.commenterId || notification.requesterId,
-            reactorName: notification.reactorName || notification.taggerName || notification.commenterName || notification.requesterName || "Unknown User",
-            postId: notification.postId,
-            reaction: notification.reaction,
-            commentContent: notification.commentContent,
-            message: notification.message,
-            timestamp: notification.timestamp,
-            postCaption: notification.postCaption, // <-- Add this line
-          });
-        }
-    
-        // Use the stored postCaption from the notification, or fetch from Firestore if missing
-        for (const notification of notifications) {
-          if (notification.postCaption) {
-            notification.postContent = notification.postCaption;
-          } else if (notification.postId) {
-            // Fallback: Fetch post content from Firestore
-            const postDoc = await db.collection('posts').doc(notification.postId).get();
-            notification.postContent = postDoc.exists ? postDoc.data().content : "[Post deleted]";
-          } else {
-            notification.postContent = "[Post deleted]";
-          }
-        }
-    
-        // Render notifications
+
+        // Render notifications (using your existing HTML mapping)
         const newNotificationsHTML = notifications.map(notification => {
           if (notification.type === 'reaction') {
             return `
@@ -1054,29 +1040,28 @@
         
         // Add the HTML to the DOM
         if (loadMore) {
-          notificationsList.innerHTML += newNotificationsHTML;
+          notificationsList.insertAdjacentHTML('beforeend', newNotificationsHTML);
         } else {
           notificationsList.innerHTML = newNotificationsHTML;
         }
         
-        // Add click event listeners to all notifications
-        document.querySelectorAll('.notification').forEach((notificationElement) => {
+        // Re-attach click event listeners to new notifications
+        const newlyAdded = loadMore ? 
+          Array.from(notificationsList.children).slice(-notifications.length) : 
+          document.querySelectorAll('.notification');
+
+        newlyAdded.forEach((notificationElement) => {
           notificationElement.addEventListener('click', async () => {
             const postId = notificationElement.getAttribute('data-post-id');
             const notificationType = notificationElement.getAttribute('data-notification-type');
         
-            // Special handling for friend requests
             if (notificationType === 'friend_request') {
               window.location.href = 'profile.html';
               return;
             }
         
-            // For all other notification types (reaction, comment, tag, comment_tag)
             if (postId) {
-              // Slide in the detail page
               document.getElementById('detail-page').classList.add('active');
-        
-              // Render the post in the detail page
               await renderPostInDetailPage(postId);
             } else {
               alert('No Post ID associated with this notification.');
@@ -1084,25 +1069,36 @@
           });
         });
         
-        // Add event listener for the back button
-        document.getElementById('back-button').addEventListener('click', () => {
-          document.getElementById('detail-page').classList.remove('active');
-          // Clear the detail page content when closing
-          document.getElementById('detail-post-container').innerHTML = '';
-        });
-    
+        // Update pagination token
+        notificationNextPageToken = data.nextPageToken || null;
+
         // Show or hide the "Load more" button
         const loadMoreButton = document.getElementById('load-more');
-        lastVisible = notificationsSnapshot.docs[notificationsSnapshot.docs.length - 1];
-        loadMoreButton.style.display = notifications.length >= 5 ? 'block' : 'none';
+        loadMoreButton.style.display = notificationNextPageToken ? 'block' : 'none';
     
       } catch (error) {
         console.error("Error loading notifications:", error);
-        notificationsList.innerHTML = `<p data-i18n="Error loading notifications. Please try again.">${translations[userLanguage]["Error loading notifications. Please try again."]}</p>`;
+        if (!loadMore) {
+          notificationsList.innerHTML = `<p data-i18n="Error loading notifications. Please try again.">${translations[userLanguage]["Error loading notifications. Please try again."]}</p>`;
+        }
       } finally {
         isLoading = false;
       }
     }
+
+    // Attach listener for the back button once (moved out of the fetch loop to prevent duplicate listeners)
+    document.getElementById('back-button').addEventListener('click', () => {
+      document.getElementById('detail-page').classList.remove('active');
+      document.getElementById('detail-post-container').innerHTML = '';
+    });
+
+    document.getElementById('load-more').addEventListener('click', () => {
+      auth.onAuthStateChanged((user) => {
+        if (user && user.emailVerified) {
+          loadNotifications(user.uid, true);
+        }
+      });
+    });
 
     document.getElementById('load-more').addEventListener('click', () => {
       auth.onAuthStateChanged((user) => {
