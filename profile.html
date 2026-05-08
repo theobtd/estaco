@@ -1003,40 +1003,56 @@
             return result;
         }
 
+        // 1. Add this helper function at the top of your script
+        function generateUniqueId(length = 10) {
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+          let result = '';
+          for (let i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+          return result;
+        }
+
         // --- Referral Link Logic ---
         document.getElementById('generate-link-button').addEventListener('click', async () => {
-            const user = auth.currentUser;
-            if (!user) return;
+          const user = auth.currentUser;
+          if (!user) return;
         
-            try {
-                const uniqueLinkId = generateUniqueId();
-                const referralLink = `${window.location.origin}/referral-signup.html?ref=${uniqueLinkId}`;
-
-                const currentUserName = document.getElementById('profile-name-display').textContent;
-                
-                // Store the link in the user's ReferralLinks sub-collection
-                await db.collection('users').doc(user.uid)
-                  .collection('ReferralLinks').doc(uniqueLinkId).set({
-                    linkId: uniqueLinkId,
-                    referrerUid: user.uid,        // Add this
-                    referrerName: currentUserName, // Add this
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    active: true
-                  });
+          // Show your loader
+          document.getElementById('loader-modal').style.display = 'flex';
         
-                // Display the link
-                const linkInput = document.getElementById('referral-link-input');
-                linkInput.value = referralLink;
-                
-                // Auto-copy to clipboard
-                linkInput.select();
-                document.execCommand('copy');
-                alert(translations[userLanguage]["Link copied to clipboard!"]);
+          try {
+            const uniqueLinkId = generateUniqueId(); // Now this function exists!
+            const referralLink = `${window.location.origin}/referral-signup.html?ref=${uniqueLinkId}`;
         
-            } catch (error) {
-                console.error("Error generating unique referral link:", error);
-                document.getElementById('error-message').textContent = "Failed to generate link.";
-            }
+            // IMPORTANT: Get the user's name to store it with the link
+            // This allows the signup page to see who the referrer is without hitting 
+            // the private 'users' collection (solving your permission error).
+            const currentUserName = document.getElementById('user-name').textContent;
+        
+            await db.collection('users').doc(user.uid)
+              .collection('ReferralLinks').doc(uniqueLinkId).set({
+                linkId: uniqueLinkId,
+                referrerUid: user.uid,
+                referrerName: currentUserName,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                active: true
+              });
+        
+            const linkInput = document.getElementById('referral-link-input');
+            linkInput.value = referralLink;
+            
+            // Copy to clipboard
+            linkInput.select();
+            document.execCommand('copy');
+            alert(translations[userLanguage]["Link copied to clipboard!"]);
+        
+          } catch (error) {
+            console.error("Error generating unique referral link:", error);
+            alert("Failed to generate link.");
+          } finally {
+            document.getElementById('loader-modal').style.display = 'none';
+          }
         });
 
         /**
