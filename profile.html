@@ -993,34 +993,45 @@
             });
         }
 
+        // Function to generate a random alphanumeric string
+        function generateRandomString(length = 8) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
         // --- Referral Link Logic ---
         document.getElementById('generate-link-button').addEventListener('click', async () => {
             const user = auth.currentUser;
-            if (!user) {
-                alert("You must be logged in to generate a referral link.");
-                return;
-            }
+            if (!user) return;
         
-            // 1. Get the base URL (e.g., https://estaco-add3c.firebaseapp.com/index.html)
-            // This ensures it works whether you are on a test domain or production.
-            const baseUrl = window.location.origin + '/referral-signup.html';
-            
-            // 2. Create the full link with the referral parameter
-            const referralLink = `${baseUrl}?ref=${user.uid}`;
-        
-            // 3. Display it in the input field
-            const linkInput = document.getElementById('referral-link-input');
-            linkInput.value = referralLink;
-        
-            // 4. Copy to clipboard automatically
             try {
-                await navigator.clipboard.writeText(referralLink);
+                const uniqueId = generateRandomString(10); // Create a unique string
+                const referralLink = `${window.location.origin}/referral-signup.html?ref=${uniqueId}`;
                 
-                // Use translation for "Link copied to clipboard!" if available, otherwise fallback
-                const msg = translations[userLanguage]?.["Link copied to clipboard!"] || "Link copied to clipboard!";
-                alert(msg);
-            } catch (err) {
-                console.error('Failed to copy: ', err);
+                // Store the link in the user's ReferralLinks sub-collection
+                await db.collection('users').doc(user.uid)
+                        .collection('ReferralLinks').doc(uniqueId).set({
+                    linkId: uniqueId,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    active: true // This allows for deactivation later
+                });
+        
+                // Display the link
+                const linkInput = document.getElementById('referral-link-input');
+                linkInput.value = referralLink;
+                
+                // Auto-copy to clipboard
+                linkInput.select();
+                document.execCommand('copy');
+                alert(translations[userLanguage]["Link copied to clipboard!"]);
+        
+            } catch (error) {
+                console.error("Error generating unique referral link:", error);
+                document.getElementById('error-message').textContent = "Failed to generate link.";
             }
         });
 
