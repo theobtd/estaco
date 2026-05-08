@@ -1009,16 +1009,20 @@
             if (!user) return;
         
             try {
-                const uniqueId = generateRandomString(10); // Create a unique string
-                const referralLink = `${window.location.origin}/referral-signup.html?ref=${uniqueId}`;
+                const uniqueLinkId = generateUniqueId();
+                const referralLink = `${window.location.origin}/referral-signup.html?ref=${uniqueLinkId}`;
+
+                const currentUserName = document.getElementById('profile-name-display').textContent;
                 
                 // Store the link in the user's ReferralLinks sub-collection
                 await db.collection('users').doc(user.uid)
-                        .collection('ReferralLinks').doc(uniqueId).set({
-                    linkId: uniqueId,
+                  .collection('ReferralLinks').doc(uniqueLinkId).set({
+                    linkId: uniqueLinkId,
+                    referrerUid: user.uid,        // Add this
+                    referrerName: currentUserName, // Add this
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    active: true // This allows for deactivation later
-                });
+                    active: true
+                  });
         
                 // Display the link
                 const linkInput = document.getElementById('referral-link-input');
