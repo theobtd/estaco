@@ -182,39 +182,31 @@
     let referrerName = "your friend";
     
     async function initializeReferral() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const refLinkId = urlParams.get('ref'); // Looking for ?ref=...
+      const urlParams = new URLSearchParams(window.location.search);
+      const refCode = urlParams.get('ref');
+      if (!refCode) return;
     
-        if (refLinkId) {
-            try {
-                // Search all 'ReferralLinks' sub-collections for this specific linkId
-                // This requires a Firestore Group Collection Query
-                const querySnapshot = await db.collectionGroup('ReferralLinks')
-                                              .where('linkId', '==', refLinkId)
-                                              .where('active', '==', true)
-                                              .get();
+      try {
+        const linkQuery = await db.collectionGroup('ReferralLinks')
+          .where('linkId', '==', refCode)
+          .where('active', '==', true)
+          .limit(1)
+          .get();
     
-                if (!querySnapshot.empty) {
-                    const linkDoc = querySnapshot.docs[0];
-                    // The parent of the link document is the 'ReferralLinks' collection, 
-                    // and its parent is the actual User document.
-                    referrerUid = linkDoc.ref.parent.parent.id;
+        if (!linkQuery.empty) {
+          const linkData = linkQuery.docs[0].data();
+          
+          // Use the data stored directly on the link!
+          referrerUid = linkData.referrerUid;
+          referrerName = linkData.referrerName;
     
-                    // Fetch the referrer's name for the UI
-                    const referrerDoc = await db.collection('users').doc(referrerUid).get();
-                    if (referrerDoc.exists) {
-                        referrerName = referrerDoc.data().name;
-                        document.getElementById('welcome-msg').textContent = 
-                            translations[userLanguage]["Join your friend on Estaco!"].replace("your friend", referrerName);
-                        document.getElementById('debug-referrer-uid').textContent = referrerUid;
-                    }
-                } else {
-                    document.getElementById('error-message').textContent = "This referral link is invalid or has been deactivated.";
-                }
-            } catch (error) {
-                console.error("Error identifying referrer:", error);
-            }
+          document.getElementById('welcome-msg').textContent = 
+            translations[userLanguage]["Join your friend on Estaco!"].replace("your friend", referrerName);
+          document.getElementById('debug-referrer-uid').textContent = referrerUid;
         }
+      } catch (error) {
+        console.error("Error identifying referrer:", error);
+      }
     }
     
     // Run the initialization
