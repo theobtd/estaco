@@ -343,6 +343,56 @@
     // Initialize on load
     updatePageLanguage(userLanguage);
 
+    /**
+     * Adds a post to a user's feed sub-collection.
+     */
+    async function addPostToUserFeed(userId, postId, timestamp) {
+      try {
+        const feedRef = db.collection(`users/${userId}/feed`).doc(postId);
+        await feedRef.set({
+          postId: postId,
+          postTimestamp: timestamp,
+        });
+      } catch (error) {
+        console.error('Error adding post to user feed:', error);
+      }
+    }
+    
+    /**
+     * Populates the feeds of two users with the last 10 posts from each other's OwnPosts.
+     */
+    async function populateFeedsWithExistingPosts(userIdA, userIdB) {
+      try {
+        // Get the last 10 posts from userIdA's OwnPosts (the Referrer)
+        const ownPostsSnapshotA = await db.collection(`users/${userIdA}/OwnPosts`)
+          .orderBy('postTimestamp', 'desc')
+          .limit(10)
+          .get();
+        const postsA = ownPostsSnapshotA.docs.map(doc => doc.data());
+    
+        // Add each post to userIdB's feed (the New User)
+        for (const post of postsA) {
+          await addPostToUserFeed(userIdB, post.postId, post.postTimestamp);
+        }
+    
+        // Get the last 10 posts from userIdB's OwnPosts (The New User - likely empty, but good for consistency)
+        const ownPostsSnapshotB = await db.collection(`users/${userIdB}/OwnPosts`)
+          .orderBy('postTimestamp', 'desc')
+          .limit(10)
+          .get();
+        const postsB = ownPostsSnapshotB.docs.map(doc => doc.data());
+    
+        // Add each post to userIdA's feed (The Referrer)
+        for (const post of postsB) {
+          await addPostToUserFeed(userIdA, post.postId, post.postTimestamp);
+        }
+    
+        console.log('Feeds populated with the last 10 posts from OwnPosts.');
+      } catch (error) {
+        console.error('Error populating feeds:', error);
+      }
+    }
+
     document.getElementById('signup-button').addEventListener('click', async () => {
       const name = document.getElementById('signup-name').value;
       const email = document.getElementById('signup-email').value;
@@ -404,14 +454,26 @@
             friends: firebase.firestore.FieldValue.arrayUnion({ uid: newUid, name: name }),
             friendsList: firebase.firestore.FieldValue.arrayUnion(newUid)
         }, { merge: true });
-
+    
         const newUserFriendsRef = db.collection('friends').doc(newUid);
         batch.set(newUserFriendsRef, {
             friends: firebase.firestore.FieldValue.arrayUnion({ uid: referrerUid, name: referrerName }),
             friendsList: firebase.firestore.FieldValue.arrayUnion(referrerUid)
         }, { merge: true });
     
+        // 1. Commit the friend connection to the database
         await batch.commit();
+        
+        // 2. NEW: Backfill the feeds! 
+        // We do this in a try/catch so that if the backfill fails for any reason, 
+        // it doesn't break the rest of the sign-up process.
+        try {
+          await populateFeedsWithExistingPosts(referrerUid, newUid);
+        } catch (backfillError) {
+          console.error("Failed to backfill feed during referral sign-up:", backfillError);
+        }
+    
+        // 3. Send verification
         await user.sendEmailVerification();
     
         alert("Account created and friend added! Check your email to verify.");
