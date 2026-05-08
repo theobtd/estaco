@@ -133,6 +133,15 @@
       <label for="signup-password-confirm" data-i18n="Confirm Password">Confirm Password</label>
       <input type="password" id="signup-password-confirm" data-i18n-placeholder="Confirm Password" placeholder="Confirm Password" required>
     </div>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="accept-terms" required>
+        <span data-i18n="I accept the terms of use">
+          I accept the <a href="TermsOfUse.html" target="_blank" data-i18n="terms of use">terms of use</a>
+        </span>
+      </label>
+    </div>
   
     <button id="signup-button" data-i18n="Sign Up & Connect">Sign Up & Connect</button>
   </div>
@@ -172,6 +181,9 @@
     // 1. Get Referrer UID from URL (?ref=UID)
     const urlParams = new URLSearchParams(window.location.search);
     const referrerUid = urlParams.get('ref');
+    
+    // NEW: We need to store the referrer's name globally so the batch write can use it later
+    let referrerName = "Your friend"; 
 
     // Display referrer name if possible
     if (referrerUid) {
@@ -179,10 +191,10 @@
     
       db.collection('usernames').doc(referrerUid).get().then(doc => {
         if (doc.exists) {
-          const name = doc.data().name;
+          referrerName = doc.data().name; // NEW: Save the name to the global variable
           const welcomeMsg = document.getElementById('welcome-msg');
           // Store the name in the attribute so translation function sees it
-          welcomeMsg.setAttribute('data-referrer-name', name);
+          welcomeMsg.setAttribute('data-referrer-name', referrerName);
           // Trigger a language update to refresh the banner text
           updatePageLanguage(userLanguage);
         }
@@ -221,6 +233,8 @@
         "Confirm Password": "Confirm Password",
         "Username cannot contain spaces.": "Username cannot contain spaces.",
         "You must accept the terms of use to proceed.": "You must accept the terms of use to proceed.",
+        "I accept the terms of use": "I accept the terms of use",
+        "terms of use": "terms of use"
       },
       French: {
         "Estaco": "Estaco",
@@ -248,6 +262,8 @@
         "Confirm Password": "Confirmer le mot de passe",
         "Username cannot contain spaces.": "Le nom d'utilisateur ne peut pas contenir d'espaces.",
         "You must accept the terms of use to proceed.": "Vous devez accepter les conditions d'utilisation pour continuer.",
+        "I accept the terms of use": "J'accepte les conditions d'utilisation",
+        "terms of use": "conditions d'utilisation"
       },
       Korean: {
         "Estaco": "에스타코",
@@ -275,6 +291,8 @@
         "Confirm Password": "비밀번호 확인",
         "Username cannot contain spaces.": "사용자 이름에 공백을 포함할 수 없습니다.",
         "You must accept the terms of use to proceed.": "이용 약관에 동의해야 진행할 수 있습니다.",
+        "I accept the terms of use": "이용 약관에 동의합니다",
+        "terms of use": "이용 약관"
       }
     };
     
@@ -285,7 +303,15 @@
       // 1. Update standard text
       document.querySelectorAll("[data-i18n]").forEach((element) => {
         const key = element.getAttribute("data-i18n");
-        if (lang[key]) element.textContent = lang[key];
+        if (lang[key]) {
+            // Check if element contains HTML (like the terms link)
+            if (element.innerHTML.includes('<a')) {
+                 // Skip raw text replacement if it has child nodes we want to preserve, or handle manually
+                 // For now, it's safer to only textContent if no children.
+            } else {
+                 element.textContent = lang[key];
+            }
+        }
       });
     
       // 2. Update placeholders
@@ -320,33 +346,33 @@
     document.getElementById('signup-button').addEventListener('click', async () => {
       const name = document.getElementById('signup-name').value;
       const email = document.getElementById('signup-email').value;
-      const emailConfirm = document.getElementById('signup-email-confirm').value; // Added
+      const emailConfirm = document.getElementById('signup-email-confirm').value; 
       const password = document.getElementById('signup-password').value;
-      const passwordConfirm = document.getElementById('signup-password-confirm').value; // Added
+      const passwordConfirm = document.getElementById('signup-password-confirm').value; 
       const language = document.getElementById('signup-language').value;
-      const acceptTerms = document.getElementById('accept-terms'); // Added
+      const acceptTerms = document.getElementById('accept-terms'); 
       const loader = document.getElementById('signup-loading');
       const errorMsg = document.getElementById('error-message');
     
-      // 1. Validation Logic (Matching index.html)
+      // 1. Validation Logic
       if (email !== emailConfirm) {
-        errorMsg.textContent = "Emails do not match.";
+        errorMsg.textContent = translations[userLanguage]["Emails do not match."];
         return;
       }
       if (password !== passwordConfirm) {
-        errorMsg.textContent = "Passwords do not match.";
+        errorMsg.textContent = translations[userLanguage]["Passwords do not match."];
         return;
       }
-      if (name.includes(" ")) { // Simple check for spaces to match isValidUsername
-        errorMsg.textContent = "Username cannot contain spaces.";
+      if (name.includes(" ")) { 
+        errorMsg.textContent = translations[userLanguage]["Username cannot contain spaces."];
         return;
       }
       if (!acceptTerms.checked) {
-        errorMsg.textContent = "You must accept the terms of use to proceed.";
+        errorMsg.textContent = translations[userLanguage]["You must accept the terms of use to proceed."];
         return;
       }
       if (!referrerUid) {
-        errorMsg.textContent = "Invalid referral link.";
+        errorMsg.textContent = translations[userLanguage]["Invalid referral link."];
         return;
       }
     
@@ -361,21 +387,29 @@
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
         const newUid = user.uid;
+        
+        // Update auth profile
+        await user.updateProfile({ displayName: name });
     
-        // Atomic Batch Write (Profile + Friendship)
+        // 4. Atomic Batch Write (Profile + Friendship)
         const batch = db.batch();
+        
+        // Write standard user data
         batch.set(db.collection('users').doc(newUid), { name, language, email, profilePictureURL: null });
         batch.set(db.collection('usernames').doc(newUid), { name });
     
-        batch.set(db.collection('users').doc(referrerUid).collection('friends').doc(newUid), { 
-          uid: newUid, 
-          addedAt: firebase.firestore.FieldValue.serverTimestamp() 
-        });
-    
-        batch.set(db.collection('users').doc(newUid).collection('friends').doc(referrerUid), { 
-          uid: referrerUid, 
-          addedAt: firebase.firestore.FieldValue.serverTimestamp() 
-        });
+        // NEW ALIGNED LOGIC: Write to the top-level 'friends' collection using arrayUnion
+        const referrerFriendsRef = db.collection('friends').doc(referrerUid);
+        batch.set(referrerFriendsRef, {
+            friends: firebase.firestore.FieldValue.arrayUnion({ uid: newUid, name: name }),
+            friendsList: firebase.firestore.FieldValue.arrayUnion(newUid)
+        }, { merge: true });
+
+        const newUserFriendsRef = db.collection('friends').doc(newUid);
+        batch.set(newUserFriendsRef, {
+            friends: firebase.firestore.FieldValue.arrayUnion({ uid: referrerUid, name: referrerName }),
+            friendsList: firebase.firestore.FieldValue.arrayUnion(referrerUid)
+        }, { merge: true });
     
         await batch.commit();
         await user.sendEmailVerification();
