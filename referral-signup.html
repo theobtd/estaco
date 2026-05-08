@@ -178,30 +178,47 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // 1. Get Referrer UID from URL (?ref=UID)
-    const urlParams = new URLSearchParams(window.location.search);
-    const referrerUid = urlParams.get('ref');
+    let referrerUid = null;
+    let referrerName = "your friend";
     
-    // NEW: We need to store the referrer's name globally so the batch write can use it later
-    let referrerName = "Your friend"; 
-
-    // Display referrer name if possible
-    if (referrerUid) {
-      document.getElementById('debug-referrer-uid').innerText = referrerUid;
+    async function initializeReferral() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refLinkId = urlParams.get('ref'); // Looking for ?ref=...
     
-      db.collection('usernames').doc(referrerUid).get().then(doc => {
-        if (doc.exists) {
-          referrerName = doc.data().name; // NEW: Save the name to the global variable
-          const welcomeMsg = document.getElementById('welcome-msg');
-          // Store the name in the attribute so translation function sees it
-          welcomeMsg.setAttribute('data-referrer-name', referrerName);
-          // Trigger a language update to refresh the banner text
-          updatePageLanguage(userLanguage);
+        if (refLinkId) {
+            try {
+                // Search all 'ReferralLinks' sub-collections for this specific linkId
+                // This requires a Firestore Group Collection Query
+                const querySnapshot = await db.collectionGroup('ReferralLinks')
+                                              .where('linkId', '==', refLinkId)
+                                              .where('active', '==', true)
+                                              .get();
+    
+                if (!querySnapshot.empty) {
+                    const linkDoc = querySnapshot.docs[0];
+                    // The parent of the link document is the 'ReferralLinks' collection, 
+                    // and its parent is the actual User document.
+                    referrerUid = linkDoc.ref.parent.parent.id;
+    
+                    // Fetch the referrer's name for the UI
+                    const referrerDoc = await db.collection('users').doc(referrerUid).get();
+                    if (referrerDoc.exists) {
+                        referrerName = referrerDoc.data().name;
+                        document.getElementById('welcome-msg').textContent = 
+                            translations[userLanguage]["Join your friend on Estaco!"].replace("your friend", referrerName);
+                        document.getElementById('debug-referrer-uid').textContent = referrerUid;
+                    }
+                } else {
+                    document.getElementById('error-message').textContent = "This referral link is invalid or has been deactivated.";
+                }
+            } catch (error) {
+                console.error("Error identifying referrer:", error);
+            }
         }
-      });
-    } else {
-      document.getElementById('debug-referrer-uid').innerText = "No ID found in URL";
     }
+    
+    // Run the initialization
+    initializeReferral();
 
     let userLanguage = "English";
 
