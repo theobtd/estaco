@@ -233,9 +233,15 @@
     }
     .media-container {
       position: relative;
-      margin-top: 10px;
       overflow: hidden;
       background-color: var(--estaco-surface);
+      
+      /* New properties to break out of the .post padding */
+      margin-top: 10px;
+      margin-bottom: 10px;
+      margin-left: -10px;
+      margin-right: -10px;
+      width: calc(100% + 20px); /* 100% width + 10px on the left + 10px on the right */
     }
     .media-horizontal,
     .media-vertical {
@@ -927,6 +933,20 @@
       color: var(--estaco-text-light);
       transition: background-color 0.2s;
       margin: 0; /* Remove any margins */
+    }
+
+    /* Edge-to-edge media on mobile screens */
+    @media (max-width: 600px) {
+      .feed-container {
+        padding-left: 0;
+        padding-right: 0;
+      }
+      
+      .post {
+        border-left: none;
+        border-right: none;
+        border-radius: 0; /* Looks cleaner when touching the screen edges */
+      }
     }
 
   </style>
