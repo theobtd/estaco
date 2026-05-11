@@ -462,42 +462,81 @@
           // Update auth profile
           await user.updateProfile({ displayName: name });
       
-          // 4. Atomic Batch Write (Profile + Friendship)
+          // 4. Check referrer's current friend count to determine the path
+          const referrerFriendsDoc = await db.collection('friends').doc(referrerUid).get();
+          const referrerFriendsCount = referrerFriendsDoc.exists ? (referrerFriendsDoc.data().friendsList?.length || 0) : 0;
+          const isReferrerFull = referrerFriendsCount >= 15;
+
+          // 5. Atomic Batch Write (Profile + Friendship/Request)
           const batch = db.batch();
           
           // Write standard user data
           batch.set(db.collection('users').doc(newUid), { name, language, email, profilePictureURL: null });
           batch.set(db.collection('usernames').doc(newUid), { name });
-      
-          // NEW ALIGNED LOGIC: Write to the top-level 'friends' collection using arrayUnion
-          const referrerFriendsRef = db.collection('friends').doc(referrerUid);
-          batch.set(referrerFriendsRef, {
-              friends: firebase.firestore.FieldValue.arrayUnion({ uid: newUid, name: name }),
-              friendsList: firebase.firestore.FieldValue.arrayUnion(newUid)
-          }, { merge: true });
-      
-          const newUserFriendsRef = db.collection('friends').doc(newUid);
-          batch.set(newUserFriendsRef, {
-              friends: firebase.firestore.FieldValue.arrayUnion({ uid: referrerUid, name: referrerName }),
-              friendsList: firebase.firestore.FieldValue.arrayUnion(referrerUid)
-          }, { merge: true });
-      
-          // 1. Commit the friend connection to the database
-          await batch.commit();
+
+          if (isReferrerFull) {
+              // PATH A: Referrer is at the cap. Send a friend request instead.
+              const requestRef = db.collection('friendRequests').doc();
+              batch.set(requestRef, {
+                  from: newUid,
+                  to: referrerUid,
+                  fromName: name,
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp()
+              });
+              
+              // Send a notification to the referrer so they know they got a request
+              const notificationRef = db.collection(`users/${referrerUid}/notifications`).doc();
+              batch.set(notificationRef, {
+                  type: "friend_request",
+                  requesterId: newUid,
+                  requesterName: name,
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                  message: `${name} sent you a friend request.`
+              });
+              
+              // Safely increment the referrer's notification badge counter
+              batch.update(db.collection('users').doc(referrerUid), { 
+                  NotificationsCounter: firebase.firestore.FieldValue.increment(1) 
+              });
+
+          } else {
+              // PATH B: Referrer has room. Auto-friend them.
+              const referrerFriendsRef = db.collection('friends').doc(referrerUid);
+              batch.set(referrerFriendsRef, {
+                  friends: firebase.firestore.FieldValue.arrayUnion({ uid: newUid, name: name }),
+                  friendsList: firebase.firestore.FieldValue.arrayUnion(newUid)
+              }, { merge: true });
           
-          // 2. NEW: Backfill the feeds! 
-          try {
-            await populateFeedsWithExistingPosts(referrerUid, newUid);
-          } catch (backfillError) {
-            console.error("Failed to backfill feed during referral sign-up:", backfillError);
+              const newUserFriendsRef = db.collection('friends').doc(newUid);
+              batch.set(newUserFriendsRef, {
+                  friends: firebase.firestore.FieldValue.arrayUnion({ uid: referrerUid, name: referrerName }),
+                  friendsList: firebase.firestore.FieldValue.arrayUnion(referrerUid)
+              }, { merge: true });
           }
       
-          // 3. Send verification
+          // 6. Commit the appropriate path to the database
+          await batch.commit();
+          
+          // 7. Backfill the feeds ONLY if they were actually friended
+          if (!isReferrerFull) {
+              try {
+                await populateFeedsWithExistingPosts(referrerUid, newUid);
+              } catch (backfillError) {
+                console.error("Failed to backfill feed during referral sign-up:", backfillError);
+              }
+          }
+      
+          // 8. Send verification
           await user.sendEmailVerification();
       
           loader.style.display = 'none'; // Hide loader before alerting
-          alert("Account created and friend added! Check your email to verify.");
-          window.location.href = 'index.html';
+          
+          // 9. Alert the user based on the path taken
+          if (isReferrerFull) {
+              alert("Account created! A friend request was sent to your referrer. Check your email to verify.");
+          } else {
+              alert("Account created and friend added! Check your email to verify.");
+          }
       
         } catch (error) {
           loader.style.display = 'none';
