@@ -144,6 +144,8 @@
     </div>
   
     <button id="signup-button" data-i18n="Sign Up & Connect">Sign Up & Connect</button>
+
+    <p id="error-message"></p>
   </div>
 
   <div id="signup-loading" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
@@ -243,7 +245,9 @@
         "Username cannot contain spaces.": "Username cannot contain spaces.",
         "You must accept the terms of use to proceed.": "You must accept the terms of use to proceed.",
         "I accept the terms of use": "I accept the terms of use",
-        "terms of use": "terms of use"
+        "terms of use": "terms of use",
+        "Username is already taken.": "Username is already taken.",
+        "Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>.": "Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>.",
       },
       French: {
         "Estaco": "Estaco",
@@ -272,7 +276,9 @@
         "Username cannot contain spaces.": "Le nom d'utilisateur ne peut pas contenir d'espaces.",
         "You must accept the terms of use to proceed.": "Vous devez accepter les conditions d'utilisation pour continuer.",
         "I accept the terms of use": "J'accepte les conditions d'utilisation",
-        "terms of use": "conditions d'utilisation"
+        "terms of use": "conditions d'utilisation",
+        "Username is already taken.": "Ce nom d'utilisateur est déjà pris.",
+        "Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>.": "Cet email est déjà utilisé. Si vous n'avez pas reçu d'email de vérification, veuillez <u><strong>vérifier votre dossier spam</strong></u>.",
       },
       Korean: {
         "Estaco": "에스타코",
@@ -301,7 +307,9 @@
         "Username cannot contain spaces.": "사용자 이름에 공백을 포함할 수 없습니다.",
         "You must accept the terms of use to proceed.": "이용 약관에 동의해야 진행할 수 있습니다.",
         "I accept the terms of use": "이용 약관에 동의합니다",
-        "terms of use": "이용 약관"
+        "terms of use": "이용 약관",
+        "Username is already taken.": "이 사용자 이름은 이미 사용 중입니다.",
+        "Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>.": "이 이메일은 이미 사용 중입니다. 확인 이메일을 받지 못하셨다면 <u><strong>스팸 폴더를 확인해 주세요</strong></u>.",
       }
     };
     
@@ -438,61 +446,71 @@
       loader.style.display = 'flex';
     
       try {
-        // 2. Check username uniqueness
-        const nameDoc = await db.collection('usernames').where('name', '==', name).get();
-        if (!nameDoc.empty) throw new Error("Username already taken.");
-    
-        // 3. Create user
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        const user = userCredential.user;
-        const newUid = user.uid;
-        
-        // Update auth profile
-        await user.updateProfile({ displayName: name });
-    
-        // 4. Atomic Batch Write (Profile + Friendship)
-        const batch = db.batch();
-        
-        // Write standard user data
-        batch.set(db.collection('users').doc(newUid), { name, language, email, profilePictureURL: null });
-        batch.set(db.collection('usernames').doc(newUid), { name });
-    
-        // NEW ALIGNED LOGIC: Write to the top-level 'friends' collection using arrayUnion
-        const referrerFriendsRef = db.collection('friends').doc(referrerUid);
-        batch.set(referrerFriendsRef, {
-            friends: firebase.firestore.FieldValue.arrayUnion({ uid: newUid, name: name }),
-            friendsList: firebase.firestore.FieldValue.arrayUnion(newUid)
-        }, { merge: true });
-    
-        const newUserFriendsRef = db.collection('friends').doc(newUid);
-        batch.set(newUserFriendsRef, {
-            friends: firebase.firestore.FieldValue.arrayUnion({ uid: referrerUid, name: referrerName }),
-            friendsList: firebase.firestore.FieldValue.arrayUnion(referrerUid)
-        }, { merge: true });
-    
-        // 1. Commit the friend connection to the database
-        await batch.commit();
-        
-        // 2. NEW: Backfill the feeds! 
-        // We do this in a try/catch so that if the backfill fails for any reason, 
-        // it doesn't break the rest of the sign-up process.
-        try {
-          await populateFeedsWithExistingPosts(referrerUid, newUid);
-        } catch (backfillError) {
-          console.error("Failed to backfill feed during referral sign-up:", backfillError);
+          // 2. Check username uniqueness
+          const nameDoc = await db.collection('usernames').where('name', '==', name).get();
+          if (!nameDoc.empty) {
+            loader.style.display = 'none';
+            errorMsg.textContent = translations[userLanguage]["Username is already taken."];
+            return;
+          }
+      
+          // 3. Create user
+          const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+          const user = userCredential.user;
+          const newUid = user.uid;
+          
+          // Update auth profile
+          await user.updateProfile({ displayName: name });
+      
+          // 4. Atomic Batch Write (Profile + Friendship)
+          const batch = db.batch();
+          
+          // Write standard user data
+          batch.set(db.collection('users').doc(newUid), { name, language, email, profilePictureURL: null });
+          batch.set(db.collection('usernames').doc(newUid), { name });
+      
+          // NEW ALIGNED LOGIC: Write to the top-level 'friends' collection using arrayUnion
+          const referrerFriendsRef = db.collection('friends').doc(referrerUid);
+          batch.set(referrerFriendsRef, {
+              friends: firebase.firestore.FieldValue.arrayUnion({ uid: newUid, name: name }),
+              friendsList: firebase.firestore.FieldValue.arrayUnion(newUid)
+          }, { merge: true });
+      
+          const newUserFriendsRef = db.collection('friends').doc(newUid);
+          batch.set(newUserFriendsRef, {
+              friends: firebase.firestore.FieldValue.arrayUnion({ uid: referrerUid, name: referrerName }),
+              friendsList: firebase.firestore.FieldValue.arrayUnion(referrerUid)
+          }, { merge: true });
+      
+          // 1. Commit the friend connection to the database
+          await batch.commit();
+          
+          // 2. NEW: Backfill the feeds! 
+          try {
+            await populateFeedsWithExistingPosts(referrerUid, newUid);
+          } catch (backfillError) {
+            console.error("Failed to backfill feed during referral sign-up:", backfillError);
+          }
+      
+          // 3. Send verification
+          await user.sendEmailVerification();
+      
+          loader.style.display = 'none'; // Hide loader before alerting
+          alert("Account created and friend added! Check your email to verify.");
+          window.location.href = 'index.html';
+      
+        } catch (error) {
+          loader.style.display = 'none';
+          
+          // Check if the error is the specific Firebase "email taken" error
+          if (error.code === 'auth/email-already-in-use') {
+            // We use innerHTML here because the translation contains HTML formatting tags
+            errorMsg.innerHTML = translations[userLanguage]["Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>."];
+          } else {
+            errorMsg.textContent = error.message;
+          }
         }
-    
-        // 3. Send verification
-        await user.sendEmailVerification();
-    
-        alert("Account created and friend added! Check your email to verify.");
-        window.location.href = 'index.html';
-    
-      } catch (error) {
-        loader.style.display = 'none';
-        errorMsg.textContent = error.message;
-      }
-    });
+      });
 
     // Password toggle logic
     document.querySelectorAll('.toggle-password').forEach(btn => {
