@@ -1100,19 +1100,56 @@
                 copyBtn.textContent = '📋';
                 copyBtn.title = 'Copy';
                 copyBtn.onclick = function() {
-                  navigator.clipboard.writeText(linkUrl).then(() => {
-                    this.textContent = '✅';
-                    this.style.backgroundColor = 'var(--estaco-success)';
-                    this.style.color = 'white';
-                    this.style.borderColor = 'var(--estaco-success)';
+                  const btn = this;
+                  
+                  // UI feedback function
+                  const showSuccess = () => {
+                    btn.textContent = '✅';
+                    btn.style.backgroundColor = 'var(--estaco-success)';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = 'var(--estaco-success)';
                     
                     setTimeout(() => {
-                      this.textContent = '📋';
-                      this.style.backgroundColor = 'var(--estaco-surface)';
-                      this.style.color = 'var(--estaco-text)';
-                      this.style.borderColor = 'var(--estaco-border)';
+                      btn.textContent = '📋';
+                      btn.style.backgroundColor = 'var(--estaco-surface)';
+                      btn.style.color = 'var(--estaco-text)';
+                      btn.style.borderColor = 'var(--estaco-border)';
                     }, 2000);
-                  });
+                  };
+
+                  // Bulletproof fallback using a temporary input field
+                  const fallbackCopy = (text) => {
+                    const tempInput = document.createElement("input");
+                    tempInput.value = text;
+                    // Move it off-screen to prevent layout jumps or scrolling
+                    tempInput.style.position = "absolute";
+                    tempInput.style.left = "-9999px";
+                    document.body.appendChild(tempInput);
+                    
+                    tempInput.select();
+                    tempInput.setSelectionRange(0, 99999); // Ensures it works on mobile
+                    
+                    try {
+                      document.execCommand("copy");
+                      showSuccess();
+                    } catch (err) {
+                      console.error("Fallback copy failed:", err);
+                    }
+                    
+                    document.body.removeChild(tempInput);
+                  };
+
+                  // Try modern clipboard API first, use fallback if it fails or is unavailable
+                  if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(linkUrl)
+                      .then(showSuccess)
+                      .catch(err => {
+                        console.warn("Modern clipboard failed, using fallback.", err);
+                        fallbackCopy(linkUrl);
+                      });
+                  } else {
+                    fallbackCopy(linkUrl);
+                  }
                 };
                 
                 // Delete Button
