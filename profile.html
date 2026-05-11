@@ -546,6 +546,48 @@
           background-color: white;
           color: var(--estaco-text-light);
         }
+        .existing-links-container {
+          margin-top: 16px;
+          border-top: 1px solid var(--estaco-border);
+          padding-top: 12px;
+        }
+        
+        .existing-links-container h4 {
+          margin: 0 0 10px 0;
+          font-size: 14px;
+          color: var(--estaco-primary);
+          font-weight: 600;
+        }
+        
+        .referral-link-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 12px;
+          background: var(--estaco-background);
+          border: 1px solid var(--estaco-border);
+          border-radius: 8px;
+          margin-bottom: 8px;
+          font-size: 12px;
+          color: var(--estaco-text-light);
+        }
+
+        .referral-link-item span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          margin-right: 10px;
+        }
+        
+        .referral-link-item button {
+          padding: 6px 10px;
+          background-color: var(--estaco-surface);
+          border: 1px solid var(--estaco-border);
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+          flex-shrink: 0;
+        }
         
     </style>
 
@@ -586,6 +628,8 @@
           
             <button id="generate-link-button" class="button" data-i18n="Generate Link">Generate Link</button>
           </div>
+          
+          <div id="existing-referral-links" class="existing-links-container" style="display: none;"></div>
         </div>
     
         <div class="section">
@@ -1016,6 +1060,67 @@
           return result;
         }
 
+        // --- Fetch and Display Existing Referral Links ---
+        function loadExistingReferralLinks(userId) {
+          const linksContainer = document.getElementById('existing-referral-links');
+          
+          db.collection('users').doc(userId).collection('ReferralLinks')
+            .orderBy('createdAt', 'desc')
+            .get()
+            .then((snapshot) => {
+              if (snapshot.empty) {
+                linksContainer.style.display = 'none';
+                return;
+              }
+              
+              linksContainer.style.display = 'block';
+              linksContainer.innerHTML = '<h4 data-i18n="Your Existing Links">Your Existing Links</h4>';
+              
+              snapshot.forEach((doc) => {
+                const data = doc.data();
+                const linkUrl = `${window.location.origin}/referral-signup.html?ref=${data.linkId}`;
+                
+                const linkDiv = document.createElement('div');
+                linkDiv.className = 'referral-link-item';
+                
+                const linkText = document.createElement('span');
+                linkText.textContent = linkUrl;
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.textContent = '📋';
+                copyBtn.title = 'Copy';
+                copyBtn.onclick = function() {
+                  // Use modern clipboard API for these dynamic items
+                  navigator.clipboard.writeText(linkUrl).then(() => {
+                    this.textContent = '✅';
+                    this.style.backgroundColor = 'var(--estaco-success)';
+                    this.style.color = 'white';
+                    this.style.borderColor = 'var(--estaco-success)';
+                    
+                    setTimeout(() => {
+                      this.textContent = '📋';
+                      this.style.backgroundColor = 'var(--estaco-surface)';
+                      this.style.color = 'var(--estaco-text)';
+                      this.style.borderColor = 'var(--estaco-border)';
+                    }, 2000);
+                  });
+                };
+                
+                linkDiv.appendChild(linkText);
+                linkDiv.appendChild(copyBtn);
+                linksContainer.appendChild(linkDiv);
+              });
+
+              // Apply translations to the new header if needed
+              if (typeof updatePageLanguage === 'function' && typeof userLanguage !== 'undefined') {
+                 updatePageLanguage(userLanguage);
+              }
+            })
+            .catch((error) => {
+              console.error("Error loading existing referral links:", error);
+            });
+        }
+
         // --- Referral Link Logic ---
         document.getElementById('generate-link-button').addEventListener('click', async () => {
           const user = auth.currentUser;
@@ -1044,6 +1149,9 @@
             // Reveal the copy button now that a link exists
             const copyBtn = document.getElementById('copy-link-button');
             copyBtn.style.display = 'block';
+
+            // Refresh the list to show the newly created link
+            loadExistingReferralLinks(user.uid);
         
           } catch (error) {
             console.error("Error generating unique referral link:", error);
@@ -1461,6 +1569,7 @@
             loadPendingRequests(user.uid);
             loadCurrentFriends(user.uid);
             loadBlockedUsers(user.uid);
+            loadExistingReferralLinks(user.uid);
           }
         });
 
