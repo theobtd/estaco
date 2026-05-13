@@ -484,12 +484,16 @@
       font-weight: 500;
     }
     
-    .comments-list {
+    .comments-wrapper {
       display: none;
     }
     
-    .comments-list.visible {
+    .comments-wrapper.visible {
       display: block;
+    }
+    
+    .comments-list {
+      display: block; /* The new wrapper handles the hiding now */
     }
 
     .comments-loading {
@@ -2342,23 +2346,25 @@
             </div>
           </div>
           <div class="comments-section">
-            <!-- NEW: Tag Preview Container -->
-            <div class="tag-preview" id="tag-preview-${post.id}" style="display: none;"></div>
+            <div class="comments-wrapper" id="comments-wrapper-${post.id}">
+              
+              <div class="tag-preview" id="tag-preview-${post.id}" style="display: none;"></div>
           
-            <!-- Existing Comment Form -->
-            <div class="comment-form">
-              <div
-                class="comment-input"
-                contenteditable="true"
-                data-placeholder="Write a comment..."
-                data-post-id="${post.id}"
-              ></div>
-              <button class="comment-button" data-post-id="${post.id}">Post</button>
+              <div class="comment-form">
+                <div
+                  class="comment-input"
+                  contenteditable="true"
+                  data-placeholder="Write a comment..."
+                  data-post-id="${post.id}"
+                ></div>
+                <button class="comment-button" data-post-id="${post.id}">Post</button>
+              </div>
+              <div class="comments-loading" id="comments-loading-${post.id}">
+                <div class="spinner"></div>
+              </div>
+              <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
+          
             </div>
-            <div class="comments-loading" id="comments-loading-${post.id}">
-              <div class="spinner"></div>
-            </div>
-            <div class="comments-list" id="comments-${post.id}" data-loaded="false"></div>
           </div>
         </div>
       `;
@@ -2639,11 +2645,11 @@
           addComment(postId, content);
           commentInput.innerHTML = ''; // Clear the contenteditable div
           // Automatically show the comments section after posting
-          const commentsList = document.getElementById(`comments-${postId}`);
+          const commentsWrapper = document.getElementById(`comments-wrapper-${postId}`); // Changed to wrapper
           const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
           if (seeCommentsButton) {
             updatePageLanguage(userLanguage);
-            commentsList.classList.add('visible');
+            commentsWrapper.classList.add('visible'); // Changed to wrapper
             loadComments(postId); // Load comments here
           }
         }
@@ -2654,16 +2660,15 @@
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('see-comments-button')) {
         const postId = e.target.getAttribute('data-post-id');
+        const commentsWrapper = document.getElementById(`comments-wrapper-${postId}`); // Changed this
         const commentsList = document.getElementById(`comments-${postId}`);
         const button = e.target;
     
         // Toggle visibility
-        if (commentsList.classList.contains('visible')) {
-          commentsList.classList.remove('visible');
-          // Removed button.textContent = translations... lines
+        if (commentsWrapper.classList.contains('visible')) {
+          commentsWrapper.classList.remove('visible');
         } else {
-          commentsList.classList.add('visible');
-          // Removed button.textContent = translations... lines
+          commentsWrapper.classList.add('visible');
         
           // Load comments if not already loaded
           if (commentsList.getAttribute('data-loaded') !== 'true') {
@@ -2803,18 +2808,18 @@
     
         const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
         if (postElement) {
-          const seeCommentsButton = postElement.querySelector('.see-comments-button');
+          const commentsWrapper = postElement.querySelector('.comments-wrapper'); // Added this
           const commentsList = postElement.querySelector('.comments-list');
-          const countBadge = postElement.querySelector(`#comment-count-${postId}`); 
+          const countBadge = postElement.querySelector(`#comment-count-${postId}`);
           
           // <-- Optimistically increment the counter
           if (countBadge) {
             const currentCount = parseInt(countBadge.textContent.replace(/[^0-9]/g, '') || '0', 10);
-            countBadge.textContent = currentCount + 1; // Removed the '()' formatting to match renderPosts
+            countBadge.textContent = currentCount + 1;
           }
           
-          if (commentsList) {
-            commentsList.classList.add('visible');
+          if (commentsWrapper) { // Changed to wrapper
+            commentsWrapper.classList.add('visible'); // Changed to wrapper
             await loadComments(postId); 
           }
           
