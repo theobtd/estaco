@@ -2315,7 +2315,7 @@
           </div>
         `;
 
-        console.log(`[Frontend - Post ${post.id}] Generated Button HTML:`, seeCommentsContainerHTML);
+        console.log(`[Frontend - Post ${post.id}] Generated Button HTML:`, seeCommentsButtonHTML);
     
       let postHTML = `
         <div class="post" data-post-id="${post.id}" data-author-id="${post.authorId}">
@@ -2334,7 +2334,7 @@
           <button class="translate-button" data-post-id="${post.id}" data-i18n="Translate">Translate</button>
           ${mediaHTML}
           <div class="post-actions">
-            ${seeCommentsContainerHTML}
+            ${seeCommentsButtonHTML}
             <div class="reactions">
               <button class="reaction-button ${likeClass}" data-post-id="${post.id}" data-reaction="like">👍${likeCountHTML}</button>
               <button class="reaction-button ${loveClass}" data-post-id="${post.id}" data-reaction="love">❤️${loveCountHTML}</button>
