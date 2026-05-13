@@ -2307,8 +2307,13 @@
         console.log(`[Frontend - Post ${post.id}] Received CommentsVisible flag as:`, post.CommentsVisible);
     
         // Only show the "See comments" button if CommentsVisible is true
-        const seeCommentsButtonHTML = `
-          <button class="see-comments-button" data-post-id="${post.id}" data-i18n="See comments" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
+        const seeCommentsContainerHTML = `
+          <div style="display: flex; align-items: center;">
+            <button class="see-comments-button" data-post-id="${post.id}" data-i18n="See comments" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
+            <span class="comment-count-badge" id="comment-count-${post.id}" style="${post.CommentsVisible && post.CommentsCounter > 0 ? '' : 'display: none;'} font-size: 14px; color: var(--estaco-text-light); margin-left: 8px;">
+              (${post.CommentsCounter || 0})
+            </span>
+          </div>
         `;
 
         console.log(`[Frontend - Post ${post.id}] Generated Button HTML:`, seeCommentsButtonHTML);
