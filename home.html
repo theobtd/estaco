@@ -2303,13 +2303,13 @@
 
         console.log(`[Frontend - Post ${post.id}] Received CommentsVisible flag as:`, post.CommentsVisible);
     
-        // Only show the chat bubble if CommentsVisible is true
+        // Button and counter are now ALWAYS visible. Defaults to 0.
         const seeCommentsButtonHTML = `
           <div style="display: flex; align-items: center;">
-            <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">
+            <button class="see-comments-button" data-post-id="${post.id}">
               💬
             </button>
-            <span class="comment-count-badge" id="comment-count-${post.id}" style="${post.CommentsVisible && post.CommentsCounter > 0 ? '' : 'display: none;'}">
+            <span class="comment-count-badge" id="comment-count-${post.id}">
               ${post.CommentsCounter || 0}
             </span>
           </div>
