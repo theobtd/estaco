@@ -464,15 +464,24 @@
     }
 
     .see-comments-button {
-      padding: 8px 12px;
-      background: var(--estaco-surface);
-      border: 1px solid var(--estaco-border);
-      border-radius: 4px;
+      background: none;
+      border: none;
+      padding: 5px;
       cursor: pointer;
+      font-size: 20px; /* Adjust size of the emoji */
+      color: var(--estaco-text-light);
+      transition: transform 0.2s, opacity 0.2s;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .comment-count-badge {
       font-size: 14px;
       color: var(--estaco-text-light);
-      margin-top: 8px;
-      transition: background-color 0.2s;
+      margin-left: 4px; /* Move closer to the icon */
+      font-weight: 500;
     }
     
     .comments-list {
@@ -921,18 +930,6 @@
       display: flex;
       gap: 8px; /* Adds spacing between reaction buttons */
       margin: 0; /* Remove any default margins */
-    }
-    
-    .see-comments-button {
-      padding: 8px 12px;
-      background: var(--estaco-surface);
-      border: 1px solid var(--estaco-border);
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      color: var(--estaco-text-light);
-      transition: background-color 0.2s;
-      margin: 0; /* Remove any margins */
     }
 
     /* Edge-to-edge media on mobile screens */
@@ -2306,12 +2303,14 @@
 
         console.log(`[Frontend - Post ${post.id}] Received CommentsVisible flag as:`, post.CommentsVisible);
     
-        // Only show the "See comments" button if CommentsVisible is true
-        const seeCommentsContainerHTML = `
+        // Only show the chat bubble if CommentsVisible is true
+        const seeCommentsButtonHTML = `
           <div style="display: flex; align-items: center;">
-            <button class="see-comments-button" data-post-id="${post.id}" data-i18n="See comments" style="${post.CommentsVisible ? '' : 'display: none;'}">See comments</button>
-            <span class="comment-count-badge" id="comment-count-${post.id}" style="${post.CommentsVisible && post.CommentsCounter > 0 ? '' : 'display: none;'} font-size: 14px; color: var(--estaco-text-light); margin-left: 8px;">
-              (${post.CommentsCounter || 0})
+            <button class="see-comments-button" data-post-id="${post.id}" style="${post.CommentsVisible ? '' : 'display: none;'}">
+              💬
+            </button>
+            <span class="comment-count-badge" id="comment-count-${post.id}" style="${post.CommentsVisible && post.CommentsCounter > 0 ? '' : 'display: none;'}">
+              ${post.CommentsCounter || 0}
             </span>
           </div>
         `;
@@ -2643,7 +2642,6 @@
           const commentsList = document.getElementById(`comments-${postId}`);
           const seeCommentsButton = document.querySelector(`.see-comments-button[data-post-id="${postId}"]`);
           if (seeCommentsButton) {
-            seeCommentsButton.textContent = translations[userLanguage]["Hide comments"];
             updatePageLanguage(userLanguage);
             commentsList.classList.add('visible');
             loadComments(postId); // Load comments here
@@ -2662,17 +2660,15 @@
         // Toggle visibility
         if (commentsList.classList.contains('visible')) {
           commentsList.classList.remove('visible');
-          button.textContent = translations[userLanguage]["See comments"];
-          button.setAttribute('data-i18n', 'See comments');
+          // Removed button.textContent = translations... lines
         } else {
           commentsList.classList.add('visible');
-          button.textContent = translations[userLanguage]["Hide comments"];
-          updatePageLanguage(userLanguage);
-          button.setAttribute('data-i18n', 'Hide comments');
+          // Removed button.textContent = translations... lines
+        
           // Load comments if not already loaded
           if (commentsList.getAttribute('data-loaded') !== 'true') {
             const commentsLoading = document.getElementById(`comments-loading-${postId}`);
-            commentsLoading.style.display = 'block';
+            if (commentsLoading) commentsLoading.style.display = 'block';
             loadComments(postId);
           }
         }
