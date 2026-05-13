@@ -2809,8 +2809,16 @@
         if (postElement) {
           const seeCommentsButton = postElement.querySelector('.see-comments-button');
           const commentsList = postElement.querySelector('.comments-list');
+          const countBadge = postElement.querySelector(`#comment-count-${postId}`); // <-- Get the badge
           
           if (seeCommentsButton) seeCommentsButton.style.display = 'block';
+
+          // <-- Optimistically increment the counter
+          if (countBadge) {
+            const currentCount = parseInt(countBadge.textContent.replace(/[^0-9]/g, '') || '0', 10);
+            countBadge.textContent = `(${currentCount + 1})`;
+            countBadge.style.display = 'inline';
+          }
           
           if (commentsList) {
             commentsList.classList.add('visible');
