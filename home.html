@@ -2276,27 +2276,18 @@
     });
 
 
-    let feedNextPageToken = null; 
+    let lastVisiblePost = null; // Replaced feedNextPageToken
     const postLimit = 3;
     let isFirstLoad = true;
-
-    async function isFriendWithCurrentUser(authorId) {
-        const user = auth.currentUser;
-        if (!user) return false;
-    
-        const friendsDoc = await db.collection('friends').doc(user.uid).get();
-        const friends = friendsDoc.data()?.friends || [];
-        return friends.some(friend => friend.uid === authorId);
-    }
+    let hasMorePosts = true; // Added flag to track end of feed
 
     // Keep track of the observer globally
     let feedObserver = null;
     
     function setupIntersectionObserver() {
-      console.log("[Observer Setup] Fired. feedNextPageToken is:", feedNextPageToken);
-      // If there is no nextPageToken, we've reached the end of the feed.
-      if (!feedNextPageToken) {
-        console.log("[Observer Setup] Aborted: feedNextPageToken is null or empty. (End of feed reached?)");
+      // If there are no more posts, stop observing
+      if (!hasMorePosts) {
+        if (feedObserver) feedObserver.disconnect();
         return;
       }
     
@@ -2309,11 +2300,8 @@
         };
     
         feedObserver = new IntersectionObserver((entries) => {
-          // Loop through entries to guarantee we catch the intersection
           entries.forEach(entry => {
-            console.log(`[Observer Trigger] Element intersecting: ${entry.isIntersecting} | isLoading: ${isLoading}`);
             if (entry.isIntersecting && !isLoading) {
-              console.log("[Observer Trigger] Conditions met! Calling loadPosts()...");
               loadPosts(); 
             }
           });
@@ -2327,20 +2315,12 @@
       const posts = document.querySelectorAll('.post');
       if (posts.length > 0) {
         const lastPost = posts[posts.length - 1];
-        console.log("[Observer Setup] Attaching observer to post ID:", lastPost.getAttribute('data-post-id'));
         feedObserver.observe(lastPost);
-      } else {
-        console.log("[Observer Setup] Warning: No .post elements found in the DOM to observe.");
       }
     }
     
     async function loadPosts() {
-      console.log("[LoadPosts] Fired. Current state -> isLoading:", isLoading, "| feedNextPageToken:", feedNextPageToken);
-      
-      if (isLoading) {
-        console.log("[LoadPosts] Aborted: isLoading is currently true.");
-        return;
-      }
+      if (isLoading || !hasMorePosts) return;
       isLoading = true;
       
       const user = auth.currentUser;
@@ -2350,72 +2330,89 @@
       }
     
       try {
-        const idToken = await user.getIdToken();
-        let workerUrl = `https://estaco-feed.tdgbertrand.workers.dev/?limit=${postLimit}`;
-    
-        if (feedNextPageToken) {
-          workerUrl += `&pageToken=${encodeURIComponent(feedNextPageToken)}`;
+        const feedRef = db.collection(`users/${user.uid}/feed`);
+        let query = feedRef.orderBy('postTimestamp', 'desc');
+
+        if (lastVisiblePost) {
+          // Use the document snapshot directly for safer pagination
+          query = query.startAfter(lastVisiblePost);
         }
-    
-        console.log("[LoadPosts] Fetching from Worker URL:", workerUrl);
-    
-        const response = await fetch(workerUrl, {
-          method: 'GET',
-          headers: { 'Authorization': `Bearer ${idToken}` }
-        });
-    
-        if (!response.ok) throw new Error('Failed to fetch feed from worker');
-    
-        const data = await response.json();
-    
-        console.log("[LoadPosts] Raw data received from Worker:", data);
-    
-        // --- THE FIX IS HERE ---
-        if (!data.posts || data.posts.length === 0) {
-          if (data.nextPageToken) {
-            // GHOST PAGE: We found deleted posts, but there's more feed to check.
-            console.log("[LoadPosts] Hit a 'ghost page' (deleted posts). Fetching next page automatically...");
-            feedNextPageToken = data.nextPageToken;
-            isLoading = false; 
-            return loadPosts(); // Recursively call immediately to get the next valid batch
+
+        query = query.limit(postLimit);
+        const feedSnapshot = await query.get();
+
+        if (feedSnapshot.empty) {
+          hasMorePosts = false;
+          const feedEl = document.getElementById('feed');
+          if (!feedEl.querySelector('.post')) {
+            feedEl.innerHTML = `<p data-i18n="No posts yet. Create one!">${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
           } else {
-            // ACTUAL END OF FEED
-            const feed = document.getElementById('feed');
-            if (!feed.querySelector('.post')) {
-              feed.innerHTML = `<p data-i18n="No posts yet. Create one!">${translations[userLanguage]["No posts yet. Create one!"]}</p>`;
-            } else {
-              if (!document.getElementById('no-more-posts')) {
-                feed.insertAdjacentHTML('beforeend', `<p id="no-more-posts" data-i18n="No more posts to load.">${translations[userLanguage]["No more posts to load."]}</p>`);
-              }
+            if (!document.getElementById('no-more-posts')) {
+              feedEl.insertAdjacentHTML('beforeend', `<p id="no-more-posts" data-i18n="No more posts to load.">${translations[userLanguage]["No more posts to load."]}</p>`);
             }
-            console.log("[LoadPosts] No posts returned and no token. Reached absolute end of feed.");
-            isLoading = false;
-            return;
           }
+          isLoading = false;
+          return;
         }
+
+        // Update the pagination cursor
+        lastVisiblePost = feedSnapshot.docs[feedSnapshot.docs.length - 1];
+
+        // Extract Post IDs and Feed-specific data (CommentsCounter)
+        const postIds = [];
+        const feedDataMap = {};
+        
+        feedSnapshot.docs.forEach(doc => {
+           const data = doc.data();
+           postIds.push(data.postId);
+           feedDataMap[data.postId] = {
+               postTimestamp: data.postTimestamp,
+               CommentsCounter: data.CommentsCounter || 0
+           };
+        });
+
+        // Fetch the actual post documents in a single query
+        // Note: 'in' queries support a maximum of 10 items, which is safe since postLimit is 3.
+        const postsSnapshot = await db.collection('posts')
+            .where(firebase.firestore.FieldPath.documentId(), 'in', postIds)
+            .get();
+
+        const postsData = [];
+        postsSnapshot.forEach((doc) => {
+            const post = doc.data();
+            post.id = doc.id;
+            
+            // Map the counter and timestamp from the feed index document to the post
+            const feedInfo = feedDataMap[post.id];
+            if (feedInfo) {
+                post.postTimestamp = feedInfo.postTimestamp;
+                post.CommentsCounter = feedInfo.CommentsCounter;
+            }
+            postsData.push(post);
+        });
+
+        // Sort postsData to match the chronological feed order
+        postsData.sort((a, b) => b.postTimestamp - a.postTimestamp);
     
         // 1. Render new posts first
-        await renderPosts(data.posts);
+        await renderPosts(postsData);
     
-        // 2. Safely update the page token
-        feedNextPageToken = data.nextPageToken || data.pageToken || data.cursor || data.lastVisible || null;
-        console.log("[LoadPosts] Extracted new feedNextPageToken:", feedNextPageToken);
-    
-        // 3. Now that the DOM and Token are updated, set up the observer
+        // 2. Now that the DOM is updated, set up the observer
         setupIntersectionObserver();
     
         isLoading = false;
-        console.log("[LoadPosts] Finished. isLoading reset to false.");
+        isFirstLoad = false;
       } catch (error) {
-        console.error("[LoadPosts] Error:", error);
+        console.error("Error loading feed:", error);
         errorMessage.textContent = "Error loading feed. Please try again.";
         isLoading = false;
       }
     }
 
     async function forceReloadFeed() {
-        isFirstLoad = false;
-        feedNextPageToken = null; // FIX: Reset the token so it fetches from the beginning
+        isFirstLoad = true;
+        lastVisiblePost = null; 
+        hasMorePosts = true;
         feed.innerHTML = '';
         await loadPosts();
     }
