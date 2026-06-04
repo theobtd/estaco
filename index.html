@@ -338,11 +338,17 @@
 
     var _fbKey = 'firebase:authUser:AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0:[DEFAULT]';
 
+    let isSigningUp = false;
+
     auth.onAuthStateChanged((user) => {
       if (user) {
+        // ADD THIS BLOCK to stop the redirect during signup
+        if (isSigningUp) {
+          return; 
+        }
+        
         var stored = localStorage.getItem(_fbKey);
         if (stored) saveAuthBackup(stored);
-        // Also handle root path '/' — Median app opens at estaco.org/ not estaco.org/index.html
         var _path = window.location.pathname;
         if (_path === '/' || _path === '' || _path.endsWith('index.html')) {
           window.location.href = 'home.html';
@@ -406,6 +412,8 @@
     
       // Show loader
       signupLoading.style.display = 'flex';
+
+      isSigningUp = true;
     
       // Check if the username already exists in the usernames collection
       db.collection('usernames')
@@ -447,38 +455,42 @@
               return auth.signOut();
             })
             .then(() => {
-              const successModal = document.getElementById('success-modal');
-              const successMessage = document.getElementById('success-message');
-              const closeModal = document.getElementById('close-modal');
+                      const successModal = document.getElementById('success-modal');
+                      const successMessage = document.getElementById('success-message');
+                      const closeModal = document.getElementById('close-modal');
+                    
+                      // Update the message per your request
+                      successMessage.innerHTML = "Please sign in and verify your email to access the home feed.";
+                      successModal.style.display = 'flex';
+                    
+                      closeModal.onclick = () => {
+                        // Sign the user out BEFORE dismissing the modal
+                        auth.signOut().then(() => {
+                          isSigningUp = false; // Reset the flag
+                          
+                          successModal.style.display = 'none';
+                          document.getElementById('signup-name').value = '';
+                          document.getElementById('signup-email').value = '';
+                          document.getElementById('signup-email-confirm').value = '';
+                          document.getElementById('signup-password').value = '';
+                          document.getElementById('signup-password-confirm').value = '';
+                          if(document.getElementById('accept-terms')) document.getElementById('accept-terms').checked = false;
             
-              // 2. Update the message to let them know they need to sign in manually
-              successMessage.textContent = "Account created successfully! Please sign in with your new credentials.";
-              successModal.style.display = 'flex';
-            
-              closeModal.onclick = () => {
-                successModal.style.display = 'none';
-                
-                // 3. Clear all sign-up inputs
-                document.getElementById('signup-name').value = '';
-                document.getElementById('signup-email').value = '';
-                document.getElementById('signup-email-confirm').value = '';
-                document.getElementById('signup-password').value = '';
-                document.getElementById('signup-password-confirm').value = '';
-                if(document.getElementById('accept-terms')) document.getElementById('accept-terms').checked = false;
-            
-                // 4. Reset views: Hide signup form, hide loading spinner, show signin form
-                signupForm.style.display = 'none';
-                signupLoading.style.display = 'none';
-                signinForm.style.display = 'block'; 
-              };
-            })
-            .catch((error) => {
-              signupLoading.style.display = 'none';
-              if (error.code === 'auth/email-already-in-use') {
-                errorMessage.innerHTML = translations[userLanguage]["Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>."];              } else {
-                errorMessage.textContent = error.message;
-              }
-            });
+                          signupForm.style.display = 'none';
+                          signupLoading.style.display = 'none';
+                          signinForm.style.display = 'block'; // Force them to the sign-in view
+                        });
+                      };
+                    })
+                    .catch((error) => {
+                      isSigningUp = false; // Reset flag on error
+                      signupLoading.style.display = 'none';
+                      if (error.code === 'auth/email-already-in-use') {
+                        errorMessage.innerHTML = translations[userLanguage]["Email already in use. If you didn't receive a verification email, please <u><strong>check your spam folder</strong></u>."];              
+                      } else {
+                        errorMessage.textContent = error.message;
+                      }
+                    });
         })
         .catch((error) => {
           signupLoading.style.display = 'none';
