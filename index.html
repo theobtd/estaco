@@ -443,21 +443,33 @@
               return user.sendEmailVerification();
             })
             .then(() => {
+              // 1. Immediately sign out the user so they aren't auto-logged in by onAuthStateChanged
+              return auth.signOut();
+            })
+            .then(() => {
               const successModal = document.getElementById('success-modal');
               const successMessage = document.getElementById('success-message');
               const closeModal = document.getElementById('close-modal');
             
-              successMessage.innerHTML = translations[userLanguage]["Account created! Please check your email for a verification link. If you don't see it, <u><strong>check your spam folder</strong></u>."];
+              // 2. Update the message to let them know they need to sign in manually
+              successMessage.textContent = "Account created successfully! Please sign in with your new credentials.";
               successModal.style.display = 'flex';
             
               closeModal.onclick = () => {
                 successModal.style.display = 'none';
+                
+                // 3. Clear all sign-up inputs
                 document.getElementById('signup-name').value = '';
                 document.getElementById('signup-email').value = '';
                 document.getElementById('signup-email-confirm').value = '';
                 document.getElementById('signup-password').value = '';
+                document.getElementById('signup-password-confirm').value = '';
+                if(document.getElementById('accept-terms')) document.getElementById('accept-terms').checked = false;
+            
+                // 4. Reset views: Hide signup form, hide loading spinner, show signin form
                 signupForm.style.display = 'none';
                 signupLoading.style.display = 'none';
+                signinForm.style.display = 'block'; 
               };
             })
             .catch((error) => {
