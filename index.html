@@ -339,7 +339,7 @@
     var _fbKey = 'firebase:authUser:AIzaSyB1txjASKb_6VPhKBpQh_Y3hoPHsNWwZ_0:[DEFAULT]';
 
     auth.onAuthStateChanged((user) => {
-      if (user && user.emailVerified) {
+      if (user) {
         var stored = localStorage.getItem(_fbKey);
         if (stored) saveAuthBackup(stored);
         // Also handle root path '/' — Median app opens at estaco.org/ not estaco.org/index.html
@@ -479,20 +479,15 @@
       const email = document.getElementById('signin-email').value;
       const password = document.getElementById('signin-password').value;
       const signinErrorMessage = document.querySelector('#signin-form #error-message');
-
+    
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => auth.signInWithEmailAndPassword(email, password))
         .then((userCredential) => {
-          const user = userCredential.user;
-          if (user.emailVerified) {
-            var fbKey = 'firebase:authUser:' + firebaseConfig.apiKey + ':[DEFAULT]';
-            var stored = localStorage.getItem(fbKey);
-            if (stored) saveAuthBackup(stored);
-            window.location.href = 'home.html';
-          } else {
-            alert(translations[userLanguage]["Please verify your email before signing in. A verification link has been sent to your email address."]);
-            auth.signOut();
-          }
+          // Logic directly processes login regardless of verification status
+          var fbKey = 'firebase:authUser:' + firebaseConfig.apiKey + ':[DEFAULT]';
+          var stored = localStorage.getItem(fbKey);
+          if (stored) saveAuthBackup(stored);
+          window.location.href = 'home.html';
         })
         .catch((error) => {
           signinErrorMessage.textContent = error.message;
