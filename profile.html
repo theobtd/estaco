@@ -660,23 +660,25 @@
             </div>
 
         <!-- Referral Section -->
-        <div class="referral-container">
+        <div class="section">
           <div class="section-header" onclick="toggleSection('referral-content', this)">
-            <h3 style="font-size:18px; color:var(--estaco-primary);" data-i18n="Referral Link">Referral Link</h3>
+            <h3 data-i18n="Referral Link">Referral Link</h3>
             <span class="toggle-icon">▼</span>
           </div>
           
           <div id="referral-content" class="section-content">
-            <p data-i18n="Invite-description">Invite your friends to join Estaco and automatically connect with them.</p>
-            <div class="referral-input-group">
-              <input type="text" id="referral-link-input" readonly placeholder="Link will appear here...">
-            
-              <button id="copy-link-button" class="button" style="display: none; padding: 10px 15px; background-color: var(--estaco-surface); border: 1px solid var(--estaco-border); color: var(--estaco-text); transition: all 0.2s;" title="Copy">📋</button>
-            
-              <button id="generate-link-button" class="button" data-i18n="Generate Link">Generate Link</button>
+            <div class="referral-container">
+              <p data-i18n="Invite-description">Invite your friends to join Estaco and automatically connect with them.</p>
+              <div class="referral-input-group">
+                <input type="text" id="referral-link-input" readonly placeholder="Link will appear here...">
+              
+                <button id="copy-link-button" class="button" style="display: none; padding: 10px 15px; background-color: var(--estaco-surface); border: 1px solid var(--estaco-border); color: var(--estaco-text); transition: all 0.2s;" title="Copy">📋</button>
+              
+                <button id="generate-link-button" class="button" data-i18n="Generate Link">Generate Link</button>
+              </div>
+              
+              <div id="existing-referral-links" class="existing-links-container" style="display: none;"></div>
             </div>
-            
-            <div id="existing-referral-links" class="existing-links-container" style="display: none;"></div>
           </div>
         </div>
     
