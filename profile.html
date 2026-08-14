@@ -908,7 +908,7 @@
                     console.log('Pending requests snapshot:', snapshot.docs.map(d => d.data()));
                     pendingFriendRequestsDiv.innerHTML = '';
                     const renderedRequests = new Set();
-                    const promises = [];
+                    
                     snapshot.forEach(doc => {
                         const request = doc.data();
                         if (renderedRequests.has(request.from)) {
@@ -917,28 +917,28 @@
                         }
                         renderedRequests.add(request.from);
         
-                        const promise = db.collection('users').doc(request.from).get()
-                            .then(userDoc => {
-                                const fromName = userDoc.data().name;
-                                const requestDiv = document.createElement('div');
-                                requestDiv.className = 'pending-friend';
-                                requestDiv.innerText = fromName;
-                                requestDiv.setAttribute('data-from-id', request.from);
-                                const acceptButton = document.createElement('button');
-                                acceptButton.className = 'friend-button';
-                                acceptButton.innerText = 'Accept';
-                                acceptButton.onclick = () => acceptFriendRequest(request.from, userId);
-                                requestDiv.appendChild(acceptButton);
-                                const rejectButton = document.createElement('button');
-                                rejectButton.className = 'friend-button remove';
-                                rejectButton.innerText = 'Reject';
-                                rejectButton.onclick = () => rejectFriendRequest(request.from, userId);
-                                requestDiv.appendChild(rejectButton);
-                                pendingFriendRequestsDiv.appendChild(requestDiv);
-                            });
-                        promises.push(promise);
+                        // USE THE NAME SAVED DIRECTLY IN THE REQUEST
+                        const fromName = request.fromName || "Unknown User"; 
+                        
+                        const requestDiv = document.createElement('div');
+                        requestDiv.className = 'pending-friend';
+                        requestDiv.innerText = fromName;
+                        requestDiv.setAttribute('data-from-id', request.from);
+                        
+                        const acceptButton = document.createElement('button');
+                        acceptButton.className = 'friend-button';
+                        acceptButton.innerText = 'Accept';
+                        acceptButton.onclick = () => acceptFriendRequest(request.from, userId);
+                        requestDiv.appendChild(acceptButton);
+                        
+                        const rejectButton = document.createElement('button');
+                        rejectButton.className = 'friend-button remove';
+                        rejectButton.innerText = 'Reject';
+                        rejectButton.onclick = () => rejectFriendRequest(request.from, userId);
+                        requestDiv.appendChild(rejectButton);
+                        
+                        pendingFriendRequestsDiv.appendChild(requestDiv);
                     });
-                    return Promise.all(promises);
                 })
                 .finally(() => {
                     isLoadingPendingRequests = false;
