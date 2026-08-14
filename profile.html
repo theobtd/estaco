@@ -1718,11 +1718,13 @@
             loadCurrentFriends(user.uid);
             loadBlockedUsers(user.uid);
             loadExistingReferralLinks(user.uid);
+            initializeUserOwnPosts(user.uid);
           }
 
 
             let lastVisibleOwnPost = null;
             let hasMoreOwnPosts = true;
+            let isLoading = false;
             
             // Call this inside your auth state change block after the rest of the profile loads:
             async function initializeUserOwnPosts(userId) {
