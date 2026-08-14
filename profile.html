@@ -593,6 +593,43 @@
           gap: 6px;
           flex-shrink: 0;
         }
+        /* Toggle Section Styles */
+        .section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          cursor: pointer;
+          border-bottom: 1px solid var(--estaco-border);
+          padding-bottom: 8px;
+          margin-bottom: 12px;
+          user-select: none;
+        }
+
+        /* Override existing h3 styles when inside a toggle header */
+        .section-header h3 {
+          margin: 0 !important;
+          border-bottom: none !important;
+          padding-bottom: 0 !important;
+        }
+    
+        .section-content {
+          display: none; /* Hidden by default */
+          width: 100%;
+        }
+    
+        .section-content.open {
+          display: block; /* Shows content when toggled */
+        }
+    
+        .toggle-icon {
+          transition: transform 0.3s ease;
+          color: var(--estaco-primary);
+          font-size: 14px;
+        }
+    
+        .toggle-icon.open {
+          transform: rotate(180deg);
+        }
         
     </style>
 
@@ -624,38 +661,56 @@
 
         <!-- Referral Section -->
         <div class="referral-container">
-          <h3 style="margin-top:0; font-size:18px; color:var(--estaco-primary);" data-i18n="Referral Link">Referral Link</h3>
-          <p data-i18n="Invite-description">Invite your friends to join Estaco and automatically connect with them.</p>
-          <div class="referral-input-group">
-            <input type="text" id="referral-link-input" readonly placeholder="Link will appear here...">
-          
-            <button id="copy-link-button" class="button" style="display: none; padding: 10px 15px; background-color: var(--estaco-surface); border: 1px solid var(--estaco-border); color: var(--estaco-text); transition: all 0.2s;" title="Copy">📋</button>
-          
-            <button id="generate-link-button" class="button" data-i18n="Generate Link">Generate Link</button>
+          <div class="section-header" onclick="toggleSection('referral-content', this)">
+            <h3 style="font-size:18px; color:var(--estaco-primary);" data-i18n="Referral Link">Referral Link</h3>
+            <span class="toggle-icon">▼</span>
           </div>
           
-          <div id="existing-referral-links" class="existing-links-container" style="display: none;"></div>
+          <div id="referral-content" class="section-content">
+            <p data-i18n="Invite-description">Invite your friends to join Estaco and automatically connect with them.</p>
+            <div class="referral-input-group">
+              <input type="text" id="referral-link-input" readonly placeholder="Link will appear here...">
+            
+              <button id="copy-link-button" class="button" style="display: none; padding: 10px 15px; background-color: var(--estaco-surface); border: 1px solid var(--estaco-border); color: var(--estaco-text); transition: all 0.2s;" title="Copy">📋</button>
+            
+              <button id="generate-link-button" class="button" data-i18n="Generate Link">Generate Link</button>
+            </div>
+            
+            <div id="existing-referral-links" class="existing-links-container" style="display: none;"></div>
+          </div>
         </div>
     
+        <!-- Platform Rules Section -->
         <div class="section">
-          <h3 data-i18n="Platform Rules">Platform Rules</h3>
-          <div class="rules-container">
-            <p data-i18n="Max 15 friends"><strong>1.</strong> Max 15 friends.</p>
-            <p data-i18n="Posts visibility"><strong>2.</strong> Your posts are not visible to users who are not your friends.</p>
-            <p data-i18n="Comments visibility"><strong>3.</strong> Your comments and reactions are not visible to users who are not your friends.</p>
-            <div class="example">
-              <p data-i18n="Visibility example"><strong>Example:</strong> John is friends with Mike but not with Jenny. Mike is friends with Jenny. If Jenny comments on Mike's post, John will see Mike's post but not Jenny's comment.</p>
+          <div class="section-header" onclick="toggleSection('rules-content', this)">
+            <h3 data-i18n="Platform Rules">Platform Rules</h3>
+            <span class="toggle-icon">▼</span>
+          </div>
+
+          <div id="rules-content" class="section-content">
+            <div class="rules-container">
+              <p data-i18n="Max 15 friends"><strong>1.</strong> Max 15 friends.</p>
+              <p data-i18n="Posts visibility"><strong>2.</strong> Your posts are not visible to users who are not your friends.</p>
+              <p data-i18n="Comments visibility"><strong>3.</strong> Your comments and reactions are not visible to users who are not your friends.</p>
+              <div class="example">
+                <p data-i18n="Visibility example"><strong>Example:</strong> John is friends with Mike but not with Jenny. Mike is friends with Jenny. If Jenny comments on Mike's post, John will see Mike's post but not Jenny's comment.</p>
+              </div>
             </div>
           </div>
         </div>
     
       <!-- Profile Content -->
-      <div class="profile-content">
         <div class="section">
-          <h3 data-i18n="Friend System">Friend System</h3>
-          <div class="search-friend">
-            <input type="text" id="search-friend" placeholder="Search by name..." data-i18n="Search by name...">
-            <button id="send-friend-request" class="button" data-i18n="Send Friend Request">Send Friend Request</button>
+          <div class="section-header" onclick="toggleSection('friend-system-content', this)">
+            <h3 data-i18n="Friend System">Friend System</h3>
+            <span class="toggle-icon">▼</span>
+          </div>
+
+          <div id="friend-system-content" class="section-content">
+            <div class="search-friend">
+              <input type="text" id="search-friend" placeholder="Search by name..." data-i18n="Search by name...">
+              <button id="send-friend-request" class="button" data-i18n="Send Friend Request">Send Friend Request</button>
+            </div>
           </div>
         </div>
         
@@ -1700,6 +1755,16 @@
               ${firstLetter}
             </div>
           `;
+        }
+
+        // Function to toggle profile page sections
+        function toggleSection(contentId, headerElement) {
+            const content = document.getElementById(contentId);
+            const icon = headerElement.querySelector('.toggle-icon');
+            
+            // Toggle the 'open' class to show/hide content and rotate the icon
+            content.classList.toggle('open');
+            icon.classList.toggle('open');
         }
         
         // Handle crop done
