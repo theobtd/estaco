@@ -699,7 +699,7 @@
           </div>
         </div>
     
-      <!-- Profile Content -->
+        <!-- Friend System (Now contains sub-sections) -->
         <div class="section">
           <div class="section-header" onclick="toggleSection('friend-system-content', this)">
             <h3 data-i18n="Friend System">Friend System</h3>
@@ -707,26 +707,31 @@
           </div>
 
           <div id="friend-system-content" class="section-content">
+            
             <div class="search-friend">
               <input type="text" id="search-friend" placeholder="Search by name..." data-i18n="Search by name...">
               <button id="send-friend-request" class="button" data-i18n="Send Friend Request">Send Friend Request</button>
             </div>
-          </div>
-        </div>
-        
-        <div class="section">
-          <h3 data-i18n="Pending Friend Requests">Pending Friend Requests</h3>
-          <div id="pending-friend-requests" class="friend-list"></div>
-        </div>
-        
-        <div class="section">
-          <h3 data-i18n="Current Friends">Current Friends</h3>
-          <div id="current-friends" class="friend-list"></div>
-        </div>
+            
+            <!-- Nested Sub-section: Pending Friend Requests -->
+            <div class="section" style="margin-bottom: 20px;">
+              <h3 data-i18n="Pending Friend Requests" style="font-size: 16px;">Pending Friend Requests</h3>
+              <div id="pending-friend-requests" class="friend-list"></div>
+            </div>
+            
+            <!-- Nested Sub-section: Current Friends -->
+            <div class="section" style="margin-bottom: 20px;">
+              <h3 data-i18n="Current Friends" style="font-size: 16px;">Current Friends</h3>
+              <div id="current-friends" class="friend-list"></div>
+            </div>
 
-        <div class="section">
-          <h3 data-i18n="Blocked Users">Blocked Users</h3>
-          <div id="blocked-users" class="friend-list"></div>
+            <!-- Nested Sub-section: Blocked Users -->
+            <div class="section" style="margin-bottom: 0;">
+              <h3 data-i18n="Blocked Users" style="font-size: 16px;">Blocked Users</h3>
+              <div id="blocked-users" class="friend-list"></div>
+            </div>
+
+          </div>
         </div>
     </div>
     
