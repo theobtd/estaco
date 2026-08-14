@@ -1811,12 +1811,24 @@
             
                 lastVisibleOwnPost = snapshot.docs[snapshot.docs.length - 1];
             
-                // Extract post IDs to fetch full documents from the main 'posts' collection if needed, 
-                // or render directly from the sub-collection depending on your DB architecture.
+                // Extract post IDs to fetch full documents from the main 'posts' collection
                 for (const doc of snapshot.docs) {
-                  const postData = doc.data();
-                  postData.id = doc.id;
-                  await renderOwnPostCard(postData);
+                  const ownPostRefData = doc.data();
+                  // Grab the post ID (either from the document fields or the document ID itself)
+                  const actualPostId = ownPostRefData.postId || doc.id; 
+                
+                  try {
+                    // Fetch the actual post data
+                    const fullPostDoc = await db.collection('posts').doc(actualPostId).get();
+                    
+                    if (fullPostDoc.exists) {
+                      const postData = fullPostDoc.data();
+                      postData.id = fullPostDoc.id; // Attach the ID for rendering
+                      await renderOwnPostCard(postData);
+                    }
+                  } catch (error) {
+                    console.error("Error fetching full post document:", error);
+                  }
                 }
             
                 // Check if there might be more posts to load
