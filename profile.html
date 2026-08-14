@@ -863,6 +863,11 @@
         const storage = firebase.storage();
         const db = firebase.firestore();
 
+        db.settings({
+            experimentalForceLongPolling: true,
+            useFetchStreams: false
+        });
+
         // Cloudflare Worker URL
         const WORKER_URL = 'https://proud-king-481e.tdgbertrand.workers.dev';
         
@@ -1671,6 +1676,10 @@
 
         // Display user information
         auth.onAuthStateChanged((user) => {
+          let lastVisibleOwnPost = null;
+          let hasMoreOwnPosts = true;
+          let isLoading = false;
+            
           if (user) {
             document.getElementById('user-name').textContent = user.displayName || "No name set";
             document.getElementById('user-email').textContent = user.email;
@@ -1720,11 +1729,6 @@
             loadExistingReferralLinks(user.uid);
             initializeUserOwnPosts(user.uid);
           }
-
-
-            let lastVisibleOwnPost = null;
-            let hasMoreOwnPosts = true;
-            let isLoading = false;
             
             // Call this inside your auth state change block after the rest of the profile loads:
             async function initializeUserOwnPosts(userId) {
