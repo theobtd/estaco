@@ -735,6 +735,19 @@
 
           </div>
         </div>
+
+        <div class="feed-container" style="margin-top: 20px;">
+          <h3 data-i18n="My Posts">My Posts</h3>
+          <div id="user-own-posts-feed">
+            <!-- User posts will load here -->
+          </div>
+          <div id="load-more-container" style="text-align: center; margin: 20px 0; display: none;">
+            <button id="load-more-own-posts-button" class="post-button" data-i18n="Load More">Load More</button>
+          </div>
+          <div id="own-posts-loading" style="display: none; text-align: center; margin: 10px 0;">
+            <div class="spinner"></div>
+          </div>
+        </div>
     </div>
     
       <!-- Cropper Modal -->
@@ -1706,6 +1719,106 @@
             loadBlockedUsers(user.uid);
             loadExistingReferralLinks(user.uid);
           }
+
+
+            let lastVisibleOwnPost = null;
+            let hasMoreOwnPosts = true;
+            
+            // Call this inside your auth state change block after the rest of the profile loads:
+            async function initializeUserOwnPosts(userId) {
+              // Load the first batch of 3 posts last
+              await loadUserOwnPosts(userId);
+            
+              document.getElementById('load-more-own-posts-button').addEventListener('click', () => {
+                loadUserOwnPosts(userId);
+              });
+            }
+            
+            async function loadUserOwnPosts(userId) {
+              const loadingIndicator = document.getElementById('own-posts-loading');
+              const loadMoreContainer = document.getElementById('load-more-container');
+              
+              if (isLoading || !hasMoreOwnPosts) return;
+              isLoading = true;
+              loadingIndicator.style.display = 'block';
+            
+              try {
+                let query = db.collection(`users/${userId}/OwnPosts`)
+                              .orderBy('timestamp', 'desc')
+                              .limit(3);
+            
+                if (lastVisibleOwnPost) {
+                  query = query.startAfter(lastVisibleOwnPost);
+                }
+            
+                const snapshot = await query.get();
+                loadingIndicator.style.display = 'none';
+            
+                if (snapshot.empty) {
+                  hasMoreOwnPosts = false;
+                  loadMoreContainer.style.display = 'none';
+                  const feedEl = document.getElementById('user-own-posts-feed');
+                  if (!feedEl.querySelector('.post')) {
+                    feedEl.innerHTML = `<p data-i18n="No posts yet. Create one!">No posts yet. Create one!</p>`;
+                  }
+                  isLoading = false;
+                  return;
+                }
+            
+                lastVisibleOwnPost = snapshot.docs[snapshot.docs.length - 1];
+            
+                // Extract post IDs to fetch full documents from the main 'posts' collection if needed, 
+                // or render directly from the sub-collection depending on your DB architecture.
+                for (const doc of snapshot.docs) {
+                  const postData = doc.data();
+                  postData.id = doc.id;
+                  await renderOwnPostCard(postData);
+                }
+            
+                // Check if there might be more posts to load
+                if (snapshot.docs.length < 3) {
+                  hasMoreOwnPosts = false;
+                  loadMoreContainer.style.display = 'none';
+                } else {
+                  loadMoreContainer.style.display = 'block';
+                }
+            
+              } catch (error) {
+                console.error("Error loading user's own posts:", error);
+                loadingIndicator.style.display = 'none';
+              } finally {
+                isLoading = false;
+              }
+            }
+            
+            async function renderOwnPostCard(post) {
+              const feedEl = document.getElementById('user-own-posts-feed');
+              if (document.querySelector(`.post[data-post-id="${post.id}"]`)) return;
+            
+              const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
+              
+              let mediaHTML = '';
+              if (post.photoURL) {
+                  mediaHTML = `<div class="media-container media-${post.mediaOrientation || 'horizontal'}"><img src="${post.photoURL}" class="post-media"></div>`;
+              } else if (post.videoURL) {
+                  mediaHTML = `<div class="media-container media-${post.mediaOrientation || 'horizontal'}"><video controls class="post-media" playsinline webkit-playsinline preload="none" poster="${post.thumbnailURL || ''}"><source src="${post.videoURL}" type="video/mp4"></video></div>`;
+              }
+            
+              const postHTML = `
+                <div class="post" data-post-id="${post.id}" data-author-id="${post.authorId}">
+                  <div class="post-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center;">
+                      ${profilePictureHTML}
+                      <h4 style="margin: 0;">${post.authorName}</h4>
+                    </div>
+                    <span style="font-size: 12px; color: #666;">${formatTimestamp(post.timestamp)}</span>
+                  </div>
+                  <p>${post.content}</p>
+                  ${mediaHTML}
+                </div>
+              `;
+              feedEl.insertAdjacentHTML('beforeend', postHTML);
+            }
         });
 
         // Add event listener for the "+" button
