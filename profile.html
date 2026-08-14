@@ -630,6 +630,41 @@
         .toggle-icon.open {
           transform: rotate(180deg);
         }
+
+        /* Add this inside the <style> tag of profile (14).html */
+
+        .post {
+          background: var(--estaco-surface);
+          padding: 16px;
+          margin-bottom: 20px;
+          border-radius: 12px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          border: 1px solid var(--estaco-border);
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        .post-header {
+          margin-bottom: 12px;
+        }
+        
+        .media-container {
+          width: 100%;
+          border-radius: 8px;
+          overflow: hidden;
+          margin-top: 12px;
+          background-color: var(--estaco-background);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        
+        .post-media {
+          width: 100%;
+          max-height: 450px; /* Constrains the massive images */
+          object-fit: cover; /* Ensures uniform display */
+          display: block;
+        }
         
     </style>
 
