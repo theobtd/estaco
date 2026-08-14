@@ -1756,16 +1756,6 @@
             </div>
           `;
         }
-
-        // Function to toggle profile page sections
-        function toggleSection(contentId, headerElement) {
-            const content = document.getElementById(contentId);
-            const icon = headerElement.querySelector('.toggle-icon');
-            
-            // Toggle the 'open' class to show/hide content and rotate the icon
-            content.classList.toggle('open');
-            icon.classList.toggle('open');
-        }
         
         // Handle crop done
         document.getElementById('crop-done-button').addEventListener('click', () => {
@@ -2419,6 +2409,14 @@
           });
         }
     }); // end _authRestoreReady.then
+
+        function toggleSection(contentId, headerElement) {
+            const content = document.getElementById(contentId);
+            const icon = headerElement.querySelector('.toggle-icon');
+            
+            content.classList.toggle('open');
+            icon.classList.toggle('open');
+        }
     </script>
 </body>
 </html>
