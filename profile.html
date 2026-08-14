@@ -863,12 +863,6 @@
         const storage = firebase.storage();
         const db = firebase.firestore();
 
-        db.settings({
-            experimentalForceLongPolling: true,
-            useFetchStreams: false,
-            merge: true
-        });
-
         // Cloudflare Worker URL
         const WORKER_URL = 'https://proud-king-481e.tdgbertrand.workers.dev';
         
