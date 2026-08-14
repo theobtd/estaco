@@ -1750,7 +1750,7 @@
             
               try {
                 let query = db.collection(`users/${userId}/OwnPosts`)
-                              .orderBy('timestamp', 'desc')
+                              .orderBy('postTimestamp', 'desc')
                               .limit(3);
             
                 if (lastVisibleOwnPost) {
