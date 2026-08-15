@@ -1969,7 +1969,7 @@
             
               const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
               
-              // --- FIX: Fetch the actual comment count from the subcollection ---
+              // --- 1. Fetch Comment Count ---
               let actualCommentCount = post.commentCount || 0; 
               try {
                   const commentsSnapshot = await db.collection('posts').doc(post.id).collection('comments').get();
@@ -1977,7 +1977,10 @@
               } catch (error) {
                   console.error("Error fetching comment count:", error);
               }
-              // ------------------------------------------------------------------
+            
+              // --- 2. Fetch Reaction Count ---
+              // Assuming it's a simple field on the post document. 
+              let actualReactionCount = post.reactionCount || post.likes || 0; 
             
               let mediaHTML = '';
               if (post.photoURL) {
@@ -2000,13 +2003,18 @@
                   
                   <!-- Post Actions -->
                   <div class="post-actions">
+                    <!-- New Reaction Button -->
+                    <button class="action-button" onclick="toggleReaction('${post.id}')">
+                      ❤️ <span data-i18n="React">React</span> (<span id="reaction-count-${post.id}">${actualReactionCount}</span>)
+                    </button>
+                    
                     <button class="action-button" onclick="toggleComments('${post.id}')">
                       💬 <span data-i18n="Comments">Comments</span> (<span id="comment-count-${post.id}">${actualCommentCount}</span>)
                     </button>
                   </div>
                   
                   <!-- Comments Section -->
-                  <div id="comments-section-${post.id}" class="comments-section">
+                  <div id="comments-section-${post.id}" class="comments-section" style="display: none;">
                     <div id="comments-list-${post.id}"></div>
                     <div class="comment-input-container">
                       <input type="text" id="comment-input-${post.id}" placeholder="Write a comment..." data-i18n="Write a comment...">
