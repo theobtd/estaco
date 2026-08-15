@@ -2285,7 +2285,7 @@
         // --- Comments Functionality ---
 
         // Toggle comment section visibility and load comments
-        function toggleComments(postId) {
+        window.toggleComments = function(postId) {
             const section = document.getElementById(`comments-section-${postId}`);
             if (section.style.display === 'none' || section.style.display === '') {
                 section.style.display = 'block';
@@ -2296,7 +2296,7 @@
         }
 
         // Fetch and render comments for a specific post
-        async function loadComments(postId) {
+        window.loadComments = async function(postId) {
             const listEl = document.getElementById(`comments-list-${postId}`);
             listEl.innerHTML = '<div style="text-align: center; margin: 10px 0;"><div class="spinner" style="width: 20px; height: 20px; border-width: 3px;"></div></div>';
             
@@ -2341,7 +2341,7 @@
         }
 
         // Submit a new comment
-        async function submitComment(postId) {
+        window.submitComment = async function(postId) {
             const inputEl = document.getElementById(`comment-input-${postId}`);
             const text = inputEl.value.trim();
             const user = auth.currentUser;
