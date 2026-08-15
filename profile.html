@@ -1969,6 +1969,16 @@
             
               const profilePictureHTML = await getCommentAuthorPicture(post.authorId, post.authorName);
               
+              // --- FIX: Fetch the actual comment count from the subcollection ---
+              let actualCommentCount = post.commentCount || 0; 
+              try {
+                  const commentsSnapshot = await db.collection('posts').doc(post.id).collection('comments').get();
+                  actualCommentCount = commentsSnapshot.size;
+              } catch (error) {
+                  console.error("Error fetching comment count:", error);
+              }
+              // ------------------------------------------------------------------
+            
               let mediaHTML = '';
               if (post.photoURL) {
                   mediaHTML = `<div class="media-container media-${post.mediaOrientation || 'horizontal'}"><img src="${post.photoURL}" class="post-media"></div>`;
@@ -1991,7 +2001,7 @@
                   <!-- Post Actions -->
                   <div class="post-actions">
                     <button class="action-button" onclick="toggleComments('${post.id}')">
-                      💬 <span data-i18n="Comments">Comments</span> (<span id="comment-count-${post.id}">${post.commentCount || 0}</span>)
+                      💬 <span data-i18n="Comments">Comments</span> (<span id="comment-count-${post.id}">${actualCommentCount}</span>)
                     </button>
                   </div>
                   
