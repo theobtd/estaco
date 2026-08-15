@@ -2441,54 +2441,70 @@
             }
         }
 
+        // --- Reactions Functionality ---
+        
         window.toggleReaction = async function(postId, reactionType) {
-            const user = auth.currentUser;
-            if (!user) return;
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                console.error("You must be logged in to react.");
+                return;
+            }
         
             const postRef = db.collection('posts').doc(postId);
-            const reactionRef = postRef.collection('userReactions').doc(user.uid);
         
             try {
                 await db.runTransaction(async (transaction) => {
                     const postDoc = await transaction.get(postRef);
-                    const reactionDoc = await transaction.get(reactionRef);
+                    if (!postDoc.exists) {
+                        throw "Post does not exist!";
+                    }
+        
+                    const postData = postDoc.data();
                     
-                    if (!postDoc.exists) return;
+                    // Initialize structures if they don't exist in the document yet
+                    let reactions = postData.reactions || { like: 0, heart: 0, laugh: 0 };
+                    let userReactions = postData.userReactions || {}; 
+                    
+                    // Check what the user has currently reacted with (if anything)
+                    const currentReaction = userReactions[user.uid];
         
-                    // Initialize the reactions map if it doesn't exist
-                    let currentReactions = postDoc.data().reactions || { like: 0, heart: 0, laugh: 0 };
-                    let previousReaction = null;
-        
-                    if (reactionDoc.exists) {
-                        previousReaction = reactionDoc.data().type;
-                    }
-        
-                    // If clicking the same reaction, remove it (toggle off)
-                    if (previousReaction === reactionType) {
-                        currentReactions[reactionType] = Math.max(0, currentReactions[reactionType] - 1);
-                        transaction.delete(reactionRef);
+                    if (currentReaction === reactionType) {
+                        // 1. User clicked the same reaction again: Remove it (Toggle OFF)
+                        reactions[reactionType] = Math.max(0, (reactions[reactionType] || 1) - 1);
+                        delete userReactions[user.uid];
                     } else {
-                        // If switching from another reaction, decrement the old one
-                        if (previousReaction && currentReactions[previousReaction] > 0) {
-                            currentReactions[previousReaction]--;
+                        // 2. User clicked a different reaction or is reacting for the first time
+                        if (currentReaction) {
+                            // Decrease the count of their previous reaction
+                            reactions[currentReaction] = Math.max(0, (reactions[currentReaction] || 1) - 1);
                         }
-                        // Increment the new reaction
-                        currentReactions[reactionType] = (currentReactions[reactionType] || 0) + 1;
-                        transaction.set(reactionRef, { type: reactionType, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                        // Increase the new reaction count
+                        reactions[reactionType] = (reactions[reactionType] || 0) + 1;
+                        // Save the user's new reaction
+                        userReactions[user.uid] = reactionType;
                     }
         
-                    // Update main post document
-                    transaction.update(postRef, { reactions: currentReactions });
+                    // Push updates to Firestore
+                    transaction.update(postRef, {
+                        reactions: reactions,
+                        userReactions: userReactions
+                    });
         
-                    // Update UI optimistically
-                    document.getElementById(`like-count-${postId}`).textContent = currentReactions.like || 0;
-                    document.getElementById(`heart-count-${postId}`).textContent = currentReactions.heart || 0;
-                    document.getElementById(`laugh-count-${postId}`).textContent = currentReactions.laugh || 0;
+                    // Update the UI immediately after the transaction succeeds
+                    const likeSpan = document.getElementById(`like-count-${postId}`);
+                    const heartSpan = document.getElementById(`heart-count-${postId}`);
+                    const laughSpan = document.getElementById(`laugh-count-${postId}`);
+                    
+                    if (likeSpan) likeSpan.textContent = reactions.like || 0;
+                    if (heartSpan) heartSpan.textContent = reactions.heart || 0;
+                    if (laughSpan) laughSpan.textContent = reactions.laugh || 0;
                 });
+        
             } catch (error) {
-                console.error("Error toggling reaction:", error);
+                console.error("Failed to toggle reaction: ", error);
+                alert(translations[userLanguage]?.["Failed to update reaction."] || "Failed to update reaction.");
             }
-        }
+        };
 
         const translations = {
           English: {
