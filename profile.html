@@ -665,6 +665,87 @@
           object-fit: cover; /* Ensures uniform display */
           display: block;
         }
+
+        /* Comments Section Styles */
+        .post-actions {
+          display: flex;
+          gap: 15px;
+          margin-top: 12px;
+          border-top: 1px solid var(--estaco-border);
+          padding-top: 12px;
+        }
+        
+        .action-button {
+          background: none;
+          border: none;
+          color: var(--estaco-text-light);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 14px;
+          padding: 0;
+          transition: color 0.2s;
+        }
+        
+        .comments-section {
+          display: none; /* Hidden by default */
+          margin-top: 15px;
+          border-top: 1px solid var(--estaco-border);
+          padding-top: 12px;
+        }
+        
+        .comment-item {
+          margin-bottom: 12px;
+          background: var(--estaco-background);
+          padding: 10px;
+          border-radius: 8px;
+          border: 1px solid var(--estaco-border);
+        }
+        
+        .comment-author {
+          font-weight: 600;
+          font-size: 13px;
+          color: var(--estaco-text);
+          display: flex;
+          justify-content: space-between;
+        }
+        
+        .comment-text {
+          font-size: 14px;
+          margin: 4px 0 0 0;
+          color: var(--estaco-text);
+        }
+        
+        .comment-input-container {
+          display: flex;
+          gap: 8px;
+          margin-top: 12px;
+        }
+        
+        .comment-input-container input {
+          flex: 1;
+          padding: 10px 14px;
+          border: 1px solid var(--estaco-border);
+          border-radius: 20px;
+          font-size: 14px;
+          outline: none;
+        }
+        
+        .comment-input-container input:focus {
+          border-color: var(--estaco-primary);
+        }
+        
+        .comment-input-container button {
+          background-color: var(--estaco-primary);
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 20px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+        }
         
     </style>
 
@@ -1906,6 +1987,22 @@
                   </div>
                   <p>${post.content}</p>
                   ${mediaHTML}
+                  
+                  <!-- Post Actions -->
+                  <div class="post-actions">
+                    <button class="action-button" onclick="toggleComments('${post.id}')">
+                      💬 <span data-i18n="Comments">Comments</span> (<span id="comment-count-${post.id}">${post.commentCount || 0}</span>)
+                    </button>
+                  </div>
+                  
+                  <!-- Comments Section -->
+                  <div id="comments-section-${post.id}" class="comments-section">
+                    <div id="comments-list-${post.id}"></div>
+                    <div class="comment-input-container">
+                      <input type="text" id="comment-input-${post.id}" placeholder="Write a comment..." data-i18n="Write a comment...">
+                      <button onclick="submitComment('${post.id}')" data-i18n="Post">Post</button>
+                    </div>
+                  </div>
                 </div>
               `;
               feedEl.insertAdjacentHTML('beforeend', postHTML);
@@ -2184,6 +2281,136 @@
           const menuPage = document.getElementById('menu-page');
           menuPage.classList.remove('open');
         });
+
+        // --- Comments Functionality ---
+
+        // Toggle comment section visibility and load comments
+        function toggleComments(postId) {
+            const section = document.getElementById(`comments-section-${postId}`);
+            if (section.style.display === 'none' || section.style.display === '') {
+                section.style.display = 'block';
+                loadComments(postId);
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        // Fetch and render comments for a specific post
+        async function loadComments(postId) {
+            const listEl = document.getElementById(`comments-list-${postId}`);
+            listEl.innerHTML = '<div style="text-align: center; margin: 10px 0;"><div class="spinner" style="width: 20px; height: 20px; border-width: 3px;"></div></div>';
+            
+            try {
+                // Assuming comments are stored in a subcollection 'comments' under each post
+                const snapshot = await db.collection('posts').doc(postId).collection('comments')
+                                         .orderBy('timestamp', 'asc').get();
+                listEl.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    listEl.innerHTML = `<p style="font-size: 12px; color: var(--estaco-text-light); text-align: center;" data-i18n="No comments yet.">No comments yet.</p>`;
+                    document.getElementById(`comment-count-${postId}`).textContent = '0';
+                    return;
+                }
+                
+                document.getElementById(`comment-count-${postId}`).textContent = snapshot.size;
+
+                snapshot.forEach(doc => {
+                    const comment = doc.data();
+                    const commentHTML = `
+                        <div class="comment-item">
+                            <div class="comment-author">
+                                ${comment.authorName} 
+                                <span style="font-weight: normal; color: var(--estaco-text-light); font-size: 11px;">
+                                    ${formatTimestamp(comment.timestamp)}
+                                </span>
+                            </div>
+                            <p class="comment-text">${comment.text}</p>
+                        </div>
+                    `;
+                    listEl.insertAdjacentHTML('beforeend', commentHTML);
+                });
+                
+                // Re-apply language translations if the function exists
+                if (typeof updatePageLanguage === 'function' && typeof userLanguage !== 'undefined') {
+                    updatePageLanguage(userLanguage);
+                }
+            } catch (error) {
+                console.error("Error loading comments:", error);
+                listEl.innerHTML = `<p style="color: var(--estaco-error); font-size: 12px;">Error loading comments.</p>`;
+            }
+        }
+
+        // Submit a new comment
+        async function submitComment(postId) {
+            const inputEl = document.getElementById(`comment-input-${postId}`);
+            const text = inputEl.value.trim();
+            const user = auth.currentUser;
+            
+            if (!text || !user) return;
+            
+            inputEl.disabled = true;
+            const submitBtn = inputEl.nextElementSibling;
+            submitBtn.disabled = true;
+            
+            try {
+                // Get the current user's latest name
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                const authorName = userDoc.data().name || user.displayName || "Unknown";
+                
+                // Add the comment to Firestore
+                await db.collection('posts').doc(postId).collection('comments').add({
+                    authorId: user.uid,
+                    authorName: authorName,
+                    text: text,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Increment comment count on the main post document
+                const postRef = db.collection('posts').doc(postId);
+                await db.runTransaction(async (transaction) => {
+                    const postDoc = await transaction.get(postRef);
+                    if (postDoc.exists) {
+                        const currentCount = postDoc.data().commentCount || 0;
+                        transaction.update(postRef, { commentCount: currentCount + 1 });
+                    }
+                });
+                
+                // Clear input and reload comments
+                inputEl.value = '';
+                await loadComments(postId); 
+                
+                // Notification logic: Notify post owner if someone else comments
+                const currentPostDoc = await postRef.get();
+                const postOwnerId = currentPostDoc.data().authorId;
+                
+                if (postOwnerId && postOwnerId !== user.uid) {
+                    await db.collection(`users/${postOwnerId}/notifications`).add({
+                        type: "comment",
+                        postId: postId,
+                        senderId: user.uid,
+                        senderName: authorName,
+                        message: `${authorName} commented on your post.`,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    // Increment target's notification counter
+                    const targetRef = db.collection('users').doc(postOwnerId);
+                    await db.runTransaction(async (t) => {
+                       const tDoc = await t.get(targetRef);
+                       const count = tDoc.data()?.NotificationsCounter || 0;
+                       t.update(targetRef, { NotificationsCounter: count + 1 });
+                    });
+                }
+                
+            } catch (error) {
+                console.error("Error posting comment:", error);
+                alert("Failed to post comment.");
+            } finally {
+                inputEl.disabled = false;
+                submitBtn.disabled = false;
+                inputEl.focus();
+            }
+        }
 
         const translations = {
           English: {
