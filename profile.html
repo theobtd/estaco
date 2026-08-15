@@ -1978,9 +1978,11 @@
                   console.error("Error fetching comment count:", error);
               }
             
-              // --- 2. Fetch Reaction Count ---
-              // Assuming it's a simple field on the post document. 
-              let actualReactionCount = post.reactionCount || post.likes || 0; 
+              // --- 2. Fetch Reaction Counts for 3 Types ---
+              // Defaulting to 0 if the reactions map or specific reaction doesn't exist yet
+              let likeCount = (post.reactions && post.reactions.like) || 0;
+              let heartCount = (post.reactions && post.reactions.heart) || 0;
+              let laughCount = (post.reactions && post.reactions.laugh) || 0;
             
               let mediaHTML = '';
               if (post.photoURL) {
@@ -2002,11 +2004,20 @@
                   ${mediaHTML}
                   
                   <!-- Post Actions -->
-                  <div class="post-actions">
-                    <!-- New Reaction Button -->
-                    <button class="action-button" onclick="toggleReaction('${post.id}')">
-                      ❤️ <span data-i18n="React">React</span> (<span id="reaction-count-${post.id}">${actualReactionCount}</span>)
-                    </button>
+                  <div class="post-actions" style="display: flex; justify-content: space-between; align-items: center;">
+                    
+                    <!-- 3 Reactions Group -->
+                    <div class="reactions-group" style="display: flex; gap: 12px;">
+                      <button class="action-button" onclick="toggleReaction('${post.id}', 'like')">
+                        👍 <span id="like-count-${post.id}">${likeCount}</span>
+                      </button>
+                      <button class="action-button" onclick="toggleReaction('${post.id}', 'heart')">
+                        ❤️ <span id="heart-count-${post.id}">${heartCount}</span>
+                      </button>
+                      <button class="action-button" onclick="toggleReaction('${post.id}', 'laugh')">
+                        😂 <span id="laugh-count-${post.id}">${laughCount}</span>
+                      </button>
+                    </div>
                     
                     <button class="action-button" onclick="toggleComments('${post.id}')">
                       💬 <span data-i18n="Comments">Comments</span> (<span id="comment-count-${post.id}">${actualCommentCount}</span>)
@@ -2427,6 +2438,55 @@
                 inputEl.disabled = false;
                 submitBtn.disabled = false;
                 inputEl.focus();
+            }
+        }
+
+        window.toggleReaction = async function(postId, reactionType) {
+            const user = auth.currentUser;
+            if (!user) return;
+        
+            const postRef = db.collection('posts').doc(postId);
+            const reactionRef = postRef.collection('userReactions').doc(user.uid);
+        
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const postDoc = await transaction.get(postRef);
+                    const reactionDoc = await transaction.get(reactionRef);
+                    
+                    if (!postDoc.exists) return;
+        
+                    // Initialize the reactions map if it doesn't exist
+                    let currentReactions = postDoc.data().reactions || { like: 0, heart: 0, laugh: 0 };
+                    let previousReaction = null;
+        
+                    if (reactionDoc.exists) {
+                        previousReaction = reactionDoc.data().type;
+                    }
+        
+                    // If clicking the same reaction, remove it (toggle off)
+                    if (previousReaction === reactionType) {
+                        currentReactions[reactionType] = Math.max(0, currentReactions[reactionType] - 1);
+                        transaction.delete(reactionRef);
+                    } else {
+                        // If switching from another reaction, decrement the old one
+                        if (previousReaction && currentReactions[previousReaction] > 0) {
+                            currentReactions[previousReaction]--;
+                        }
+                        // Increment the new reaction
+                        currentReactions[reactionType] = (currentReactions[reactionType] || 0) + 1;
+                        transaction.set(reactionRef, { type: reactionType, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                    }
+        
+                    // Update main post document
+                    transaction.update(postRef, { reactions: currentReactions });
+        
+                    // Update UI optimistically
+                    document.getElementById(`like-count-${postId}`).textContent = currentReactions.like || 0;
+                    document.getElementById(`heart-count-${postId}`).textContent = currentReactions.heart || 0;
+                    document.getElementById(`laugh-count-${postId}`).textContent = currentReactions.laugh || 0;
+                });
+            } catch (error) {
+                console.error("Error toggling reaction:", error);
             }
         }
 
